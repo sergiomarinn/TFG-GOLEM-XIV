@@ -1,31 +1,35 @@
 import axios from 'axios'
 import { React, useState } from 'react'
 
+import {useNavigate } from 'react-router-dom';
+
 export const Register = () => {
 
+    const navigate = useNavigate()
     const [formData, setFormData] = useState({
         email: '',
         password: '',
         nombre: '',
-        apellidos: ''
-      });
-      const { email, password, apellidos, nombre} = formData;
-    
+        apellidos: '',
+        niub: 0
+    });
+    const {email, password, apellidos, nombre, niub } = formData;
+
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const handleSubmit = e => {
         e.preventDefault();
-        const baseURL = 'http://127.0.0.1:8000/corrector/users'
-        axios.post(baseURL, {
-          body: formData,
-          headers: {
-            'content-type': 'application/json'
-          }
-        })
-        .then((response) => {
-          console.log(response.data);
-        });
 
+        const baseURL = 'http://127.0.0.1:8000/users/'
+        axios.post(baseURL, formData)
+            .then((response) => {
+               navigate("/")
+            }).catch((response) => console.log(response));
+
+    }
+
+    const backToLogin = e => {
+        navigate("/")
     }
 
     return (
@@ -39,27 +43,33 @@ export const Register = () => {
                     </h1>
                     <form class="space-y-4 md:space-y-6" action="#">
                         <div>
+                            <label for="niub" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">NIUB</label>
+                            <input type="number" value={niub} name='niub' onChange={e => onChange(e)} class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Numero de Identficació de la UB" required></input>
+                            <p id="helper-text-explanation" class="mt-2 text-sm text-gray-500 dark:text-gray-400">Si no saps quin es el teu niub.<a href="#" class="font-medium text-blue-600 hover:underline dark:text-blue-500">Fés click aqui</a>.</p>
+                        </div>
+                        <div>
                             <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre</label>
-                            <input type="email" value={nombre} name='nombre'  onChange={e => onChange(e)} class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Albert" required></input>
+                            <input type="email" value={nombre} name='nombre' onChange={e => onChange(e)} class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Albert" required></input>
                         </div>
                         <div>
                             <label for="apellido" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Apellidos</label>
-                            <input type="email"  value={apellidos} name='apellidos'  onChange={e => onChange(e)} class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Roca Perez" required></input>
+                            <input type="email" value={apellidos} name='apellidos' onChange={e => onChange(e)} class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Roca Perez" required></input>
                         </div>
                         <div>
                             <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
-                            <input type="email"  value={email} name='email'  onChange={e => onChange(e)} class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@company.com" required></input>
+                            <input type="email" value={email} name='email' onChange={e => onChange(e)} class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@company.com" required></input>
                         </div>
                         <div>
                             <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contraseña</label>
-                            <input type="password"  value={password} name='password'  onChange={e => onChange(e)} placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required></input>
+                            <input type="password" value={password} name='password' onChange={e => onChange(e)} placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required></input>
                         </div>
                         <div>
                             <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Confirmación</label>
                             <input type="password" placeholder="Vuelve a escribir la contraseña" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" ></input>
                         </div>
 
-                        <button type="submit" onClick={handleSubmit} variant="outlined" class="w-full text-black dark:text-white bg-sky-300 hover:bg-sky-400 focus:ring-4 focus:outline-none focus:ring-sky-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-sky-600 dark:hover:bg-sky-700 dark:focus:ring-sky-800">Sign in</button>
+                        <button type="submit" onClick={handleSubmit} variant="outlined" class="w-full text-black dark:text-white bg-sky-300 hover:bg-sky-400 focus:ring-4 focus:outline-none focus:ring-sky-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-sky-600 dark:hover:bg-sky-700 dark:focus:ring-sky-800">Registrarse</button>
+                        <button type="submit" onClick={backToLogin} variant="outlined" class="w-full text-black dark:text-white bg-sky-300 hover:bg-sky-400 focus:ring-4 focus:outline-none focus:ring-sky-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-sky-600 dark:hover:bg-sky-700 dark:focus:ring-sky-800">Volver al Login</button>
                     </form>
                 </div>
             </div>

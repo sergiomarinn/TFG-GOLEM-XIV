@@ -1,10 +1,13 @@
 import fastapi
-from api.controller import router as correctorRouter
+from api.auth.controller import router as correctorRouter
+from api.cursos.controller import router as cursosRouter
 from fastapi.middleware.cors import CORSMiddleware
 
-app = fastapi.FastAPI(title="Senser", version="0.1.0-alpha.1")
+app = fastapi.FastAPI()
 
 app.include_router(correctorRouter)
+
+app.include_router(cursosRouter)
 
 origins = [
     "http://localhost:3000",

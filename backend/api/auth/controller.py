@@ -62,7 +62,7 @@ class login (BaseModel):
 router = APIRouter(
     prefix="/users",
     responses={404: {"description": "Not found"}},
-    tags=["corrector"],
+    tags=["users"],
 )
 
 async def decodeToken(token: Annotated[str, Depends(oauth2_bearer)]):
@@ -82,7 +82,7 @@ async def decodeToken(token: Annotated[str, Depends(oauth2_bearer)]):
 def Hello_World(user: Annotated[dict, Depends(decodeToken)],db: Session = Depends(get_db)):
     usuarios = db.query(models.User).all()
    
-    return {"usuarios" : user['is_profesor']}
+    return {"usuarios" : user}
 
 
 @router.delete("")
@@ -153,10 +153,10 @@ class test(BaseModel):
 @router.post("/uploadfile")
 async def login(file: UploadFile, fileForm: test = Depends()):
     directorio = UPLOAD_DIR +"/" + fileForm.curs + "/" + fileForm.assignatura + "/" + fileForm.practica + "/" + file.filename
-    with open(directorio, 'wb') as sink:
+    with open(directorio, 'wb') as f:
         chunk_size = 1024 * 1024
         while True:
             chunk = file.file.read(chunk_size)
             if not chunk:
                 break
-            sink.write(chunk)
+            f.write(chunk)

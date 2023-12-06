@@ -116,7 +116,7 @@ async def login(form_data:login, db: Session = Depends(get_db) ):
     if '@' in form_data.username:
         user = comprovar_usuario_email(form_data.username, form_data.password, db)
     else:
-        user = comprovar_usuario_niub(int(form_data.username), form_data.password, db)
+        user = comprovar_usuario_niub(form_data.username, form_data.password, db)
     
     token = create_token(user.niub, user.is_alumno, user.is_profesor, user.is_admin, timedelta(minutes=20))
 
@@ -137,7 +137,7 @@ def comprovar_usuario_email(usuario: str, constraseña: str, db) :
         raise InvalidCredentialsException
     return user
 
-def comprovar_usuario_niub(usuario: int, constraseña: str, db) :
+def comprovar_usuario_niub(usuario: str, constraseña: str, db) :
     user = db.query(models.User).filter(models.User.niub == usuario).first()
     if not user:
         raise InvalidCredentialsException 

@@ -8,13 +8,15 @@ from typing import Annotated
 import os   
 from api.mongodb import MongoDBClient
 from api.database import SessionLocal
-from api import models
+from api import models #rcp_client
 import pandas as pd
 from sqlalchemy.dialects.postgresql import insert
 
 
 prof_path = './api/correcciones/profesores'
 almn_path = './api/correcciones/alumnos'
+#rabbit = rcp_client.RpcClient()
+
 # Dependency to get db session
 def get_db():
     db = SessionLocal()
@@ -45,7 +47,11 @@ class Curs(BaseModel):
 
 
 @router.post("")
-async def crear_nou_curs(file: UploadFile , formData: Curs = Depends(),  db: Session = Depends(get_db)):
+async def crear_nou_curs(user: auth ,file: UploadFile , formData: Curs = Depends(),  db: Session = Depends(get_db)):
+    
+    if user['is_alumno']:
+        raise HTTPException(403, "Unauthorized")
+    
     curs = models.cursos(nom=formData.nom, curs=formData.curs, descripcio=formData.descripcio)
     db.add(curs)
     db.commit()
@@ -61,7 +67,7 @@ async def crear_nou_curs(file: UploadFile , formData: Curs = Depends(),  db: Ses
     except FileExistsError:
         pass
     
-    info = []
+    info = [{"user_niub": user['niub'], "cursos_id" : curs.id}]
     for i in data["niub"]:
         info.append({"user_niub": i, "cursos_id" : curs.id})
 
@@ -69,8 +75,13 @@ async def crear_nou_curs(file: UploadFile , formData: Curs = Depends(),  db: Ses
     db.execute(stmt)
     db.commit()
 
+@router.get("")
+async def get_cursos(user: auth, db: Session = Depends(get_db)):
+    cursos = db.query(models.cursos).join(models.cursos.usuarios).filter(models.User.niub == user['niub']).all()
+    return cursos
+
 @router.delete("")
-def deleteUser(formdata : Curs = Depends(), db: Session = Depends(get_db) ):
+def deleteUser(formdata : Curs = Depends(), db: Session = Depends(get_db)):
     user = db.query(models.cursos).filter(models.cursos.nom == formdata.nom).first() 
     db.delete(user)
     db.commit()

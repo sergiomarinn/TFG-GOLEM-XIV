@@ -24,7 +24,7 @@ class User(Base):
     is_alumno = Column(Boolean, default=True)
     is_profesor = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
-    cursos = relationship('cursos', secondary='cursos_usuario')
+    cursos = relationship('cursos', secondary='cursos_usuario', back_populates='usuarios')
 
 
 class cursos(Base):
@@ -33,7 +33,7 @@ class cursos(Base):
     nom = Column(String, nullable=False)
     curs= Column(String, nullable=False)
     descripcio= Column(String)
-    usuarios = relationship(User, secondary='cursos_usuario')
+    usuarios = relationship(User, secondary='cursos_usuario', back_populates='cursos')
     practicas = relationship('practicas')
 
 class practicas(Base):

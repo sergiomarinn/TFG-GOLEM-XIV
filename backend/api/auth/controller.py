@@ -49,7 +49,7 @@ class Token(BaseModel):
     token_type:str
     
 class registro(BaseModel):
-    niub: int  
+    niub: str  
     email: str
     password: str
     nombre: str   
@@ -95,8 +95,6 @@ def deleteUser(niub: int = Form(...), db: Session = Depends(get_db) ):
 
 @router.post("/")
 async def create_user(formData: registro, db: Session = Depends(get_db)):
-    if(len(str(formData.niub)) != 8 ):
-        raise HTTPException(status_code = 413, detail="El niub ha de tener 8 dígitos")
     user = db.query(models.User).filter(models.User.niub == formData.niub).first() 
     if user:
         raise HTTPException(status_code = 400, detail="Este usuario ya existe")

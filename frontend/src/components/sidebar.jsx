@@ -1,12 +1,13 @@
 import { useState } from "react";
 import flecha from "../assets/control.png"
 import ubL from "../assets/ub_logo.png"
+import casa from "../assets/hogar.svg"
 
 
 export const Sidebar = () => {
     const [open, setOpen] = useState(true);
     const Menus = [
-        { title: "Inici", src: ubL },
+        { title: "Inici", src: casa },
     ];
 
     return (
@@ -18,6 +19,8 @@ export const Sidebar = () => {
                 >
                     <img
                         src={flecha}
+                        width="5a0px"
+                        height="50px"
                         className={`absolute cursor-pointer -right-7 top-9 w-7 border-purple-800 border-2 rounded-full  ${!open && "rotate-180"}`}
                         onClick={() => setOpen(!open)
                         }
@@ -36,8 +39,7 @@ export const Sidebar = () => {
                         {Menus.map((Menu, index) => (
                             <li
                                 key={index}
-                                className={`flex  rounded-md p-2 cursor-pointer hover:bg-light-white text-gray-300 text-sm items-center gap-x-4 
-              ${Menu.gap ? "mt-9" : "mt-2"} ${index === 0 && "bg-light-white"
+                                className={`flex  rounded-md p-2 cursor-pointer hover:bg-light-white text-gray-300 text-sm items-center gap-x-4  ${Menu.gap ? "mt-9" : "mt-2"} ${index === 0 && "bg-light-white"
                                     } `}
                             >
                                 <img src={Menu.src} />

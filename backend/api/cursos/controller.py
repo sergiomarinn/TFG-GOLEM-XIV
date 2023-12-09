@@ -45,12 +45,19 @@ class Curs(BaseModel):
     curs: str
     nom : str
 
+class Practica(BaseModel):
+    id : int
+    descripcio: Optional[str] = None
+    nom : str
+    llenguatje:str
+
+
 
 @router.post("")
 async def crear_nou_curs(user: auth ,file: UploadFile , formData: Curs = Depends(),  db: Session = Depends(get_db)):
     
     if user['is_alumno']:
-        raise HTTPException(403, "Unauthorized")
+        raise HTTPException(401, "Unauthorized")
     
     curs = models.cursos(nom=formData.nom, curs=formData.curs, descripcio=formData.descripcio)
     db.add(curs)
@@ -74,6 +81,20 @@ async def crear_nou_curs(user: auth ,file: UploadFile , formData: Curs = Depends
     stmt = insert(models.cursos_usuario).values(info)
     db.execute(stmt)
     db.commit()
+
+    return curs 
+
+
+@router.post("/practica")
+async def crear_practicas(user: auth, formData: Curs, db: Session = Depends(get_db)):
+    if user['is_alumno']:
+        raise HTTPException(401, "Unauthorized")
+    
+
+    
+    
+
+
 
 @router.get("")
 async def get_cursos(user: auth, db: Session = Depends(get_db)):

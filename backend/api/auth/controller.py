@@ -78,12 +78,19 @@ async def decodeToken(token: Annotated[str, Depends(oauth2_bearer)]):
     except jwt.exceptions.InvalidTokenError :
         raise HTTPException(status_code=401, detail="No estas autorizado")
 
-@router.get("")
-def Hello_World(user: Annotated[dict, Depends(decodeToken)],db: Session = Depends(get_db)):
-    usuarios = db.query(models.User).all()
-   
-    return {"usuarios" : user}
+class profesor(BaseModel):
+    niub:str
 
+
+
+@router.post("/profesor")
+async def give_profesor(user: Annotated[dict, Depends(decodeToken)], formdata: profesor, db : Session= Depends(get_db)):
+    if not user['is_admin']:
+        raise HTTPException(401, 'Unauthorized')
+    db.query(models.User).filter(models.User.niub == formdata.niub).update({'is_alumno': False, 'is_profesor' : True})
+    db.commit()
+    return {"message" : "updated"}
+    
 
 @router.delete("")
 def deleteUser(niub: int = Form(...), db: Session = Depends(get_db) ):

@@ -41,7 +41,7 @@ class practicas(Base):
     __tablename__ = "practicas"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    curs = Column(Integer, ForeignKey('cursos.id'))
+    curs = Column(Integer, ForeignKey('cursos.id'), primary_key=True)
     nom = Column(String, nullable=False)
     Descripcio = Column(String)
     idiomaP = Column(String, nullable=False)

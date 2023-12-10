@@ -1,13 +1,19 @@
 import { useState } from "react";
 import flecha from "../assets/control.png"
 import ubL from "../assets/ub_logo.png"
-import casa from "../assets/hogar.svg"
+import React from "react";
+import {ReactComponent as home} from "../assets/hogar.svg"
+import {ReactComponent as calendari} from "../assets/calendar.svg"
+import {useNavigate } from 'react-router-dom';
 
 
 export const Sidebar = () => {
-    const [open, setOpen] = useState(true);
+    
+    const navigate = useNavigate()
+    const [open, setOpen] = useState(false);
     const Menus = [
-        { title: "Inici", src: casa },
+        { title: "Inici", Image : home, height:"30" , width:"30", style: "fill-white group-hover:fill-sky-500 duration-700", goTo : "/main"},
+        { title: "Calendari", Image : calendari, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo : "/"} 
     ];
 
     return (
@@ -15,13 +21,13 @@ export const Sidebar = () => {
             <div className="w-1/5 p-4">
                 <div
                     className={` ${open ? "w-72" : "w-20 "
-                        } bg-dark-purple h-screen p-5  pt-8 relative duration-500`}
+                        } bg-dark-purple h-screen p-5  pt-8 relative duration-1000`}
                 >
                     <img
                         src={flecha}
-                        width="5a0px"
+                        width="50px"
                         height="50px"
-                        className={`absolute cursor-pointer -right-7 top-9 w-7 border-purple-800 border-2 rounded-full  ${!open && "rotate-180"}`}
+                        className={`scale-0 md:scale-150 absolute cursor-pointer -right-7 top-11 w-7 border-sky-500 border-2 rounded-full  ${!open && "rotate-180"}`}
                         onClick={() => setOpen(!open)
                         }
                     />
@@ -30,7 +36,7 @@ export const Sidebar = () => {
                             src={ubL}
                         />
                         <h1
-                            className={`text-white origin-left font-medium text-xl duration-200 ${!open && "scale-0"}`}
+                            className={`text-white origin-left font-medium text-xl duration-1000 ${!open && "scale-0"}`}
                         >
                             Corrector UB
                         </h1>
@@ -39,13 +45,19 @@ export const Sidebar = () => {
                         {Menus.map((Menu, index) => (
                             <li
                                 key={index}
-                                className={`flex  rounded-md p-2 cursor-pointer hover:bg-light-white text-gray-300 text-sm items-center gap-x-4  ${Menu.gap ? "mt-9" : "mt-2"} ${index === 0 && "bg-light-white"
-                                    } `}
-                            >
-                                <img src={Menu.src} />
-                                <span className={`${!open && "hidden"} origin-left duration-200`}>
+                                className={`flex rounded-md p-2 cursor-pointer group  text-gray-300 hover:text-sky-500   text-lg font-bold items-center gap-x-4  ${Menu.gap ? "mt-9" : "mt-2"} ${index === 0 && "bg-light-white"}  `}
+                                onClick={(e) => {
+                                    navigate(Menu.goTo)
+                                }}>
+                                <div>
+                                <Menu.Image height={Menu.height} width={Menu.width} className={Menu.style} />
+                                </div>
+                                
+                                <div className={`${!open && "scale-0"} origin-left duration-700`}>
+                                <span >
                                     {Menu.title}
                                 </span>
+                                </div>
                             </li>
                         ))}
                     </ul>

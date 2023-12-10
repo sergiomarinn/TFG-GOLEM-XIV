@@ -21,7 +21,7 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <div class=" bg-gradient-to-b from-cyan-400 via-sky-300">
+    <div class=" bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200">
       <RouterProvider router={router}/>
     </div>
   )

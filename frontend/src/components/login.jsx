@@ -27,7 +27,7 @@ export const Login = () => {
             .then((response) => {
                 console.log(response)
                 localStorage.setItem('token', response.data.token_type + " " + response.data.access_token)
-                navigate("/")
+                navigate("/main")
 
             }).catch((response) => console.log(response));
     }

@@ -1,7 +1,7 @@
 import { Sidebar } from './sidebar'
 import {Modal } from './modal'
 import axios from 'axios'
-import { React, useState } from 'react'
+import { React, useEffect, useState } from 'react'
 
 import {useNavigate } from 'react-router-dom';
 
@@ -10,49 +10,61 @@ import {useNavigate } from 'react-router-dom';
 export const Main = () => {
 
     const [modalOpen, setModalOpen] = useState(false);
+    const [cartas, setCartas] = useState([]);
+
 
     const Carta = ({ carta }) => (
         <div
-            className="block rounded-lg  bg-slate-800 h-auto max-w-sm " >
-            <a href="#!">
+            className="block rounded-lg hover:cursor-pointer bg-slate-800 h-4/5 max-w-sm" onClick={(e) => goToCurso(carta, e)} >
+            <a>
                 <img
                     className="h-1/3 w-full rounded-xl object-cover md:h-1/3 md:w-full"
                     src="https://tecdn.b-cdn.net/img/new/standard/nature/184.jpg"
                     alt="" />
             </a>
             <div className="p-6 h-fit">
+                <div className='grid grid-cols-1 md:grid-cols-3'>
                 <h5
-                    className="mb-2  text-xl font-medium leading-tight text-neutral-800 dark:text-neutral-50">
-                    Card title
+                    className="mb-2 flex text-xl truncate col-span-2 font-medium leading-tight text-neutral-800 dark:text-neutral-50">
+                    {carta.nom}
                 </h5>
-                <p className="mb-4 text-base text-neutral-600 dark:text-neutral-200">
-                    Some quick example text to build on the card title and make up the
-                    bulk of the card's content.
-                </p>
+                <h5
+                    className="mb-2 right-0 flex text-xl col-span-1 justify-end font-medium leading-tight text-neutral-800 dark:text-neutral-50">
+                    {carta.curs}
+                </h5>
+                </div>
             </div>
         </div>
 
     );
 
+    const goToCurso = (carta, e) => {
+        e.preventDefault()
+        localStorage.setItem("curs_id", carta.id)
+        console.log(localStorage)
+    }
 
+    useEffect(() =>{
+        axios
+        .get('http://127.0.0.1:8000/cursos',  {
+            headers: {
+                'Authorization': localStorage.getItem('token')
+            }
+        })
+        .then((response) => {
+            setCartas(response.data)
 
-    const cartas = [
-        { titulo: 'Carta 1', contenido: 'Contenido de la carta 1' },
-        { titulo: 'Carta 2', contenido: 'Contenido de la carta 2' },
-        { titulo: 'Carta 3', contenido: 'Contenido de la carta 3' },
-        { titulo: 'Carta 3', contenido: 'Contenido de la carta 3' },
-        { titulo: 'Carta 3', contenido: 'Contenido de la carta 3' },
-        { titulo: 'Carta 3', contenido: 'Contenido de la carta 3' },
-        { titulo: 'Carta 3', contenido: 'Contenido de la carta 3' }
-    ];
-
-
+        })
+        .catch((error) => {
+           setCartas([])
+        });
+    },[modalOpen])
     return (
         <div className='flex bg-zinc-100'>
             <Sidebar />
             <div className="flex-1 p-8 md:p-24 sm:p-12">
 
-                <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-x-0 gap-y-4 '>
                     {cartas.map((carta, index) => (
                         <Carta key={index} carta={carta} />
                     ))}

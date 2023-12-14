@@ -1,11 +1,11 @@
 import axios from 'axios'
 import { React, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
 import { Button, Dropdown } from 'flowbite-react';
-import { ReactComponent as excel} from '../assets/archivo-excel.svg'
+import { ReactComponent as excel } from '../assets/archivo-excel.svg'
 
 
 export const Modal = ({ setOpenModal }) => {
+
     const test = [
         '2023/2024',
         '2024/2025',
@@ -30,27 +30,32 @@ export const Modal = ({ setOpenModal }) => {
         e.preventDefault()
         console.log(e)
         const baseURL = 'http://127.0.0.1:8000/cursos/' + variable
-        axios.get(baseURL).then((response) => {
+        axios.get(baseURL, {responseType: 'arraybuffer'}).then((response) => {
             console.log(response)
-            // Create blob link to download
-            const url = window.URL.createObjectURL(
-                new Blob([response.data]),
-            );
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute(
-                'download',
-                response.headers['Content-Disposition'].split('filename=')[1].replace(/"/g, ''),
-            );
+            var downloadLink = document.createElement("a");
 
-            // Append to html link element page
-            document.body.appendChild(link);
+            // Obtén el nombre del archivo desde el header Content-Disposition
+            var filename = response.headers['content-disposition'].split('filename=')[1];
+            downloadLink.download = filename;
 
-            // Start download
-            link.click();
+            // Crea un Blob con los datos de respuesta
+            var blobData = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8' });
+            console.log(blobData.size);
 
-            // Clean up and remove the link
-            link.parentNode.removeChild(link);
+            // Crea el Object URL
+            var downloadUrl = URL.createObjectURL(blobData);
+
+            downloadLink.href = downloadUrl;
+
+            document.body.appendChild(downloadLink);
+
+            // Simula un clic para iniciar la descarga
+            downloadLink.click();
+
+            document.body.removeChild(downloadLink);
+
+            // Revoca el Object URL
+            URL.revokeObjectURL(downloadUrl);
         })
     }
     const create = e => {
@@ -68,8 +73,8 @@ export const Modal = ({ setOpenModal }) => {
                 }
             })
             .then((response) => {
-                console.log('Respuesta del servidor:', response.data);
-                // Puedes hacer algo con la respuesta del servidor aquí
+                setOpenModal(false)
+
             })
             .catch((error) => {
                 console.error('Error al enviar la solicitud:', error);
@@ -119,7 +124,7 @@ export const Modal = ({ setOpenModal }) => {
             <div class="w-auto bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-slate-800 dark:border-gray-700">
                 <div class="p-8 space-y-4 md:space-y-6 sm:p-8 grid grid-cols-2 gap-x-4 gap-y-2 ">
                     <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white col-span-2">
-                        Creacio Curs
+                        Creació Curs
                     </h1>
                     <div class="col-span-2 md:col-span-1 xl:col-span-1">
                         <label for="nom" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nom Curs</label>
@@ -151,7 +156,7 @@ export const Modal = ({ setOpenModal }) => {
                         >
                             <div className="align-middle justify-items-center p-3 text-white">
                                 <img src="" alt="" />
-                                <p>Arrastra aqui els fichers o </p>
+                                <p>Arrossega aqui els fichers o </p>
                             </div>
                             <input className='text-transparent ml-40' type="file" value="" onChange={onDrop} />
                         </div>
@@ -163,12 +168,12 @@ export const Modal = ({ setOpenModal }) => {
                                     </p>
                                     {
                                         filelist.map((item, index) => (
-                                            <div key={index} className="flex flex-auto relative  bg-sky-500 rounded-xl p-4 mb-3">
-                                                <svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 24 24" width="36" height="36" className='mr-2 fill-green-700'><path d="M14,7V.46c.91,.35,1.75,.88,2.46,1.59l3.48,3.49c.71,.71,1.24,1.55,1.59,2.46h-6.54c-.55,0-1-.45-1-1Zm8,3.49v8.51c0,2.76-2.24,5-5,5H7c-2.76,0-5-2.24-5-5V5C2,2.24,4.24,0,7,0h4.51c.16,0,.32,.01,.49,.02V7c0,1.65,1.35,3,3,3h6.98c.01,.16,.02,.32,.02,.49Zm-8.7,6.51l1.97-2.36c.35-.42,.3-1.05-.13-1.41-.43-.35-1.05-.3-1.41,.13l-1.73,2.08-1.73-2.08c-.35-.42-.98-.48-1.41-.13-.42,.35-.48,.98-.13,1.41l1.97,2.36-1.97,2.36c-.35,.42-.3,1.05,.13,1.41,.19,.16,.41,.23,.64,.23,.29,0,.57-.12,.77-.36l1.73-2.08,1.73,2.08c.2,.24,.48,.36,.77,.36,.23,0,.45-.08,.64-.23,.42-.35,.48-.98,.13-1.41l-1.97-2.36Z"/></svg>
+                                            <div key={index} className="flex flex-auto relative bg-gradient-to-r from-sky-500 via-sky-400 to-sky-300   rounded-xl p-4 mb-3">
+                                                <svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 24 24" width="36" height="36" className='mr-2 fill-green-700'><path d="M14,7V.46c.91,.35,1.75,.88,2.46,1.59l3.48,3.49c.71,.71,1.24,1.55,1.59,2.46h-6.54c-.55,0-1-.45-1-1Zm8,3.49v8.51c0,2.76-2.24,5-5,5H7c-2.76,0-5-2.24-5-5V5C2,2.24,4.24,0,7,0h4.51c.16,0,.32,.01,.49,.02V7c0,1.65,1.35,3,3,3h6.98c.01,.16,.02,.32,.02,.49Zm-8.7,6.51l1.97-2.36c.35-.42,.3-1.05-.13-1.41-.43-.35-1.05-.3-1.41,.13l-1.73,2.08-1.73-2.08c-.35-.42-.98-.48-1.41-.13-.42,.35-.48,.98-.13,1.41l1.97,2.36-1.97,2.36c-.35,.42-.3,1.05,.13,1.41,.19,.16,.41,.23,.64,.23,.29,0,.57-.12,.77-.36l1.73-2.08,1.73,2.08c.2,.24,.48,.36,.77,.36,.23,0,.45-.08,.64-.23,.42-.35,.48-.98,.13-1.41l-1.97-2.36Z" /></svg>
                                                 <div className="flex flex-col  justify-center">
                                                     <p className="text-white" >{item.name}</p>
                                                 </div>
-                                                <span className="bg-sky-200 rounded-full w-9 h-9 flex align-middle justify-center absolute cursor-pointer text-center font-black text-2xl right-7" onClick={() => fileRemove(item)}>x</span>
+                                                <span className="bg-sky-500 rounded-full border-sky-900 w-9 h-9 flex align-middle justify-center absolute cursor-pointer text-center  text-2xl right-7" onClick={() => fileRemove(item)}>x</span>
                                             </div>
                                         ))
                                     }
@@ -182,14 +187,14 @@ export const Modal = ({ setOpenModal }) => {
                             type="button"
                             onClick={(e) => download('csv', e)}
                         >
-                            Descargar Plantilla CSV
+                            Descarregar Plantilla CSV
                         </button>
                         <button
                             className="bg-sky-500 text-white active:bg-sky-500 flex-1 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                             type="button"
                             onClick={(e) => download('excel', e)}
                         >
-                            Descargar Plantilla Excel
+                            Descarregar Plantilla Excel
                         </button>
                     </div>
 
@@ -202,14 +207,14 @@ export const Modal = ({ setOpenModal }) => {
                         type="button"
                         onClick={() => setOpenModal(false)}
                     >
-                        Close
+                        Tancar
                     </button>
                     <button
                         className="bg-sky-500 text-white active:bg-sky-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                         type="button"
                         onClick={create}
                     >
-                        Save Changes
+                        Guardar
                     </button>
                 </div>
             </div>

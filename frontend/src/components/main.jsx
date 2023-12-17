@@ -1,5 +1,5 @@
 import { Sidebar } from './sidebar'
-import {Modal } from './modal'
+import { Modal } from './modal'
 import axios from 'axios'
 import { React, useEffect, useState } from 'react'
 
@@ -28,8 +28,7 @@ export const Main = () => {
                     className="mb-2 flex text-xl truncate col-span-2 font-medium leading-tight text-neutral-800 dark:text-neutral-50">
                     {carta.nom}
                 </h5>
-                <h5
-                    className="mb-2 right-0 flex text-xl col-span-1 justify-end font-medium leading-tight text-neutral-800 dark:text-neutral-50">
+                <h5 className="mb-2 md:right-0 flex text-xl col-span-1 justify-end font-medium leading-tight text-neutral-800 dark:text-neutral-50">
                     {carta.curs}
                 </h5>
                 </div>
@@ -64,7 +63,7 @@ export const Main = () => {
             <Sidebar />
             <div className="flex-1 p-8 md:p-24 sm:p-12">
 
-                <div className='grid grid-cols-1 md:grid-cols-3 gap-x-0 gap-y-4 '>
+                <div className='grid grid-cols-1 md:grid-cols-3 md:gap-x-1 xl:gap-x-0 gap-y-4'>
                     {cartas.map((carta, index) => (
                         <Carta key={index} carta={carta} />
                     ))}

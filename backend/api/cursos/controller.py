@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, Form, File
 from fastapi.responses import FileResponse, StreamingResponse
 from api.auth.controller import decodeToken
-from typing import Annotated, Optional
+from typing import Annotated, List, Optional
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from pathlib import Path
@@ -105,9 +105,37 @@ async def crear_nou_curs(user: auth, nom: str = Form(...),
 
 
 @router.post("/practica")
-async def crear_practicas(user: auth, formData: Curs, db: Session = Depends(get_db)):
+async def crear_practicas(user: auth, nom: str = Form(...),
+                         idiomaP: str = Form(...),
+                         descripcio: str = Form(...),
+                         files: List[UploadFile] = File(...),
+                         id_curs: str = Form(...), 
+                         db: Session = Depends(get_db)):
+    
     if user['is_alumno']:
         raise HTTPException(401, "Unauthorized")
+    
+    
+    curs = db.query(models.cursos).join(models.cursos.usuarios).filter(
+        models.User.niub == user['niub'], models.cursos.id == id).first()
+    
+    practica = models.practicas(nom=nom, curs=id_curs, descripcio=descripcio,idiomaP=idiomaP)
+
+    db.add(practica)
+    db.commit()
+
+    p_path = prof_path + "/" + curs.curs + "/" + curs.nom
+
+    for file in files:
+        directorio = p_path + "/" + file.filename
+        with open(directorio, 'wb') as f:
+            chunk_size = 1024 * 1024
+            while True:
+                chunk = file.file.read(chunk_size)
+                if not chunk:
+                    break
+                f.write(chunk)
+    
 
 
 @router.get("/csv")
@@ -130,7 +158,7 @@ async def get_excel():
 
     # Configurar la respuesta HTTP
     response = Response(content=buffer.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response.headers["Content-Disposition"] = f"attachment; filename=generated_excel.xlsx"
+    response.headers["Content-Disposition"] = f"attachment; filename=plantilla_alumnes.xlsx"
 
     return response
 
@@ -141,6 +169,16 @@ async def get_cursos(user: auth, db: Session = Depends(get_db)):
         models.User.niub == user['niub']).all()
     return cursos
 
+
+@router.get("/curs/{id}")
+async def get_cursos(id: int, user: auth, db: Session = Depends(get_db)):
+    curs = db.query(models.cursos).join(models.cursos.usuarios).filter(
+        models.User.niub == user['niub'], models.cursos.id == id).first()
+    
+    if (curs == None) :
+        raise HTTPException(404, "Not Found")
+    
+    return curs
 
 @router.delete("")
 def deleteUser(formdata: Curs = Depends(), db: Session = Depends(get_db)):

@@ -43,7 +43,7 @@ class practicas(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     curs = Column(Integer, ForeignKey('cursos.id'), primary_key=True)
     nom = Column(String, nullable=False)
-    Descripcio = Column(String)
+    descripcio = Column(String)
     idiomaP = Column(String, nullable=False)
 
 

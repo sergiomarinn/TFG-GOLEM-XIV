@@ -11,28 +11,12 @@ import { useNavigate } from 'react-router-dom';
 export const Assignatura = () => {
 
     const [modalOpen, setModalOpen] = useState(false);
-
-    const cartas = [{
-        title: "1",
-    },
-    {
-        title: "1",
-    },
-    {
-        title: "1",
-    },
-    {
-        title: "1",
-    },
-    {
-        title: "1",
-    }
-    ]
+    const [cartas, setCartas] = useState([]);
 
 
     const Carta = ({ carta }) => (
         <div
-            className="block relative rounded-xl hover:cursor-pointer bg-slate-800 h-52 col-span-1" onClick={(e) => goToCurso(carta, e)} >
+            className="block relative rounded-xl hover:cursor-pointer bg-slate-800 h-52 col-span-1" onClick={(e) => goToPractica(carta, e)} >
             <a>
                 <img
                     className="h-1/3 w-full rounded-t-xl object-cover md:w-full"
@@ -44,41 +28,37 @@ export const Assignatura = () => {
                 <div className='grid grid-cols-1 md:grid-cols-3 ' >
                     <h5
                         className="mb-2 flex text-xl truncate col-span-2 font-medium leading-tight text-neutral-800 dark:text-neutral-50">
-                        {carta.nom} Hola
+                        {carta.nom} 
                     </h5>
                     <h5 className="mb-2 md:right-0 flex text-xl col-span-1 justify-end font-medium leading-tight text-neutral-800 dark:text-neutral-50">
-                        {carta.curs} Hola 2
+                        {carta.idiomaP} 
                     </h5>
                 </div>
                 
-            </div>
-            <div className='mt-9 absolute right-3 bottom-3 md:right-6 md:bottom-6 text-white' >
-                    holaaa
-                    
             </div>
         </div>
 
     );
 
-    const goToCurso = (carta, e) => {
+    const goToPractica = (carta, e) => {
         e.preventDefault()
-        localStorage.setItem("curs_id", carta.id)
+        localStorage.setItem("practica_id", carta.id)
         console.log(localStorage)
     }
 
     useEffect(() => {
         axios
-            .get('http://127.0.0.1:8000/cursos', {
+            .get('http://127.0.0.1:8000/cursos/curs/' + localStorage.getItem('curs_id'), {
                 headers: {
                     'Authorization': localStorage.getItem('token')
                 }
             })
             .then((response) => {
-                //setCartas(response.data)
+                setCartas(response.data)
 
             })
             .catch((error) => {
-                //setCartas([])
+                setCartas([])
             });
     }, [modalOpen])
     return (

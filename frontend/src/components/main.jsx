@@ -63,7 +63,7 @@ export const Main = () => {
         });
     },[modalOpen])
     return (
-        <div className='flex bg-zinc-100 h-auto'>
+        <div className='flex bg-zinc-100 h-auto overflow-auto'>
             <Sidebar />
             <div className="flex-1 p-8 md:p-24 sm:p-12">
 

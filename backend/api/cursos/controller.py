@@ -187,14 +187,12 @@ async def get_cursos(user: auth, db: Session = Depends(get_db)):
 
 
 @router.get("/curs/{id}")
-async def get_cursos(id: int, user: auth, db: Session = Depends(get_db)):
-    curs = db.query(models.cursos).join(models.cursos.usuarios).filter(
-        models.User.niub == user['niub'], models.cursos.id == id).first()
+async def get_practiques(id: int, user: auth, db: Session = Depends(get_db)):
+   
+    practiques = db.query(models.practicas).filter(
+       models.practicas.curs == id).all()
     
-    if (curs == None) :
-        raise HTTPException(404, "Not Found")
-    
-    return curs
+    return practiques
 
 @router.delete("")
 def deleteUser(formdata: Curs = Depends(), db: Session = Depends(get_db)):

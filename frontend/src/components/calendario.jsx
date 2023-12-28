@@ -10,7 +10,7 @@ import esLocale from '@fullcalendar/core/locales/es-us';
 export const Calendario = () => {
 
     return (
-        <div className='flex bg-zinc-100 h-screen w-full'>
+        <div className='flex sticky top-0 bg-zinc-100 h-screen w-full overflow-hidden '>
             <Sidebar />
 
             <div className="flex-1 p-16 ">

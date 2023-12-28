@@ -106,7 +106,7 @@ async def create_user(formData: registro, db: Session = Depends(get_db)):
     if user:
         raise HTTPException(status_code = 400, detail="Este usuario ya existe")
     password_h = utils.hash(formData.password)
-    db_user = models.User(niub=formData.niub,email=formData.email, password=password_h, nombre=formData.nombre, apellidos=formData.apellidos)
+    db_user = models.User(niub=formData.niub.lower(),email=formData.email.lower(), password=password_h, nombre=formData.nombre, apellidos=formData.apellidos)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -118,10 +118,10 @@ async def login(form_data:login, db: Session = Depends(get_db) ):
     if form_data.username == "":
         raise InvalidCredentialsException
     
-    if '@' in form_data.username:
-        user = comprovar_usuario_email(form_data.username, form_data.password, db)
+    if '@' in form_data.username.lower():
+        user = comprovar_usuario_email(form_data.username.lower(), form_data.password, db)
     else:
-        user = comprovar_usuario_niub(form_data.username, form_data.password, db)
+        user = comprovar_usuario_niub(form_data.username.lower(), form_data.password, db)
     
     token = create_token(user.niub, user.is_alumno, user.is_profesor, user.is_admin, timedelta(minutes=20))
 

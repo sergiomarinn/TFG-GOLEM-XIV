@@ -1,6 +1,7 @@
 import { Sidebar } from './sidebar'
 import { Modal } from './modal'
 import axios from 'axios'
+import fondo from '../assets/fondo.jpg'
 import { React, useEffect, useState } from 'react'
 
 import {useNavigate } from 'react-router-dom';
@@ -9,17 +10,19 @@ import {useNavigate } from 'react-router-dom';
 
 export const Main = () => {
 
+    const navigate = useNavigate()
+
     const [modalOpen, setModalOpen] = useState(false);
     const [cartas, setCartas] = useState([]);
 
 
     const Carta = ({ carta }) => (
         <div
-            className="block rounded-lg hover:cursor-pointer bg-slate-800 h-4/5 max-w-sm" onClick={(e) => goToCurso(carta, e)} >
+            className="block rounded-lg hover:cursor-pointer bg-slate-800 h-64 max-w-sm" onClick={(e) => goToCurso(carta, e)} >
             <a>
                 <img
-                    className="h-1/3 w-full rounded-xl object-cover md:h-1/3 md:w-full"
-                    src="https://tecdn.b-cdn.net/img/new/standard/nature/184.jpg"
+                    className="h-1/3 w-full rounded-t-xl object-cover md:h-1/3 md:w-full"
+                    src={fondo}
                     alt="" />
             </a>
             <div className="p-6 h-fit">
@@ -41,6 +44,7 @@ export const Main = () => {
         e.preventDefault()
         localStorage.setItem("curs_id", carta.id)
         console.log(localStorage)
+        navigate("/assignatura")
     }
 
     useEffect(() =>{
@@ -59,11 +63,11 @@ export const Main = () => {
         });
     },[modalOpen])
     return (
-        <div className='flex bg-zinc-100'>
+        <div className='flex bg-zinc-100 h-auto'>
             <Sidebar />
             <div className="flex-1 p-8 md:p-24 sm:p-12">
 
-                <div className='grid grid-cols-1 md:grid-cols-3 md:gap-x-1 xl:gap-x-0 gap-y-4'>
+                <div className='grid grid-cols-1 md:grid-cols-3 md:gap-x-4 xl:gap-x-4 gap-y-10'>
                     {cartas.map((carta, index) => (
                         <Carta key={index} carta={carta} />
                     ))}

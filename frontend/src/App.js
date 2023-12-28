@@ -1,6 +1,8 @@
 import { Login } from './components/login';
 import { Register } from './components/register';
-import { Main} from './components/main'
+import { Main} from './components/main';
+import { Assignatura } from './components/assignatura';
+import { Calendario } from './components/calendario';
 import { createBrowserRouter, RouterProvider} from "react-router-dom"
 
 
@@ -16,6 +18,14 @@ const router = createBrowserRouter([
   {
     path: "/main",
     element: <Main />
+  },
+  {
+    path : "/assignatura",
+    element: <Assignatura />
+  },
+  {
+    path : "/calendario",
+    element: <Calendario />
   }
 ])
 

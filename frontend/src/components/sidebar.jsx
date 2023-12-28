@@ -1,9 +1,11 @@
 import { useState } from "react";
 import flecha from "../assets/control.png"
 import ubL from "../assets/ub_logo.png"
+
 import React from "react";
 import {ReactComponent as home} from "../assets/hogar.svg"
 import {ReactComponent as calendari} from "../assets/calendar.svg"
+import {ReactComponent as logout} from "../assets/logout.svg"
 import {useNavigate } from 'react-router-dom';
 
 
@@ -12,12 +14,13 @@ export const Sidebar = () => {
     const navigate = useNavigate()
     const [open, setOpen] = useState(false);
     const Menus = [
-        { title: "Inici", Image : home, height:"30" , width:"30", style: "fill-white group-hover:fill-sky-500 duration-700", goTo : "/main"},
-        { title: "Calendari", Image : calendari, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo : "/"} 
+        { title: "Inici", Image : home, height:"40" , width:"30", style: "fill-white group-hover:fill-sky-500 duration-700", goTo : "/main"},
+        { title: "Calendari", Image : calendari, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo : "/calendario"},
+        { title: "Sortir", Image : logout, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo : "/"} 
     ];
 
     return (
-        <div className="flex bg-slate-800">
+        <div className="flex sticky left-0 top-0 h-screen bg-slate-800">
             <div className="w-1/5 p-4">
                 <div
                     className={` ${open ? "w-72" : "w-20 "

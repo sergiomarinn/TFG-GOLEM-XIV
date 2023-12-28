@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table, VARCHAR
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table, VARCHAR, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from .database import Base
@@ -36,13 +36,14 @@ class cursos(Base):
     usuarios = relationship(User, secondary='cursos_usuario', back_populates='cursos')
     practicas = relationship('practicas')
 
+
 class practicas(Base):
 
     __tablename__ = "practicas"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    curs = Column(Integer, ForeignKey('cursos.id'), primary_key=True)
-    nom = Column(String, nullable=False)
+    curs = Column(Integer, ForeignKey('cursos.id'))
+    nom = Column(String, primary_key=True ,nullable=False, unique=True)
     descripcio = Column(String)
     idiomaP = Column(String, nullable=False)
 

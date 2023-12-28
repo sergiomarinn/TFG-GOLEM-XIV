@@ -4,6 +4,7 @@ from api.auth.controller import decodeToken
 from typing import Annotated, List, Optional
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from pathlib import Path
 from typing import Annotated
 from io import BytesIO
@@ -105,10 +106,11 @@ async def crear_nou_curs(user: auth, nom: str = Form(...),
 
 
 @router.post("/practica")
-async def crear_practicas(user: auth, nom: str = Form(...),
+async def crear_practicas(user: auth, 
+                         nom: str = Form(...),
                          idiomaP: str = Form(...),
                          descripcio: str = Form(...),
-                         files: List[UploadFile] = File(...),
+                         files: list[UploadFile] = File(...),
                          id_curs: str = Form(...), 
                          db: Session = Depends(get_db)):
     
@@ -117,14 +119,28 @@ async def crear_practicas(user: auth, nom: str = Form(...),
     
     
     curs = db.query(models.cursos).join(models.cursos.usuarios).filter(
-        models.User.niub == user['niub'], models.cursos.id == id).first()
+        models.User.niub == user['niub'], models.cursos.id == id_curs).first()
     
     practica = models.practicas(nom=nom, curs=id_curs, descripcio=descripcio,idiomaP=idiomaP)
 
-    db.add(practica)
-    db.commit()
+    try: 
+        db.add(practica)
+        db.commit() 
 
-    p_path = prof_path + "/" + curs.curs + "/" + curs.nom
+    except SQLAlchemyError as e:
+        error = str(e.__dict__['orig'])
+        raise HTTPException(500 , "Prueba")
+
+    p_path = prof_path + "/" + curs.curs + "/" + curs.nom + "/" + nom
+    a_path = almn_path + "/" + curs.curs + "/" + curs.nom + "/" + nom
+
+    try:
+        os.makedirs(p_path)
+        os.makedirs(a_path)
+    except FileExistsError:
+        pass
+
+
 
     for file in files:
         directorio = p_path + "/" + file.filename

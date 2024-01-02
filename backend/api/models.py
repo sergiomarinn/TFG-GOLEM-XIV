@@ -25,6 +25,7 @@ class User(Base):
     is_profesor = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
     cursos = relationship('cursos', secondary='cursos_usuario', back_populates='usuarios')
+    practicas = relationship('practicas', secondary='practicas_usuario', back_populates='usuarios')
 
 
 class cursos(Base):
@@ -41,13 +42,19 @@ class practicas(Base):
 
     __tablename__ = "practicas"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, unique=True ,index=True, autoincrement=True)
     curs = Column(Integer, ForeignKey('cursos.id'))
     nom = Column(String, primary_key=True ,nullable=False, unique=True)
     descripcio = Column(String)
     idiomaP = Column(String, nullable=False)
+    usuarios = relationship(User, secondary='practicas_usuario', back_populates='practicas')
 
 
+class practicas_usuario(Base):
+    __tablename__ ='practicas_usuario'
 
+    user_niub = Column(String, ForeignKey('user.niub'), primary_key = True)
+    practicas_id = Column(Integer, ForeignKey('practicas.id'), primary_key = True)
+    corregit = Column(Boolean, default=False)
 
     

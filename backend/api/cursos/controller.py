@@ -66,7 +66,9 @@ class Practica(BaseModel):
 async def crear_nou_curs(user: auth, nom: str = Form(...),
                          curs: str = Form(...),
                          descripcio: str = Form(...),
-                         file: UploadFile = File(...),  db: Session = Depends(get_db)):
+                         file: UploadFile = File(...),
+                         db: Session = Depends(get_db),
+                         mongo: Session = Depends(get_mongodb_client)):
 
     if user['is_alumno']:
         raise HTTPException(401, "Unauthorized")
@@ -96,8 +98,12 @@ async def crear_nou_curs(user: auth, nom: str = Form(...),
         pass
 
     info = [{"user_niub": user['niub'], "cursos_id": curs.id}]
+    mongo.getDatabase("mydb")
+    mongo.getCollection("mycol")
+    mongo.push_curso(user['niub'], curs.id)
     for i in data["niub"]:
-        info.append({"user_niub": i, "cursos_id": curs.id})
+        info.append({"user_niub": i.lower(), "cursos_id": curs.id})
+        mongo.push_curso(i.lower(), curs.id)
 
     stmt = insert(models.cursos_usuario).values(info)
     db.execute(stmt)
@@ -106,30 +112,31 @@ async def crear_nou_curs(user: auth, nom: str = Form(...),
 
 
 @router.post("/practica")
-async def crear_practicas(user: auth, 
-                         nom: str = Form(...),
-                         idiomaP: str = Form(...),
-                         descripcio: str = Form(...),
-                         files: list[UploadFile] = File(...),
-                         id_curs: str = Form(...), 
-                         db: Session = Depends(get_db)):
-    
+async def crear_practicas(user: auth,
+                          nom: str = Form(...),
+                          idiomaP: str = Form(...),
+                          descripcio: str = Form(...),
+                          files: Optional[list[UploadFile]] = File(None),
+                          id_curs: str = Form(...),
+                          db: Session = Depends(get_db),
+                          mongo: Session = Depends(get_mongodb_client)):
+
     if user['is_alumno']:
         raise HTTPException(401, "Unauthorized")
-    
-    
+
     curs = db.query(models.cursos).join(models.cursos.usuarios).filter(
         models.User.niub == user['niub'], models.cursos.id == id_curs).first()
-    
-    practica = models.practicas(nom=nom, curs=id_curs, descripcio=descripcio,idiomaP=idiomaP)
 
-    try: 
+    practica = models.practicas(
+        nom=nom, curs=id_curs, descripcio=descripcio, idiomaP=idiomaP)
+
+    try:
         db.add(practica)
-        db.commit() 
+        db.commit()
 
     except SQLAlchemyError as e:
         error = str(e.__dict__['orig'])
-        raise HTTPException(500 , "Prueba")
+        raise HTTPException(500, "Prueba")
 
     p_path = prof_path + "/" + curs.curs + "/" + curs.nom + "/" + nom
     a_path = almn_path + "/" + curs.curs + "/" + curs.nom + "/" + nom
@@ -140,18 +147,38 @@ async def crear_practicas(user: auth,
     except FileExistsError:
         pass
 
+    usuarios_en_curso = (
+        db.query(models.User)
+        .join(models.cursos_usuario)
+        .join(models.cursos)
+        .filter(models.cursos.nom == curs.nom)
+        .all()
+    )
 
+    mongo.getDatabase("mydb")
+    mongo.getCollection("mycol")
 
-    for file in files:
-        directorio = p_path + "/" + file.filename
-        with open(directorio, 'wb') as f:
-            chunk_size = 1024 * 1024
-            while True:
-                chunk = file.file.read(chunk_size)
-                if not chunk:
-                    break
-                f.write(chunk)
-    
+    info = []
+
+    for usuario in usuarios_en_curso:
+        mongo.push_practicas(usuario.niub, curs.id, practica.id)
+        info.append({'user_niub': usuario.niub, 'practicas_id': practica.id})
+
+    stmt = insert(models.practicas_usuario).values(info)
+    db.execute(stmt)
+    db.commit()
+
+    if files != None:
+
+        for file in files:
+            directorio = p_path + "/" + file.filename
+            with open(directorio, 'wb') as f:
+                chunk_size = 1024 * 1024
+                while True:
+                    chunk = file.file.read(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
 
 
 @router.get("/csv")
@@ -173,46 +200,91 @@ async def get_excel():
         df.to_excel(writer, sheet_name="Sheet1")
 
     # Configurar la respuesta HTTP
-    response = Response(content=buffer.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response = Response(content=buffer.getvalue(
+    ), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     response.headers["Content-Disposition"] = f"attachment; filename=plantilla_alumnes.xlsx"
 
     return response
 
 
 @router.get("")
-async def get_cursos(user: auth, db: Session = Depends(get_db)):
+async def get_cursos(user: auth, db: Session = Depends(get_db), mongo: Session = Depends(get_mongodb_client)):
     cursos = db.query(models.cursos).join(models.cursos.usuarios).filter(
         models.User.niub == user['niub']).all()
     return cursos
 
 
-@router.get("/curs/{id}")
+@router.get("/curs/practicas/{id}")
 async def get_practiques(id: int, user: auth, db: Session = Depends(get_db)):
-   
+
     practiques = db.query(models.practicas).filter(
-       models.practicas.curs == id).all()
-    
+        models.practicas.curs == id).all()
+
     return practiques
 
-@router.delete("")
-def deleteUser(formdata: Curs = Depends(), db: Session = Depends(get_db)):
-    user = db.query(models.cursos).filter(
-        models.cursos.nom == formdata.nom).first()
-    db.delete(user)
-    db.commit()
-    return {"eliminado": user}
+
+@router.get("/curs/{id}")
+async def get_curs_info(id: int, user: auth, db: Session = Depends(get_db)):
+
+    curs = db.query(models.cursos).filter(
+        models.cursos.id == id).first()
+
+    return curs
+
+
+@router.get("/practica/{id}")
+async def get_practica_info(id: int, user: auth, db: Session = Depends(get_db), mongo: Session = Depends(get_mongodb_client)):
+    practica = db.query(models.practicas).filter(
+        models.practicas.id == id).first()
+    return practica
 
 
 @router.post("/upload")
 async def upload_file(
-    nom: str = Form(...),
-    curs: str = Form(...),
-    descripcio: str = Form(...),
-    file: UploadFile = File(...),
+    user: auth,
+    id_practica: int = Form(...),
+    files: list[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+    mongo: Session = Depends(get_mongodb_client)
 ):
-    return {
-        "nom": nom,
-        "curs": curs,
-        "descripcio": descripcio,
-        "file_content_type": file.content_type,
-    }
+    curs = db.query(models.cursos).join(models.practicas).filter(
+        models.practicas.id == id_practica).first()
+    practica = db.query(models.practicas).filter(
+        models.practicas.id == id_practica).first()
+
+    if user['is_alumno']:
+
+        a_path = almn_path + "/" + curs.curs + "/" + \
+            curs.nom + "/" + practica.nom + "/" + user['niub']
+
+        try:
+            os.makedirs(a_path)
+        except FileExistsError:
+            pass
+
+        for file in files:
+            directorio = a_path + "/" + file.filename
+            with open(directorio, 'wb') as f:
+                chunk_size = 1024 * 1024
+                while True:
+                    chunk = file.file.read(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+            mongo.getDatabase("mydb")
+            mongo.getCollection("mycol")
+            mongo.cambiar_direccion_fichero(user['niub'], curs.id, practica.id, directorio)
+
+    else:
+        p_path = prof_path + "/" + curs.curs + "/" + curs.nom + "/" + practica.nom
+        if files != None:
+            for file in files:
+                directorio = p_path + "/" + file.filename
+                with open(directorio, 'wb') as f:
+                    chunk_size = 1024 * 1024
+                    while True:
+                        chunk = file.file.read(chunk_size)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+

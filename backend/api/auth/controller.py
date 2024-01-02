@@ -84,10 +84,10 @@ class profesor(BaseModel):
 
 
 @router.post("/profesor")
-async def give_profesor(user: Annotated[dict, Depends(decodeToken)], formdata: profesor, db : Session= Depends(get_db)):
+async def give_profesor(user: Annotated[dict, Depends(decodeToken)], niub: str = Form(...), db : Session= Depends(get_db)):
     if not user['is_admin']:
         raise HTTPException(401, 'Unauthorized')
-    db.query(models.User).filter(models.User.niub == formdata.niub).update({'is_alumno': False, 'is_profesor' : True})
+    db.query(models.User).filter(models.User.niub == niub.lower()).update({'is_alumno': False, 'is_profesor' : True})
     db.commit()
     return {"message" : "updated"}
     
@@ -101,7 +101,7 @@ def deleteUser(niub: int = Form(...), db: Session = Depends(get_db) ):
 
 
 @router.post("/")
-async def create_user(formData: registro, db: Session = Depends(get_db)):
+async def create_user(formData: registro, db: Session = Depends(get_db), mongo : Session = Depends(get_mongodb_client)):
     user = db.query(models.User).filter(models.User.niub == formData.niub).first() 
     if user:
         raise HTTPException(status_code = 400, detail="Este usuario ya existe")
@@ -110,10 +110,13 @@ async def create_user(formData: registro, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    mongo.getDatabase("mydb")
+    mongo.set(mongo.getCollection("mycol"), db_user.niub)
     return db_user
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 async def login(form_data:login, db: Session = Depends(get_db) ):
     if form_data.username == "":
         raise InvalidCredentialsException
@@ -125,7 +128,7 @@ async def login(form_data:login, db: Session = Depends(get_db) ):
     
     token = create_token(user.niub, user.is_alumno, user.is_profesor, user.is_admin, timedelta(minutes=20))
 
-    return {'access_token' : token, 'token_type': 'Bearer'}
+    return {'access_token' : token, 'token_type': 'Bearer', 'is_alumne' : user.is_alumno, 'is_profesor' : user.is_profesor, 'is_admin' : user.is_admin }
 
 
 def create_token(niub, is_alumno, is_profesor, is_admin, expires_delta: timedelta):

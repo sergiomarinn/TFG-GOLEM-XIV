@@ -2,25 +2,30 @@ import { useState } from "react";
 import flecha from "../assets/control.png"
 import ubL from "../assets/ub_logo.png"
 
+
+import { Modal3 } from './modal3'
 import React from "react";
 import {ReactComponent as home} from "../assets/hogar.svg"
 import {ReactComponent as calendari} from "../assets/calendar.svg"
 import {ReactComponent as logout} from "../assets/logout.svg"
+import {ReactComponent as plus} from "../assets/plus.svg"
 import {useNavigate } from 'react-router-dom';
 
 
 export const Sidebar = () => {
     
     const navigate = useNavigate()
+    const [modalOpen, setModalOpen] = useState(false)
     const [open, setOpen] = useState(false);
     const Menus = [
-        { title: "Inici", Image : home, height:"40" , width:"30", style: "fill-white group-hover:fill-sky-500 duration-700", goTo : "/main"},
-        { title: "Calendari", Image : calendari, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo : "/calendario"},
-        { title: "Sortir", Image : logout, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo : "/"} 
+        { title: "Inici", Image : home, height:"40" , width:"30", style: "fill-white group-hover:fill-sky-500 duration-700", goTo : "/main", visible : "true"},
+        { title: "Calendari", Image : calendari, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo : "/calendario", visible : "true"},
+        { title : "Afegir Profesor", Image : plus, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo: null, visible: localStorage.getItem('admin') },
+        { title: "Sortir", Image : logout, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo : "/", visible : "true"} 
     ];
 
     return (
-        <div className="flex sticky left-0 top-0 h-screen bg-slate-800">
+        <div className="flex sticky  top-0 h-screen bg-slate-800">
             <div className="w-1/5 p-4">
                 <div
                     className={` ${open ? "w-72" : "w-20 "
@@ -48,9 +53,14 @@ export const Sidebar = () => {
                         {Menus.map((Menu, index) => (
                             <li
                                 key={index}
-                                className={`flex rounded-md p-2 cursor-pointer group  text-gray-300 hover:text-sky-500   text-lg font-bold items-center gap-x-4  ${Menu.gap ? "mt-9" : "mt-2"} ${index === 0 && "bg-light-white"}  `}
+                                className={`flex rounded-md p-2 cursor-pointer group  text-gray-300 hover:text-sky-500   text-lg font-bold items-center gap-x-4  ${Menu.gap ? "mt-9" : "mt-2"} ${index === 0 && "bg-light-white"} ${Menu.visible === "true" ? 'visible' : 'hidden'}  `}
+                                
                                 onClick={(e) => {
+                                    if(index === 2){
+                                        setModalOpen(true)
+                                    }else{
                                     navigate(Menu.goTo)
+                                }
                                 }}>
                                 <div>
                                 <Menu.Image height={Menu.height} width={Menu.width} className={Menu.style} />
@@ -64,6 +74,7 @@ export const Sidebar = () => {
                             </li>
                         ))}
                     </ul>
+                    {modalOpen && <Modal3 setOpenModal={setModalOpen} />}
                 </div>
             </div>
         </div>

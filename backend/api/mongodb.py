@@ -44,11 +44,23 @@ class MongoDBClient:
                                             array_filters=[{"curso.id": id_curs}])
 
     def cambiar_direccion_fichero(self, id, id_curs, id_practica, directorio):
-        print(id, id_curs, id_practica, directorio)
+        
         self.database.collection.update_one(
             {"niub": id},
             {"$set": {
                 "cursos.$[curso].practicas.$[practica].fichero": directorio}},
+            array_filters=[
+                {"curso.id": id_curs},
+                {"practica.id": id_practica}
+            ]
+        )
+        
+    def correccion(self, id, id_curs, id_practica, info):
+        
+        self.database.collection.update_one(
+            {"niub": id},
+            {"$set": {
+                "cursos.$[curso].practicas.$[practica].correccion": info}},
             array_filters=[
                 {"curso.id": id_curs},
                 {"practica.id": id_practica}

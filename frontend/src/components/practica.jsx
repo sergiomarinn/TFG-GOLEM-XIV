@@ -137,7 +137,7 @@ export const Practica = () => {
 
                 <div class="w-3/4 overflow-x-auto pt-4 border-slate-600 border-2 border-opacity-25 mt-5 ml-5 rounded-xl">
 
-                    <div class=" text-xl font-light font-sans relative px-7  items-center space-x-3  text-black break-words whitespace-normal">La practica s'ha d'entregar en format zip, la resolucio no es automatica acaba en mes o menys cinc minuts, aixi que torna a aquesta pagina o deixa que acabi i veuras els resultats.</div>
+                    <div class=" text-xl font-light font-sans relative px-7  items-center space-x-3  text-black break-words whitespace-normal">La pràctica s'ha d'entregar en format zip, la resolució no és automàtica i  acaba en més o menys cinc minuts, així que torna a aquesta pàgina o deixa que acabi i veuràs els resultats.</div>
                     <div class=" text-xl font-light font-sans  text-black relative px-7  items-center space-x-3 break-words whitespace-normal pb-3">{info.descripcio}</div>
                 </div>
 
@@ -150,7 +150,7 @@ export const Practica = () => {
                     >
                         <div className="align-middle justify-items-center p-3 text-black">
                             <img src="" alt="" />
-                            <p>Arrossega aqui els fichers o </p>
+                            <p>Arrossega aquí els fitxers o </p>
                         </div>
                         <input className='text-transparent ml-40' type="file" value="" onChange={onDrop} />
                     </div>

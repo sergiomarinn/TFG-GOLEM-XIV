@@ -20,7 +20,7 @@ export const Sidebar = () => {
     const Menus = [
         { title: "Inici", Image : home, height:"40" , width:"30", style: "fill-white group-hover:fill-sky-500 duration-700", goTo : "/main", visible : "true"},
         { title: "Calendari", Image : calendari, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo : "/calendario", visible : "true"},
-        { title : "Afegir Profesor", Image : plus, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo: null, visible: localStorage.getItem('admin') },
+        { title : "Afegir Professor", Image : plus, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo: null, visible: localStorage.getItem('admin') },
         { title: "Sortir", Image : logout, height:"40" , width:"30", style: "stroke-white group-hover:stroke-sky-500 duration-700", goTo : "/", visible : "true"} 
     ];
 

@@ -136,7 +136,7 @@ async def crear_practicas(user: auth,
 
     except SQLAlchemyError as e:
         error = str(e.__dict__['orig'])
-        raise HTTPException(500, "Prueba")
+        raise HTTPException(500, error)
 
     p_path = prof_path + "/" + curs.curs + "/" + curs.nom + "/" + nom
     a_path = almn_path + "/" + curs.curs + "/" + curs.nom + "/" + nom

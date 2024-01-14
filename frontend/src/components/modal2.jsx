@@ -96,15 +96,15 @@ export const Modal2 = ({ setOpenModal }) => {
             <div class="w-auto bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-slate-800 dark:border-gray-700">
                 <div class="p-8 space-y-4 md:space-y-6 sm:p-8 grid grid-cols-2 gap-x-4 gap-y-2 ">
                     <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white col-span-2">
-                        Creació Practica
+                        Creació Pràctica
                     </h1>
                     <div class="col-span-2 md:col-span-1 xl:col-span-1">
-                        <label for="nom" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nom Curs</label>
+                        <label for="nom" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nom Pràctica</label>
                         <input variant="standard" type="email" value={nom} name='nom' onChange={e => onChange(e)} class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required></input>
 
                     </div>
                     <div class="col-span-2 md:col-span-1 xl:col-span-1">
-                        <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Curs</label>
+                        <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Idioma Programació</label>
                         <Dropdown size="lg" placement="bottom-start" renderTrigger={() =>
                             <button className="sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 bg-gray-700 border-gray-600  dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 type="button">{selectedcurs}</button>}>
@@ -115,7 +115,7 @@ export const Modal2 = ({ setOpenModal }) => {
                         </Dropdown>
                     </div>
                     <div class="col-span-2">
-                        <label for="descripcio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripcio</label>
+                        <label for="descripcio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripció</label>
                         <textarea value={descripcio} name='descripcio' onChange={e => onChange(e)}
                             class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required></textarea>
                     </div >
@@ -128,7 +128,7 @@ export const Modal2 = ({ setOpenModal }) => {
                         >
                             <div className="align-middle justify-items-center p-3 text-white">
                                 <img src="" alt="" />
-                                <p>Arrossega aqui els fichers o </p>
+                                <p>Arrossega aquí els fitxers o </p>
                             </div>
                             <input className='text-transparent ml-40' type="file" value="" onChange={onDrop} />
                         </div>

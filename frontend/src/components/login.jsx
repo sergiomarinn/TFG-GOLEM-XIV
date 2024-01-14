@@ -49,13 +49,13 @@ export const Login = () => {
                             <input type="username" value={username} onChange={e => onChange(e)} name="username" id="email" class=" sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500" placeholder="NIUB999999999 / name@company.com" required=""></input>
                         </div>
                         <div>
-                            <label for="password" class="block mb-2 text-sm font-medium text-white">Contraseña</label>
+                            <label for="password" class="block mb-2 text-sm font-medium text-white">Contrasenya</label>
                             <input type="password" name="password" value={password} onChange={e => onChange(e)} id="password" placeholder="••••••••" class=" sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500" required=""></input>
                         </div>
-                        <button type="submit" onClick={handleSubmit} variant="outlined" class="w-full  focus:ring-4 focus:outline-none  font-medium rounded-lg text-sm px-5 py-2.5 text-center text-white bg-sky-600 hover:bg-sky-700 focus:ring-sky-800">Sign in</button>
+                        <button type="submit" onClick={handleSubmit} variant="outlined" class="w-full  focus:ring-4 focus:outline-none  font-medium rounded-lg text-sm px-5 py-2.5 text-center text-white bg-sky-600 hover:bg-sky-700 focus:ring-sky-800">Entrar</button>
                         <p class="text-sm text-white">
-                            No tienes cuenta? <a href="/register" class="font-medium  hover:underline text-white">Sign up</a>
-                        </p>
+                            No tens un usuari? <a href="/register" class="font-medium  hover:underline text-sky-500">Ves al registre</a>
+                        </p>    
                     </form>
                 </div>
             </div>

@@ -48,19 +48,19 @@ export const Register = () => {
             <div class="w-auto ç rounded-lg shadow border md:mt-0 sm:max-w-md xl:p-0 bg-slate-800 border-gray-700">
                 <div class="p-8 space-y-4 md:space-y-6 sm:p-8 grid grid-cols-2 gap-x-4 gap-y-2">
                     <h1 class="text-xl font-bold leading-tight tracking-tight  md:text-2xl text-white col-span-2 md:col-span-2 xl:col-span-2">
-                        Registro
+                        Registre
                     </h1>
                         <div class="col-span-2 md:col-span-1 xl:col-span-1">
                             <label for="niub" class="block mb-2 text-sm font-medium text-white">NIUB</label>
                             <input type="email" value={niub} name='niub' onChange={e => onChange(e)} class="sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500" placeholder="NIUB999999999" required></input>
-                            <p id="helper-text-explanation" class="mt-2 text-sm  text-gray-400">El niub esta al carnet de estudiant, si no el tens.<a href="http://www.ub.edu/carnet/ca/alumnat.html" class="font-medium  hover:underline text-blue-500"> Fés click aqui</a>.</p>
+                            <p id="helper-text-explanation" class="mt-2 text-sm  text-gray-400">El niub està al carnet d'estudiant, si no en tens.<a href="http://www.ub.edu/carnet/ca/alumnat.html" class="font-medium  hover:underline text-blue-500"> Fes click aquí.</a></p>
                         </div>
                         <div class="col-span-2 md:col-span-1 xl:col-span-1">
-                            <label for="name" class="block mb-2 text-sm font-medium text-white">Nombre</label>
+                            <label for="name" class="block mb-2 text-sm font-medium text-white">Nom</label>
                             <input type="email" value={nombre} name='nombre' onChange={e => onChange(e)} class="sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500" placeholder="Albert" required></input>
                         </div >
                         <div class="col-span-2 md:col-span-1 xl:col-span-1">
-                            <label for="apellido" class="block mb-2 text-sm font-medium text-white">Apellidos</label>
+                            <label for="apellido" class="block mb-2 text-sm font-medium text-white">Cognoms</label>
                             <input type="email" value={apellidos} name='apellidos' onChange={e => onChange(e)} class="sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500" placeholder="Roca Perez" required></input>
                         </div>
                         <div class="col-span-2 md:col-span-1 xl:col-span-1">
@@ -68,12 +68,12 @@ export const Register = () => {
                             <input type="email" value={email} name='email' onChange={e => onChange(e)} class="sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500" placeholder="name@company.com" required></input>
                         </div>
                         <div class="col-span-2 md:col-span-2 xl:col-span-2">
-                            <label for="password" class="block mb-2 text-sm font-medium text-white">Contraseña</label>
+                            <label for="password" class="block mb-2 text-sm font-medium text-white">Contrasenya</label>
                             <input type="password" value={password} name='password' onChange={e => onChange(e)} placeholder="••••••••" class="sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500" required></input>
                         </div>
                         <div class="col-span-2 md:col-span-2 xl:col-span-2">
-                            <label for="password2" class="block mb-2 text-sm font-medium text-white">Confirmación</label>
-                            <input type="password" value={password2} onChange={e => onChange(e)} name='password2' placeholder="Vuelve a escribir la contraseña" class="sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500 " ></input>
+                            <label for="password2" class="block mb-2 text-sm font-medium text-white">Confirmació</label>
+                            <input type="password" value={password2} onChange={e => onChange(e)} name='password2' placeholder="Torna a escriure la contrasenya" class="sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500 " ></input>
                         </div>
                         <PasswordChecklist className="col-span-2 md:col-span-2 xl:col-span-2"
                             rules={["minLength", "specialChar", "number", "capital", "match"]}
@@ -84,15 +84,15 @@ export const Register = () => {
                             validTextColor='white'
                             onChange={(isValid) => setIsValid(isValid)}
                             messages={{
-                                minLength: "La contraseña tiene más de 8 caracteres.",
-                                specialChar: "La contraseña tiene caracteres especiales.",
-                                number: "La contraseña tiene un número.",
-                                capital: "La contraseña tiene una letra mayúscula.",
-                                match: "Las contraseñas coinciden.",
+                                minLength: "La contrasenya té més de 8 caràcters.",
+                                specialChar: "La contrasenya té caràcters especials.",
+                                number: "La contrasenya té un número.",
+                                capital: "La contrasenya té una lletra majúscula.",
+                                match: "Les contrasenyes coincideixen.",
                             }}
                         />
-                        <button type="submit" onClick={handleSubmit} variant="outlined" class="w-full col-span-2 md:col-span-2 xl:col-span-2 text-white focus:ring-4 focus:outline-none  font-medium rounded-lg text-sm px-5 py-2.5 text-center bg-sky-600 hover:bg-sky-700 focus:ring-sky-800">Registrarse</button>
-                        <button type="submit" onClick={backToLogin} variant="outlined" class="w-full col-span-2 md:col-span-2 xl:col-span-2 text-white focus:ring-4 focus:outline-none  font-medium rounded-lg text-sm px-5  py-2.5 text-center bg-sky-600 hover:bg-sky-700 focus:ring-sky-800">Volver al Login</button>
+                        <button type="submit" onClick={handleSubmit} variant="outlined" class="w-full col-span-2 md:col-span-2 xl:col-span-2 text-white focus:ring-4 focus:outline-none  font-medium rounded-lg text-sm px-5 py-2.5 text-center bg-sky-600 hover:bg-sky-700 focus:ring-sky-800">Registrar-se</button>
+                        <button type="submit" onClick={backToLogin} variant="outlined" class="w-full col-span-2 md:col-span-2 xl:col-span-2 text-white focus:ring-4 focus:outline-none  font-medium rounded-lg text-sm px-5  py-2.5 text-center bg-sky-600 hover:bg-sky-700 focus:ring-sky-800">Tornar al Login</button>
                         <ToastContainer />
                 </div>
             </div>

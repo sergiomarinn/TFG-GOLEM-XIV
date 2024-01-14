@@ -143,7 +143,7 @@ export const Modal = ({ setOpenModal }) => {
                         </Dropdown>
                     </div>
                     <div class="col-span-2">
-                        <label for="descripcio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripcio</label>
+                        <label for="descripcio" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Descripció</label>
                         <textarea value={descripcio} name='descripcio' onChange={e => onChange(e)}
                             class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required></textarea>
                     </div >
@@ -156,7 +156,7 @@ export const Modal = ({ setOpenModal }) => {
                         >
                             <div className="align-middle justify-items-center p-3 text-white">
                                 <img src="" alt="" />
-                                <p>Arrossega aqui els fichers o </p>
+                                <p>Arrossega aquí els fitxers o </p>
                             </div>
                             <input className='text-transparent ml-40' type="file" value="" onChange={onDrop} />
                         </div>

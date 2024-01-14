@@ -68,13 +68,10 @@ export const Practica = () => {
                     
                 }
             })
-            .then((response) => {
-                setFile([])
-
-            })
             .catch((error) => {
                 console.error('Error al enviar la solicitud:', error);
             });
+        setFile([]);
 
     }
 

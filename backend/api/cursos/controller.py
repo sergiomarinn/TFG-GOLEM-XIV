@@ -9,18 +9,20 @@ from pathlib import Path
 from typing import Annotated
 from io import BytesIO
 import os
+import asyncio
+import json
 from api.mongodb import MongoDBClient
 from api.database import SessionLocal
-from api import models  # rcp_client
+from api import models, updated_rpc_client_ping
 import pandas as pd
 from sqlalchemy.dialects.postgresql import insert
 
-
+full_path = os.getenv("full_path")
 prof_path = './api/correcciones/profesores'
 almn_path = './api/correcciones/alumnos'
+rpc_client = None
 
-# rabbit = rcp_client.RpcClient()
-
+rpc_client = updated_rpc_client_ping.RpcClientPing()
 # Dependency to get db session
 
 
@@ -205,12 +207,14 @@ async def get_excel():
     response.headers["Content-Disposition"] = f"attachment; filename=plantilla_alumnes.xlsx"
 
     return response
-
-
+    
 @router.get("")
 async def get_cursos(user: auth, db: Session = Depends(get_db), mongo: Session = Depends(get_mongodb_client)):
+    if user['is_admin']:
+        cursos = db.query(models.cursos).all()
+        return cursos
     cursos = db.query(models.cursos).join(models.cursos.usuarios).filter(
-        models.User.niub == user['niub']).all()
+        models.User.niub == user['niub']).all()   
     return cursos
 
 
@@ -237,7 +241,6 @@ async def get_practica_info(id: int, user: auth, db: Session = Depends(get_db), 
     practica = db.query(models.practicas).filter(
         models.practicas.id == id).first()
     return practica
-
 
 @router.post("/upload")
 async def upload_file(
@@ -274,7 +277,17 @@ async def upload_file(
             mongo.getDatabase("mydb")
             mongo.getCollection("mycol")
             mongo.cambiar_direccion_fichero(user['niub'], curs.id, practica.id, directorio)
-
+        
+        a_path = full_path + '/alumnos/' +  curs.curs + "/" + curs.nom + "/" + practica.nom + "/" + user['niub'] 
+        p_path = full_path + '/profesores/' +  curs.curs + "/" + curs.nom + "/" + practica.nom
+        print(a_path)
+        print(p_path)
+        await rpc_client.connect()
+        result = await rpc_client.call("java_checks", curs.nom, curs.curs, practica.nom, user['niub'], a_path, p_path)
+        string = result.decode("utf-8")
+        resposta  = json.loads(string)
+        mongo.correccion(user['niub'], curs.id, practica.id, resposta)
+        
     else:
         p_path = prof_path + "/" + curs.curs + "/" + curs.nom + "/" + practica.nom
         if files != None:

@@ -1,13 +1,14 @@
 from pymongo import MongoClient
 import pymongo
 import json
+import os 
 
 
 class MongoDBClient:
-    def __init__(self, host="mongodb+srv://mongodb:mongodb@cluster0.dwtsv2t.mongodb.net/", port=27017):
+    def __init__(self, host=os.getenv("mongo"), port=27017):
         self.host = host
         self.port = port
-        self.client = MongoClient(host, port)
+        self.client = MongoClient(os.getenv("mongo"), port)
         self.database = None
         self.collection = None
 

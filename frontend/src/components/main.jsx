@@ -3,18 +3,14 @@ import { Modal } from './modal'
 import axios from 'axios'
 import fondo from '../assets/fondo.jpg'
 import { React, useEffect, useState } from 'react'
-
 import { useNavigate } from 'react-router-dom';
 
-
-
 export const Main = () => {
-
     const navigate = useNavigate()
 
     const [modalOpen, setModalOpen] = useState(false);
-    const [cartas, setCartas] = useState([]);
 
+    const [cartas, setCartas] = useState([]);
 
     const Carta = ({ carta }) => (
         <div
@@ -62,6 +58,7 @@ export const Main = () => {
                 setCartas([])
             });
     }, [modalOpen])
+
     return (
         <div className='flex bg-zinc-100 h-auto'>
             <Sidebar />

@@ -1,5 +1,7 @@
 import pika
+
 import uuid
+
 
 class RpcClient:
     def __init__(self):
@@ -31,7 +33,6 @@ class RpcClient:
             ),
             body=f"{subject},{year},{task},{student_id},{student_dir},{teacher_dir}"
         )
-
         while self.response is None:
             self.connection.process_data_events()
 

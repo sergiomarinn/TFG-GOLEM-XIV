@@ -1,0 +1,15 @@
+# Archivos de Visual Studio
+.vs/
+*.user
+*.suo
+
+# Archivos binarios y de compilación
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# Otros archivos innecesarios
+*.log
+*.tmp

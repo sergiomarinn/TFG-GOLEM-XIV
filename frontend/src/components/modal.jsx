@@ -3,7 +3,6 @@ import { React, useState } from 'react'
 import { Button, Dropdown } from 'flowbite-react';
 import { ReactComponent as excel } from '../assets/archivo-excel.svg'
 
-
 export const Modal = ({ setOpenModal }) => {
 
     const test = [
@@ -11,6 +10,7 @@ export const Modal = ({ setOpenModal }) => {
         '2024-2025',
         '2025-2026'
     ]
+
     const [selectedcurs, setSelectedcurs] = useState(test[0])
 
     const [filelist, setFile] = useState([])
@@ -34,30 +34,26 @@ export const Modal = ({ setOpenModal }) => {
             console.log(response)
             var downloadLink = document.createElement("a");
 
-            // Obtén el nombre del archivo desde el header Content-Disposition
             var filename = response.headers['content-disposition'].split('filename=')[1];
             downloadLink.download = filename;
 
-            // Crea un Blob con los datos de respuesta
             var blobData = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=utf-8' });
             console.log(blobData.size);
 
-            // Crea el Object URL
             var downloadUrl = URL.createObjectURL(blobData);
 
             downloadLink.href = downloadUrl;
 
             document.body.appendChild(downloadLink);
 
-            // Simula un clic para iniciar la descarga
             downloadLink.click();
 
             document.body.removeChild(downloadLink);
 
-            // Revoca el Object URL
             URL.revokeObjectURL(downloadUrl);
         })
     }
+
     const create = e => {
         e.preventDefault()
         const formDataToSend = new FormData();
@@ -81,6 +77,7 @@ export const Modal = ({ setOpenModal }) => {
             });
 
     }
+
     const onDrop = (e) => {
         e.preventDefault();
 

@@ -1,5 +1,9 @@
+#Se importan varias funcionalidades de FastAPI para manejar rutas, excepciones, y archivos. 
+#decodeToken se usa para la autenticación de los usuarios.
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, Form, File
 from fastapi.responses import FileResponse, StreamingResponse
+
+#Se utilizan para manejar datos, bases de datos (SQL y MongoDB), y archivos.
 from api.auth.controller import decodeToken
 from typing import Annotated, List, Optional
 from pydantic import BaseModel
@@ -13,26 +17,35 @@ import asyncio
 import json
 from api.mongodb import MongoDBClient
 from api.database import SessionLocal
-from api import models, updated_rpc_client_ping
+from datetime import date
+
+#Un cliente que se usa para comunicarse con otro servicio (probablemente en Java) para procesar datos.
+from api import models, updated_rpc_client_ping, sender
+
+#Para manipular datos tabulares, especialmente archivos CSV y Excel.
 import pandas as pd
+
 from sqlalchemy.dialects.postgresql import insert
+from api import sender
 
 full_path = os.getenv("full_path")
 prof_path = './api/correcciones/profesores'
 almn_path = './api/correcciones/alumnos'
-rpc_client = None
 
-rpc_client = updated_rpc_client_ping.RpcClientPing()
+
+send = None
+
 # Dependency to get db session
 
+"""FUNCIONES PARA MANEJAR CONEXIONES A BASE DE DATOS"""
 
+#Crea una sesión de base de datos local que se cerrará después de ser utilizada.
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
 
 def get_mongodb_client():
     mongodb = MongoDBClient()
@@ -42,15 +55,19 @@ def get_mongodb_client():
         mongodb.close()
 
 
+"""DEFINICIÓN DEL ROUTER Y MODELOS"""
+
+#Dependencia que extrae y verifica el token de autenticación.
 auth = Annotated[dict, Depends(decodeToken)]
 
+#Permite agrupar endpoints relacionados bajo un prefijo.
 router = APIRouter(
     prefix="/cursos",
     responses={404: {"description": "Not found"}},
     tags=["cursos"],
 )
 
-
+#Modelos definidos usando Pydantic, que facilita la validación de datos en las solicitudes.
 class Curs(BaseModel):
     descripcio: Optional[str] = None
     curs: str
@@ -63,7 +80,9 @@ class Practica(BaseModel):
     nom: str
     llenguatje: str
 
+"""ENDPOINTS"""
 
+#Permite a un usuario (que no es un alumno) crear un nuevo curso.
 @router.post("")
 async def crear_nou_curs(user: auth, nom: str = Form(...),
                          curs: str = Form(...),
@@ -112,12 +131,13 @@ async def crear_nou_curs(user: auth, nom: str = Form(...),
     db.commit()
     return curs
 
-
+#Permite a un usuario (que no es un alumno) crear una práctica asociada a un curso.
 @router.post("/practica")
 async def crear_practicas(user: auth,
                           nom: str = Form(...),
                           idiomaP: str = Form(...),
                           descripcio: str = Form(...),
+                          entrega: str = Form(...),
                           files: Optional[list[UploadFile]] = File(None),
                           id_curs: str = Form(...),
                           db: Session = Depends(get_db),
@@ -130,7 +150,7 @@ async def crear_practicas(user: auth,
         models.User.niub == user['niub'], models.cursos.id == id_curs).first()
 
     practica = models.practicas(
-        nom=nom, curs=id_curs, descripcio=descripcio, idiomaP=idiomaP)
+        nom=nom, curs=id_curs, descripcio=descripcio, idiomaP=idiomaP, entrega=date.fromisoformat(entrega))
 
     try:
         db.add(practica)
@@ -182,7 +202,7 @@ async def crear_practicas(user: auth,
                         break
                     f.write(chunk)
 
-
+#Permite a los usuarios descargar una plantilla de alumnos en formato CSV.
 @router.get("/csv")
 async def get_csv():
 
@@ -190,7 +210,7 @@ async def get_csv():
     return StreamingResponse(iter(df.to_csv(index=False)), media_type="text/csv",
                              headers={"Content-Disposition": f"attachment; filename=plantilla_alumnes.csv"})
 
-
+#Permite a los usuarios descargar una plantilla de alumnos en formato Excel.
 @router.get("/excel")
 async def get_excel():
 
@@ -208,6 +228,7 @@ async def get_excel():
 
     return response
     
+#Permiten a los usuarios obtener la lista de cursos.
 @router.get("")
 async def get_cursos(user: auth, db: Session = Depends(get_db), mongo: Session = Depends(get_mongodb_client)):
     if user['is_admin']:
@@ -217,7 +238,7 @@ async def get_cursos(user: auth, db: Session = Depends(get_db), mongo: Session =
         models.User.niub == user['niub']).all()   
     return cursos
 
-
+#Permiten a los usuarios obtener la lista de prácticas por curso.
 @router.get("/curs/practicas/{id}")
 async def get_practiques(id: int, user: auth, db: Session = Depends(get_db)):
 
@@ -226,7 +247,28 @@ async def get_practiques(id: int, user: auth, db: Session = Depends(get_db)):
 
     return practiques
 
+#Permiten a los usuarios obtener la lista de prácticas por usuario.
+@router.get("/practicas/usuario")
+async def get_practiques(user: auth, db: Session = Depends(get_db)):
 
+    practiques = db.query(
+    models.practicas.nom,       # Campo 'nom' de la tabla 'practicas'
+    models.practicas.entrega,   # Campo 'entrega' de la tabla 'practicas'
+    models.practicas.descripcio # Campo 'descripcio' de la tabla 'practicas'
+    ).join(
+        models.practicas_usuario,  # Unimos con la tabla 'practicas_usuario'
+        models.practicas.id == models.practicas_usuario.practicas_id  # Condición de unión
+    ).filter(
+        models.practicas_usuario.user_niub == user['niub']  # Filtramos por el 'user_niub' del usuario
+    ).all()
+
+    practicas = [
+    {"nom": nom, "entrega": entrega, "descripcio" : descripcio}
+    for nom, entrega, descripcio in practiques
+    ] 
+    print("Practicas_usuario: ", practiques)
+    return practicas
+#Permiten a los usuarios obtener información detallada de un curso específico.
 @router.get("/curs/{id}")
 async def get_curs_info(id: int, user: auth, db: Session = Depends(get_db)):
 
@@ -235,13 +277,66 @@ async def get_curs_info(id: int, user: auth, db: Session = Depends(get_db)):
 
     return curs
 
-
+#Permiten a los usuarios obtener detalles de una práctica específica.
 @router.get("/practica/{id}")
 async def get_practica_info(id: int, user: auth, db: Session = Depends(get_db), mongo: Session = Depends(get_mongodb_client)):
     practica = db.query(models.practicas).filter(
         models.practicas.id == id).first()
     return practica
 
+#Permiten a los usuarios obtener las prácticas que tiene corregidas.
+@router.get("/practicas_corregidas")
+async def get_practicas_corregidas(user: auth, db: Session = Depends(get_db), mongo: Session = Depends(get_mongodb_client)):
+    practicas_corregidas_con_cursos = (
+    db.query(
+        models.practicas_usuario.practicas_id,  # ID de la práctica
+        models.practicas.curs             # ID del curso asociado
+    )
+    .join(
+        models.practicas,  # Tabla a unir
+        models.practicas.id == models.practicas_usuario.practicas_id  # Clave de unión
+    )
+    .filter(
+        models.practicas_usuario.corregit == True,                  # Filtro: prácticas corregidas
+        models.practicas_usuario.user_niub == user['niub']         # Filtro: usuario específico
+    )
+    .all()
+    )
+    
+    print("Prácticas postgress",practicas_corregidas_con_cursos)
+
+    practicas = [
+    {"id_practica": practica_id, "id_curso": curso_id}
+    for practica_id, curso_id in practicas_corregidas_con_cursos
+    ] 
+
+    print("IDs Prácticas IDs cursos",practicas)
+
+    mongo.getDatabase("mydb")
+    mongo.getCollection("mycol")
+    practicas_corregidas = mongo.practicas(user['niub'], practicas)
+    print("Prácticas controller",practicas_corregidas)
+
+    practicas_combinadas = []
+
+    for p in json.loads(practicas_corregidas):
+        info = await get_practica_info(p['practica_id'], user, db, mongo)
+        curs = await get_curs_info(info.curs, user, db)
+        print("Pràctica Controller", info)
+        print("Curs Controller", curs)
+        practicas_combinadas.append({
+            'practica_id': info.id,
+            'curs': curs.nom,
+            'nom': info.nom,
+            'descripcio': info.descripcio,
+            'idiomaP': info.idiomaP,
+            'correccion': p["correccion"]
+        })
+    return practicas_combinadas
+
+
+
+#Permite a los alumnos subir archivos relacionados con sus prácticas.
 @router.post("/upload")
 async def upload_file(
     user: auth,
@@ -282,11 +377,28 @@ async def upload_file(
         p_path = full_path + '/profesores/' +  curs.curs + "/" + curs.nom + "/" + practica.nom
         print(a_path)
         print(p_path)
-        await rpc_client.connect()
-        result = await rpc_client.call("java_checks", curs.nom, curs.curs, practica.nom, user['niub'], a_path, p_path)
-        string = result.decode("utf-8")
-        resposta  = json.loads(string)
-        mongo.correccion(user['niub'], curs.id, practica.id, resposta)
+
+        body={
+            "name": practica.nom,
+            "idiomaP": practica.idiomaP,
+            "niub": user['niub'],
+            "curs_id": curs.id,
+            "practica_id": practica.id
+        }
+
+        practica_usuario = db.query(models.practicas_usuario).filter(
+        models.practicas_usuario.user_niub == user['niub'], models.practicas_usuario.practicas_id == practica.id).first()
+
+        if(practica_usuario):
+            # Actualizar la entrada existente
+            practica_usuario.corregit = False
+            db.commit()
+        else:
+            new_practica_usuario = models.practicas_usuario(user_niub = user['niub'], practicas_id = practica.id, corregit = False)
+            db.add(new_practica_usuario)
+            db.commit()
+
+        send = sender.Sender(body)
         
     else:
         p_path = prof_path + "/" + curs.curs + "/" + curs.nom + "/" + practica.nom

@@ -3,18 +3,17 @@ import { Modal2 } from './modal2'
 import axios from 'axios'
 import fondo from '../assets/fondo.jpg'
 import { React, useEffect, useState } from 'react'
-
 import { useNavigate } from 'react-router-dom';
-
-
 
 export const Assignatura = () => {
 
     const navigate = useNavigate()
-    const [modalOpen, setModalOpen] = useState(false);
-    const [cartas, setCartas] = useState([]);
-    const [info, setInfo] = useState({});
 
+    const [modalOpen, setModalOpen] = useState(false);
+
+    const [cartas, setCartas] = useState([]);
+
+    const [info, setInfo] = useState({});
 
     const Carta = ({ carta }) => (
         <div

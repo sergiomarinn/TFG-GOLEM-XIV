@@ -1,10 +1,11 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table, VARCHAR, DateTime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table, VARCHAR, DateTime, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+
+
 from .database import Base
 
 Base = declarative_base()
-
 
 class cursos_usuario(Base):
     __tablename__ ='cursos_usuario'
@@ -37,7 +38,6 @@ class cursos(Base):
     usuarios = relationship(User, secondary='cursos_usuario', back_populates='cursos')
     practicas = relationship('practicas')
 
-
 class practicas(Base):
 
     __tablename__ = "practicas"
@@ -47,6 +47,7 @@ class practicas(Base):
     nom = Column(String, primary_key=True ,nullable=False, unique=True)
     descripcio = Column(String)
     idiomaP = Column(String, nullable=False)
+    entrega = Column(Date, nullable=True)
     usuarios = relationship(User, secondary='practicas_usuario', back_populates='practicas')
 
 

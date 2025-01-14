@@ -1,6 +1,9 @@
 import aio_pika
+
 import asyncio
+
 import uuid
+
 
 class RpcClientPing:
     def __init__(self):
@@ -20,8 +23,10 @@ class RpcClientPing:
 
         await self.callback_queue.consume(self.on_response)
 
+  
     def on_response(self, message: aio_pika.IncomingMessage):
         future = self.futures.pop(message.correlation_id, None)
+
         if future and not future.done():
             future.set_result(message.body)
 
@@ -30,7 +35,9 @@ class RpcClientPing:
             await self.connect()
 
         corr_id = str(uuid.uuid4())
+
         future = self.loop.create_future()
+
         self.futures[corr_id] = future
 
         await self.channel.default_exchange.publish(
@@ -43,7 +50,7 @@ class RpcClientPing:
         )
 
         return await future
-        
+
     async def call_ping(self, procedure):
         if not self.connection or self.connection.is_closed:
             await self.connect()

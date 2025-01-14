@@ -1,7 +1,11 @@
 import os
+
 from passlib.context import CryptContext
+
 from dotenv import find_dotenv, load_dotenv
+
 dotenv_path = find_dotenv()
+
 load_dotenv(dotenv_path)
 
 secret_key = os.getenv("encrypt_key")

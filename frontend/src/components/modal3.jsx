@@ -12,6 +12,7 @@ export const Modal3 = ({ setOpenModal }) => {
     });
 
     const { nom, descripcio } = formData;
+
     const create = e => {
         e.preventDefault()
         const formDataToSend = new FormData();
@@ -33,7 +34,7 @@ export const Modal3 = ({ setOpenModal }) => {
             });
 
     }
-   
+
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
     return (
         <div

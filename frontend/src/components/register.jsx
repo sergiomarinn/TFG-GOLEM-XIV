@@ -3,14 +3,15 @@ import { React, useState } from 'react'
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css";
 import PasswordChecklist from "react-password-checklist"
-
 import { useNavigate } from 'react-router-dom';
+
 
 export const Register = () => {
 
-    
     const [isValid, setIsValid] = useState(false)
+
     const navigate = useNavigate()
+
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -21,11 +22,15 @@ export const Register = () => {
     });
     const { email, password, apellidos, nombre, niub, password2 } = formData;
 
+    
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+ 
     const handleSubmit = e => {
+       
         e.preventDefault();
 
+        
         if (isValid) {
             const baseURL = 'http://127.0.0.1:8000/users/'
             axios.post(baseURL, formData)
@@ -37,6 +42,7 @@ export const Register = () => {
 
     }
 
+    
     const backToLogin = e => {
         navigate("/")
     }

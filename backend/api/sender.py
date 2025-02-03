@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv("C:/Users/rocio/IdeaProjects/TFG/backend/.env")
 
-RABBIT_HOST = os.getenv("rabbit_host")
-RABBIT_PORT = int(os.getenv("rabbit_port"))
+#RABBIT_HOST = os.getenv("rabbit_host")
+#RABBIT_PORT = int(os.getenv("rabbit_port"))
 HOST = os.getenv("DB_HOST")
 
 class Sender:

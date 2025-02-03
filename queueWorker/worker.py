@@ -1,20 +1,33 @@
+import sys
+import os
+sys.path.append("/app/backend")
+
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend")))
+
 import pika
-from .rpc_client import RpcClient
-from .mongodb import MongoDBClient
+#from .rpc_client import RpcClient
+#from .mongodb import MongoDBClient
 from sqlalchemy.orm import Session
 import json
-from .database import SessionLocal
-from .models import practicas_usuario
+#from .database import SessionLocal
+#from .models import practicas_usuario
 from sqlalchemy.exc import SQLAlchemyError
 import requests
 import time
-import os
+
 from dotenv import load_dotenv
 
-load_dotenv("C:/Users/rocio/IdeaProjects/TFG/backend/.env")
+from backend.api.database import SessionLocal  # PostgreSQL con SQLAlchemy
+from backend.api.models import practicas_usuario  # PModels
+from backend.api.mongodb import MongoDBClient  # Conexión a MongoDB
+from backend.api.rpc_client import RpcClient  # Cliente RPC
 
-RABBIT_HOST = os.getenv("rabbit_host")
-RABBIT_PORT = int(os.getenv("rabbit_port"))
+
+load_dotenv()
+
+#RABBIT_HOST = os.getenv("rabbit_host")
+#RABBIT_PORT = int(os.getenv("rabbit_port"))
 HOST = os.getenv("DB_HOST")
 
 class Worker:
@@ -54,7 +67,7 @@ class Worker:
         except json.JSONDecodeError:
             print("Error al deserialitzar el missatge JSON")
             return
-
+        
         result = self.rpc_client.call(body_json)
         print(f"Worker rep de cliet: {result}")  
         

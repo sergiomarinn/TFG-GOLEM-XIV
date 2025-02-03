@@ -46,7 +46,7 @@ const router = createBrowserRouter([
 function App() {
   return (
     <NotificationProvider>
-      <div className="flex">
+      <div className="bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200">
         <Sidebar />  
         <div className="flex-1">
           <RouterProvider router={router} />  

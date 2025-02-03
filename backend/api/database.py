@@ -7,7 +7,7 @@ from sqlalchemy.sql import text
 import os
 from dotenv import load_dotenv
 
-load_dotenv("C:/Users/rocio/IdeaProjects/TFG/backend/.env")
+load_dotenv()
 
 SQLALCHEMY_DATABASE_URL = os.getenv("url_db")
 

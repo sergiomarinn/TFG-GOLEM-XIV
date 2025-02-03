@@ -4,10 +4,10 @@ import time
 import os
 from dotenv import load_dotenv
 
-load_dotenv("C:/Users/rocio/IdeaProjects/TFG/backend/.env")
+load_dotenv()
 
-RABBIT_HOST = os.getenv("rabbit_host")
-RABBIT_PORT = int(os.getenv("rabbit_port"))
+#RABBIT_HOST = os.getenv("rabbit_host")
+#RABBIT_PORT = int(os.getenv("rabbit_port"))
 HOST = os.getenv("DB_HOST")
 
 connection = pika.BlockingConnection(
@@ -20,6 +20,7 @@ channel.queue_declare(queue="rpc_queue")
 
 
 def on_request_java(name, body):
+
     print("java")
     test_result = {
         "Student ID": "niub20217245",
@@ -38,61 +39,13 @@ def on_request_java(name, body):
             }
         }
     }
-    '''test_result = {
-        "testResult": {
-            "studentId": "12345",
-            "testDate": "2024-12-18T10:30:00Z",
-            "language": "Java",
-            "score": 66,
-            "totalQuestions": 3,
-            "correctAnswers": 2,
-            "incorrectAnswers": 1,
-            "timeTaken": "15 minutes",
-            "questions": [
-                {
-                    "questionId": 1,
-                    "language": "Java",
-                    "question": "What is the default value of an int variable in Java?",
-                    "correctAnswer": "0",
-                    "userAnswer": "0",
-                    "isCorrect": True
-                },
-                {
-                    "questionId": 2,
-                    "language": "Java",
-                    "question": "Which of the following is used to define a constant in Java?",
-                    "correctAnswer": "final",
-                    "userAnswer": "final",
-                    "isCorrect": True
-                },
-                {
-                    "questionId": 3,
-                    "language": "Java",
-                    "question": "Which keyword is used to inherit a class in Java?",
-                    "correctAnswer": "extends",
-                    "userAnswer": "implements",
-                    "isCorrect": False
-                }
-            ],
-            "feedback": {
-                "generalComments": "Good understanding of basic Java concepts. Mistaken the inheritance keyword.",
-                "areasForImprovement": [
-                    "Java inheritance concepts",
-                    "Java keyword usage"
-                ],
-                "recommendedResources": [
-                    "Java Inheritance Tutorial",
-                    "Java Official Documentation"
-                ]
-            }
-        }
-    }'''
     body_dict = json.loads(body.decode("utf-8"))
     body_dict["info"] = json.dumps(test_result)
     print(body_dict)
     return json.dumps(body_dict) 
 
 def on_request_python(name, body):
+    
     print("python")
     test_result = {
         "Student ID": "niub20217245",
@@ -111,55 +64,6 @@ def on_request_python(name, body):
             }
         }
     }
-    '''test_result = {
-        "testResult": {
-            "studentId": "12345",
-            "testDate": "2024-12-18T10:30:00Z",
-            "language": "Java",
-            "score": 66,
-            "totalQuestions": 3,
-            "correctAnswers": 2,
-            "incorrectAnswers": 1,
-            "timeTaken": "15 minutes",
-            "questions": [
-                {
-                    "questionId": 1,
-                    "language": "Java",
-                    "question": "What is the default value of an int variable in Java?",
-                    "correctAnswer": "0",
-                    "userAnswer": "0",
-                    "isCorrect": True
-                },
-                {
-                    "questionId": 2,
-                    "language": "Java",
-                    "question": "Which of the following is used to define a constant in Java?",
-                    "correctAnswer": "final",
-                    "userAnswer": "final",
-                    "isCorrect": True
-                },
-                {
-                    "questionId": 3,
-                    "language": "Java",
-                    "question": "Which keyword is used to inherit a class in Java?",
-                    "correctAnswer": "extends",
-                    "userAnswer": "implements",
-                    "isCorrect": False
-                }
-            ],
-            "feedback": {
-                "generalComments": "Good understanding of basic Java concepts. Mistaken the inheritance keyword.",
-                "areasForImprovement": [
-                    "Java inheritance concepts",
-                    "Java keyword usage"
-                ],
-                "recommendedResources": [
-                    "Java Inheritance Tutorial",
-                    "Java Official Documentation"
-                ]
-            }
-        }
-    }'''
     body_dict = json.loads(body.decode("utf-8"))
     body_dict["info"] = json.dumps(test_result)
     print(body_dict)

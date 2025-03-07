@@ -28,3 +28,7 @@ class PracticePublicWithUsers(PracticeBase):
 class PracticePublicWithCourse(PracticeBase):
     id: int
     course: CoursePublic
+
+class PracticesOut(SQLModel):
+    data: list[PracticePublic]
+    count: int

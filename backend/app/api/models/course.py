@@ -1,16 +1,24 @@
 from sqlmodel import Field, Relationship
 
-from typing import List, Optional
 from .base import SQLModel
+from .CoursesUsersLink import CoursesUsersLink
+from .user import User, UserOut
 
-class CursosUsuario(SQLModel, table=True):
-    user_niub: str = Field(foreign_key="user.niub", primary_key=True)
-    cursos_id: int = Field(foreign_key="cursos.id", primary_key=True)
+class CourseBase(SQLModel):
+    name: str
+    course: str
+    description: str
 
-class Cursos(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    nom: str
-    curs: str
-    descripcio: Optional[str] = None
-    usuarios: List["User"] = Relationship(back_populates="cursos", link_model=CursosUsuario)
-    practicas: List["Practicas"] = Relationship(back_populates="cursos")
+class Course(CourseBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    users: list[User] = Relationship(back_populates="course", link_model=CoursesUsersLink)
+    practices: list["Practices"] = Relationship(back_populates="course")
+
+class CoursePublic(CourseBase):
+    id: int
+    users: list[UserOut]
+    practices: list["PracticePublic"]
+
+class CoursesOut(SQLModel):
+    data: list[CoursePublic]
+    count: int

@@ -1,6 +1,7 @@
 from sqlmodel import Field, Relationship
-from typing import List, Optional
+
 from .base import SQLModel
+from .CoursesUsersLink import CoursesUsersLink
 
 class UserBase(SQLModel):
     niub: str = Field(primary_key=True)
@@ -14,8 +15,8 @@ class UserBase(SQLModel):
 class User(UserBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     hashed_password: str
-    cursos: List["Cursos"] = Relationship(back_populates="usuarios", link_model="CursosUsuario")
-    practicas: List["Practicas"] = Relationship(back_populates="usuarios", link_model="PracticasUsuario")
+    courses: list["Course"] = Relationship(back_populates="users", link_model=CoursesUsersLink)
+    practices: list["Practice"] = Relationship(back_populates="user", link_model="PracticesUsersLink")
 
 class UserCreate(UserBase):
     password: str
@@ -28,15 +29,15 @@ class UserCreateOpen(SQLModel):
     surnames: str
 
 class UserUpdate(UserBase):
-    niub: Optional[str]
-    email: Optional[str]
-    name: Optional[str]
-    surnames: Optional[str]
+    niub: str | None
+    email: str | None
+    name: str | None
+    surnames: str | None
 
 class UserUpdateMe(SQLModel):
-    email: Optional[str]
-    name: Optional[str]
-    surnames: Optional[str]
+    email: str | None
+    name: str | None
+    surnames: str | None
 
 class UserUpdatePassword(SQLModel):
     current_password: str
@@ -49,6 +50,17 @@ class UsersOut(SQLModel):
     data: list[UserOut]
     count: int
 
+class UserCoursesOut(SQLModel):
+    data: list["CoursePublic"]
+    count: int
+
+class UserPracticesOut(SQLModel):
+    data: list["PracticesPublic"]
+    count: int
+
+class UserCoursesPracticesOut(UserBase):
+    courses: list["CoursePublic"]
+    practices: list["PracticePublicWithCourse"]
 
 class Token(SQLModel):
     access_token: str

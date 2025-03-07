@@ -11,12 +11,23 @@ class CourseBase(SQLModel):
 
 class Course(CourseBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    users: list[User] = Relationship(back_populates="course", link_model=CoursesUsersLink)
+    users: list[User] = Relationship(back_populates="courses", link_model=CoursesUsersLink)
     practices: list["Practices"] = Relationship(back_populates="course")
 
 class CoursePublic(CourseBase):
     id: int
+
+class CoursePublicWithUsersAndPractices(CourseBase):
+    id: int
     users: list[UserOut]
+    practices: list["PracticePublic"]
+
+class CoursePublicWithUsers(CourseBase):
+    id: int
+    users: list[UserOut]
+
+class CoursePublicWithPractices(CourseBase):
+    id: int
     practices: list["PracticePublic"]
 
 class CoursesOut(SQLModel):

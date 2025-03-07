@@ -1,11 +1,13 @@
+from pydantic import EmailStr
 from sqlmodel import Field, Relationship
 
 from .base import SQLModel
 from .CoursesUsersLink import CoursesUsersLink
+from .PracticesUsersLink import PracticesUsersLink
 
 class UserBase(SQLModel):
     niub: str = Field(primary_key=True)
-    email: str = Field(index=True, nullable=False)
+    email: str = Field(index=True, sa_column_kwargs={'unique': True})
     name: str
     surnames: str
     is_student: bool = Field(default=True)
@@ -13,17 +15,16 @@ class UserBase(SQLModel):
     is_admin: bool = Field(default=False)
 
 class User(UserBase, table=True):
-    id: int | None = Field(default=None, primary_key=True)
     hashed_password: str
     courses: list["Course"] = Relationship(back_populates="users", link_model=CoursesUsersLink)
-    practices: list["Practice"] = Relationship(back_populates="user", link_model="PracticesUsersLink")
+    practices: list["Practice"] = Relationship(back_populates="users", link_model=PracticesUsersLink)
 
 class UserCreate(UserBase):
     password: str
 
 class UserCreateOpen(SQLModel):
     niub: str
-    email: str
+    email: EmailStr
     password: str
     name: str
     surnames: str
@@ -35,7 +36,7 @@ class UserUpdate(UserBase):
     surnames: str | None
 
 class UserUpdateMe(SQLModel):
-    email: str | None
+    email: EmailStr | None
     name: str | None
     surnames: str | None
 

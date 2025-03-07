@@ -13,7 +13,7 @@ from sqlalchemy import pool
 
 #Importa los modelos del proyecto, estos modelos contienen la definición de las tablas y 
 #su estructura en SQLAlchemy. Se necesita para las migraciones automáticas.
-from api import models
+from app.models import *
 
 
 #Importa el objeto context de Alembic, que proporciona el 
@@ -35,7 +35,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = models.Base.metadata
+target_metadata = SQLModel.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

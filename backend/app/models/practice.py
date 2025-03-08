@@ -3,8 +3,9 @@ from sqlmodel import Field, Relationship
 from datetime import date
 from .base import SQLModel
 from .PracticesUsersLink import PracticesUsersLink
-from .user import User, UserOut
+from .user import User, UserPublic
 from .course import Course, CoursePublic
+import uuid
 
 class PracticeBase(SQLModel):
     course_id: int
@@ -14,16 +15,19 @@ class PracticeBase(SQLModel):
     due_date: date
 
 class Practice(PracticeBase, table=True):
-    id: int | None = Field(default=None, primary_key=True)
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     users: list[User] = Relationship(back_populates="practices", link_model=PracticesUsersLink)
     course: Course = Relationship(back_populates="practices")
+
+class PracticeCreate(PracticeBase):
+    pass
 
 class PracticePublic(PracticeBase):
     id: int
 
 class PracticePublicWithUsers(PracticeBase):
     id: int
-    users: list[UserOut]
+    users: list[UserPublic]
 
 class PracticePublicWithCourse(PracticeBase):
     id: int

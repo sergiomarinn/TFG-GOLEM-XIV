@@ -20,7 +20,7 @@ class User(UserBase, table=True):
     practices: list["Practice"] = Relationship(back_populates="users", link_model=PracticesUsersLink)
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(min_length=8, max_length=40)
 
 class UserCreateOpen(SQLModel):
     niub: str
@@ -30,10 +30,8 @@ class UserCreateOpen(SQLModel):
     surnames: str
 
 class UserUpdate(UserBase):
-    niub: str | None
-    email: str | None
-    name: str | None
-    surnames: str | None
+    email: EmailStr | None
+    password: str | None = Field(default=None, min_length=8, max_length=40)
 
 class UserUpdateMe(SQLModel):
     email: EmailStr | None
@@ -44,11 +42,11 @@ class UserUpdatePassword(SQLModel):
     current_password: str
     new_password: str
 
-class UserOut(UserBase):
+class UserPublic(UserBase):
     id: int
 
 class UsersOut(SQLModel):
-    data: list[UserOut]
+    data: list[UserPublic]
     count: int
 
 class UserCoursesOut(SQLModel):
@@ -63,6 +61,9 @@ class UserCoursesPracticesOut(UserBase):
     courses: list["CoursePublic"]
     practices: list["PracticePublicWithCourse"]
 
+class Message(SQLModel):
+    message: str
+
 class Token(SQLModel):
     access_token: str
     token_type: str = "bearer"
@@ -72,4 +73,4 @@ class TokenPayload(SQLModel):
 
 class NewPassword(SQLModel):
     token: str
-    new_password: str
+    new_password: str = Field(min_length=8, max_length=40)

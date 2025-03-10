@@ -1,8 +1,8 @@
 """initial migration
 
-Revision ID: d3ebe3a5e54f
+Revision ID: 5f988452751e
 Revises: 
-Create Date: 2025-03-07 18:14:47.474377
+Create Date: 2025-03-10 13:49:23.046357
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = 'd3ebe3a5e54f'
+revision = '5f988452751e'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,7 +23,7 @@ def upgrade() -> None:
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('course', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('practice',
@@ -32,7 +32,7 @@ def upgrade() -> None:
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('programming_language', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('due_date', sa.Date(), nullable=False),
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('user',
@@ -49,14 +49,14 @@ def upgrade() -> None:
     op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True)
     op.create_table('coursesuserslink',
     sa.Column('user_niub', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('course_id', sa.Integer(), nullable=False),
+    sa.Column('course_id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
     sa.ForeignKeyConstraint(['course_id'], ['course.id'], ),
     sa.ForeignKeyConstraint(['user_niub'], ['user.niub'], ),
     sa.PrimaryKeyConstraint('user_niub', 'course_id')
     )
     op.create_table('practicesuserslink',
     sa.Column('user_niub', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('practice_id', sa.Integer(), nullable=False),
+    sa.Column('practice_id', sqlmodel.sql.sqltypes.GUID(), nullable=False),
     sa.Column('corrected', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['practice_id'], ['practice.id'], ),
     sa.ForeignKeyConstraint(['user_niub'], ['user.niub'], ),

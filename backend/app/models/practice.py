@@ -23,14 +23,14 @@ class PracticeCreate(PracticeBase):
     pass
 
 class PracticePublic(PracticeBase):
-    id: int
+    id: uuid.UUID
 
 class PracticePublicWithUsers(PracticeBase):
-    id: int
+    id: uuid.UUID
     users: list[UserPublic]
 
 class PracticePublicWithCourse(PracticeBase):
-    id: int
+    id: uuid.UUID
     course: CoursePublic
 
 class PracticesOut(SQLModel):

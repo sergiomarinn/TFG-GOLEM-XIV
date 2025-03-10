@@ -19,19 +19,19 @@ class CourseCreate(CourseBase):
     pass
 
 class CoursePublic(CourseBase):
-    id: int
+    id: uuid.UUID
 
 class CoursePublicWithUsersAndPractices(CourseBase):
-    id: int
+    id: uuid.UUID
     users: list[UserPublic]
     practices: list["PracticePublic"]
 
 class CoursePublicWithUsers(CourseBase):
-    id: int
+    id: uuid.UUID
     users: list[UserPublic]
 
 class CoursePublicWithPractices(CourseBase):
-    id: int
+    id: uuid.UUID
     practices: list["PracticePublic"]
 
 class CoursesOut(SQLModel):

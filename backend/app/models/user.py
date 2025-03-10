@@ -4,12 +4,13 @@ from sqlmodel import Field, Relationship
 from .base import SQLModel
 from .CoursesUsersLink import CoursesUsersLink
 from .PracticesUsersLink import PracticesUsersLink
+import uuid
 
 class UserBase(SQLModel):
-    niub: str = Field(primary_key=True)
+    niub: str = Field(primary_key=True, min_length=12, max_length=12)
     email: str = Field(index=True, sa_column_kwargs={'unique': True})
-    name: str
-    surnames: str
+    name: str = Field(max_length=255)
+    surnames: str = Field(max_length=255)
     is_student: bool = Field(default=True)
     is_teacher: bool = Field(default=False)
     is_admin: bool = Field(default=False)
@@ -22,28 +23,28 @@ class User(UserBase, table=True):
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=40)
 
-class UserCreateOpen(SQLModel):
-    niub: str
-    email: EmailStr
-    password: str
-    name: str
-    surnames: str
+class UserRegister(SQLModel):
+    niub: str = Field(min_length=12, max_length=12)
+    email: EmailStr = Field(max_length=255)
+    password: str = Field(min_length=8, max_length=40)
+    name: str = Field(max_length=255)
+    surnames: str = Field(max_length=255)
 
 class UserUpdate(UserBase):
     email: EmailStr | None
     password: str | None = Field(default=None, min_length=8, max_length=40)
 
 class UserUpdateMe(SQLModel):
-    email: EmailStr | None
-    name: str | None
-    surnames: str | None
+    email: EmailStr | None = Field(max_length=255)
+    name: str | None = Field(max_length=255) 
+    surnames: str | None = Field(max_length=255)
 
 class UserUpdatePassword(SQLModel):
-    current_password: str
-    new_password: str
+    current_password: str = Field(min_length=8, max_length=40)
+    new_password: str = Field(min_length=8, max_length=40)
 
 class UserPublic(UserBase):
-    id: int
+    id: uuid.UUID
 
 class UsersOut(SQLModel):
     data: list[UserPublic]
@@ -69,7 +70,7 @@ class Token(SQLModel):
     token_type: str = "bearer"
 
 class TokenPayload(SQLModel):
-    sub: int | None = None
+    sub: str | None = None
 
 class NewPassword(SQLModel):
     token: str

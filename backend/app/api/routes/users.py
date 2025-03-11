@@ -13,9 +13,8 @@ from app.api.deps import (
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import (
-    Item,
     Message,
-    UpdatePassword,
+    UserUpdatePassword,
     User,
     UserCreate,
     UserPublic,
@@ -99,7 +98,7 @@ def update_user_me(
 
 @router.patch("/me/password", response_model=Message)
 def update_password_me(
-    *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
+    *, session: SessionDep, body: UserUpdatePassword, current_user: CurrentUser
 ) -> Any:
     """
     Update own password.
@@ -155,14 +154,14 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     return user
 
 
-@router.get("/{user_id}", response_model=UserPublic)
+@router.get("/{user_niub}", response_model=UserPublic)
 def read_user_by_id(
-    user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
+    user_niub: str, session: SessionDep, current_user: CurrentUser
 ) -> Any:
     """
-    Get a specific user by id.
+    Get a specific user by niub.
     """
-    user = session.get(User, user_id)
+    user = session.get(User, user_niub)
     if user == current_user:
         return user
     if not current_user.is_admin:
@@ -174,21 +173,21 @@ def read_user_by_id(
 
 
 @router.patch(
-    "/{user_id}",
+    "/{user_niub}",
     dependencies=[Depends(get_current_active_superuser)],
     response_model=UserPublic,
 )
 def update_user(
     *,
     session: SessionDep,
-    user_id: uuid.UUID,
+    user_niub: str,
     user_in: UserUpdate,
 ) -> Any:
     """
     Update a user.
     """
 
-    db_user = session.get(User, user_id)
+    db_user = session.get(User, user_niub)
     if not db_user:
         raise HTTPException(
             status_code=404,
@@ -196,7 +195,7 @@ def update_user(
         )
     if user_in.email:
         existing_user = crud.get_user_by_email(session=session, email=user_in.email)
-        if existing_user and existing_user.id != user_id:
+        if existing_user and existing_user.niub != user_niub:
             raise HTTPException(
                 status_code=409, detail="User with this email already exists"
             )
@@ -205,22 +204,20 @@ def update_user(
     return db_user
 
 
-@router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
+@router.delete("/{user_niub}", dependencies=[Depends(get_current_active_superuser)])
 def delete_user(
-    session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
+    session: SessionDep, current_user: CurrentUser, user_niub: str
 ) -> Message:
     """
     Delete a user.
     """
-    user = session.get(User, user_id)
+    user = session.get(User, user_niub)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user == current_user:
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
-    statement = delete(Item).where(col(Item.owner_id) == user_id)
-    session.exec(statement)  # type: ignore
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")

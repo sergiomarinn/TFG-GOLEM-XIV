@@ -44,9 +44,9 @@ class UserUpdatePassword(SQLModel):
     new_password: str = Field(min_length=8, max_length=40)
 
 class UserPublic(UserBase):
-    id: uuid.UUID
+    pass
 
-class UsersOut(SQLModel):
+class UsersPublic(SQLModel):
     data: list[UserPublic]
     count: int
 

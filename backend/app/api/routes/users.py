@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlmodel import col, delete, func, select
 
 from app import crud
@@ -24,6 +24,8 @@ from app.models import (
     UserUpdateMe,
 )
 from app.utils import generate_new_account_email, send_email
+
+UPLOAD_DIR = './api/corrections'
 
 router = APIRouter()
 
@@ -54,14 +56,14 @@ def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
     """
     Create new user.
     """
-    user = crud.get_user_by_email(session=session, email=user_in.email)
+    user = crud.user.get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system.",
         )
 
-    user = crud.create_user(session=session, user_create=user_in)
+    user = crud.user.create_user(session=session, user_create=user_in)
     if settings.emails_enabled and user_in.email:
         email_data = generate_new_account_email(
             email_to=user_in.email, username=user_in.email, password=user_in.password
@@ -83,7 +85,7 @@ def update_user_me(
     """
 
     if user_in.email:
-        existing_user = crud.get_user_by_email(session=session, email=user_in.email)
+        existing_user = crud.user.get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != current_user.id:
             raise HTTPException(
                 status_code=409, detail="User with this email already exists"
@@ -143,14 +145,14 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     """
     Create new user without the need to be logged in.
     """
-    user = crud.get_user_by_email(session=session, email=user_in.email)
+    user = crud.user.get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system",
         )
     user_create = UserCreate.model_validate(user_in)
-    user = crud.create_user(session=session, user_create=user_create)
+    user = crud.user.create_user(session=session, user_create=user_create)
     return user
 
 
@@ -194,13 +196,13 @@ def update_user(
             detail="The user with this id does not exist in the system",
         )
     if user_in.email:
-        existing_user = crud.get_user_by_email(session=session, email=user_in.email)
+        existing_user = crud.user.get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.niub != user_niub:
             raise HTTPException(
                 status_code=409, detail="User with this email already exists"
             )
 
-    db_user = crud.update_user(session=session, db_user=db_user, user_in=user_in)
+    db_user = crud.user.update_user(session=session, db_user=db_user, user_in=user_in)
     return db_user
 
 
@@ -221,3 +223,19 @@ def delete_user(
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")
+
+class file(BaseModel):
+    course: str
+    subject: str
+    practice: str
+
+@router.post("/uploadfile")
+def upload_file(file: UploadFile, fileForm: file):
+    directorio = UPLOAD_DIR +"/" + fileForm.course + "/" + fileForm.subject + "/" + fileForm.practice + "/" + file.filename
+    with open(directorio, 'wb') as f:
+        chunk_size = 1024 * 1024
+        while True:
+            chunk = file.file.read(chunk_size)
+            if not chunk:
+                break
+            f.write(chunk)

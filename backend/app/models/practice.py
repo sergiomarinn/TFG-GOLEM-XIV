@@ -33,6 +33,6 @@ class PracticePublicWithCourse(PracticeBase):
     id: uuid.UUID
     course: CoursePublic
 
-class PracticesOut(SQLModel):
+class PracticesPublic(SQLModel):
     data: list[PracticePublic]
     count: int

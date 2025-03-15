@@ -224,18 +224,18 @@ def delete_user(
     session.commit()
     return Message(message="User deleted successfully")
 
-class file(BaseModel):
-    course: str
-    subject: str
-    practice: str
+# class file(BaseModel):
+#     course: str
+#     subject: str
+#     practice: str
 
-@router.post("/uploadfile")
-def upload_file(file: UploadFile, fileForm: file):
-    directorio = UPLOAD_DIR +"/" + fileForm.course + "/" + fileForm.subject + "/" + fileForm.practice + "/" + file.filename
-    with open(directorio, 'wb') as f:
-        chunk_size = 1024 * 1024
-        while True:
-            chunk = file.file.read(chunk_size)
-            if not chunk:
-                break
-            f.write(chunk)
+# @router.post("/uploadfile")
+# def upload_file(file: UploadFile, fileForm: file):
+#     directorio = UPLOAD_DIR +"/" + fileForm.course + "/" + fileForm.subject + "/" + fileForm.practice + "/" + file.filename
+#     with open(directorio, 'wb') as f:
+#         chunk_size = 1024 * 1024
+#         while True:
+#             chunk = file.file.read(chunk_size)
+#             if not chunk:
+#                 break
+#             f.write(chunk)

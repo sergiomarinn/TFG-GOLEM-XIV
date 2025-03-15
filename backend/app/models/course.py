@@ -18,6 +18,11 @@ class Course(CourseBase, table=True):
 class CourseCreate(CourseBase):
     pass
 
+class CourseUpdate(SQLModel):
+    name: str | None
+    course: str | None
+    description: str | None
+
 class CoursePublic(CourseBase):
     id: uuid.UUID
 
@@ -34,6 +39,6 @@ class CoursePublicWithPractices(CourseBase):
     id: uuid.UUID
     practices: list["PracticePublic"]
 
-class CoursesOut(SQLModel):
+class CoursesPublic(SQLModel):
     data: list[CoursePublic]
     count: int

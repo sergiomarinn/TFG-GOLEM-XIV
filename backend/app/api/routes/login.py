@@ -90,10 +90,10 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
     """
     Reset password
     """
-    niub = verify_password_reset_token(token=body.token)
-    if not niub:
+    email = verify_password_reset_token(token=body.token)
+    if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
-    user = crud.user.get_user_by_niub(session=session, niub=niub)
+    user = crud.user.get_user_by_email(session=session, email=email)
     if not user:
         raise HTTPException(
             status_code=404,

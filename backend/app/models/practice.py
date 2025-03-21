@@ -8,7 +8,7 @@ from .course import Course, CoursePublic
 import uuid
 
 class PracticeBase(SQLModel):
-    course_id: int
+    course_id: int | None = Field(default=None, foreign_key="course.id", ondelete="CASCADE")
     name: str
     description: str
     programming_language: str
@@ -22,6 +22,13 @@ class Practice(PracticeBase, table=True):
 class PracticeCreate(PracticeBase):
     pass
 
+class PracticeUpdate(SQLModel):
+    course_id: int | None
+    name: str | None
+    description: str | None
+    programming_language: str | None
+    due_date: date | None
+
 class PracticePublic(PracticeBase):
     id: uuid.UUID
 
@@ -31,6 +38,11 @@ class PracticePublicWithUsers(PracticeBase):
 
 class PracticePublicWithCourse(PracticeBase):
     id: uuid.UUID
+    course: CoursePublic
+
+class PracticePublicWithUsersAndCourse(PracticeBase):
+    id: uuid.UUID
+    users: list[UserPublic]
     course: CoursePublic
 
 class PracticesPublic(SQLModel):

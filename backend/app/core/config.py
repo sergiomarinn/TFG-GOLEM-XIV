@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     DOMAIN: str = "localhost"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
+    PROFESSOR_FILES_PATH: str = os.path.join('.', 'corrections_files', 'teachers')
+    STUDENT_FILES_PATH: str = os.path.join('.', 'corrections_files', 'students')
+
     @computed_field  # type: ignore[misc]
     @property
     def server_host(self) -> str:

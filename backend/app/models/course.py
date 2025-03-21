@@ -13,7 +13,7 @@ class CourseBase(SQLModel):
 class Course(CourseBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     users: list[User] = Relationship(back_populates="courses", link_model=CoursesUsersLink)
-    practices: list["Practices"] = Relationship(back_populates="course")
+    practices: list["Practices"] = Relationship(back_populates="course", cascade_delete=True)
 
 class CourseCreate(CourseBase):
     pass

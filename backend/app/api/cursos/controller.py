@@ -83,7 +83,7 @@ class Practica(BaseModel):
 """ENDPOINTS"""
 
 #Permite a un usuario (que no es un alumno) crear un nuevo curso.
-@router.post("")
+@router.post("")##
 async def crear_nou_curs(user: auth, nom: str = Form(...),
                          curs: str = Form(...),
                          descripcio: str = Form(...),
@@ -132,7 +132,7 @@ async def crear_nou_curs(user: auth, nom: str = Form(...),
     return curs
 
 #Permite a un usuario (que no es un alumno) crear una práctica asociada a un curso.
-@router.post("/practica")
+@router.post("/practica")##
 async def crear_practicas(user: auth,
                           nom: str = Form(...),
                           idiomaP: str = Form(...),
@@ -203,7 +203,7 @@ async def crear_practicas(user: auth,
                     f.write(chunk)
 
 #Permite a los usuarios descargar una plantilla de alumnos en formato CSV.
-@router.get("/csv")
+@router.get("/csv")##
 async def get_csv():
 
     df = pd.DataFrame(columns=["niub", "nom", "cognoms"])
@@ -211,7 +211,7 @@ async def get_csv():
                              headers={"Content-Disposition": f"attachment; filename=plantilla_alumnes.csv"})
 
 #Permite a los usuarios descargar una plantilla de alumnos en formato Excel.
-@router.get("/excel")
+@router.get("/excel")##
 async def get_excel():
 
     df = pd.DataFrame(columns=["niub", "nom", "cognoms"])
@@ -229,7 +229,7 @@ async def get_excel():
     return response
     
 #Permiten a los usuarios obtener la lista de cursos.
-@router.get("")
+@router.get("")##
 async def get_cursos(user: auth, db: Session = Depends(get_db), mongo: Session = Depends(get_mongodb_client)):
     if user['is_admin']:
         cursos = db.query(models.cursos).all()
@@ -239,7 +239,7 @@ async def get_cursos(user: auth, db: Session = Depends(get_db), mongo: Session =
     return cursos
 
 #Permiten a los usuarios obtener la lista de prácticas por curso.
-@router.get("/curs/practicas/{id}")
+@router.get("/curs/practicas/{id}")##
 async def get_practiques(id: int, user: auth, db: Session = Depends(get_db)):
 
     practiques = db.query(models.practicas).filter(
@@ -248,7 +248,7 @@ async def get_practiques(id: int, user: auth, db: Session = Depends(get_db)):
     return practiques
 
 #Permiten a los usuarios obtener la lista de prácticas por usuario.
-@router.get("/practicas/usuario")
+@router.get("/practicas/usuario")##
 async def get_practiques(user: auth, db: Session = Depends(get_db)):
 
     practiques = db.query(
@@ -269,7 +269,7 @@ async def get_practiques(user: auth, db: Session = Depends(get_db)):
     print("Practicas_usuario: ", practiques)
     return practicas
 #Permiten a los usuarios obtener información detallada de un curso específico.
-@router.get("/curs/{id}")
+@router.get("/curs/{id}")##
 async def get_curs_info(id: int, user: auth, db: Session = Depends(get_db)):
 
     curs = db.query(models.cursos).filter(
@@ -278,7 +278,7 @@ async def get_curs_info(id: int, user: auth, db: Session = Depends(get_db)):
     return curs
 
 #Permiten a los usuarios obtener detalles de una práctica específica.
-@router.get("/practica/{id}")
+@router.get("/practica/{id}")##
 async def get_practica_info(id: int, user: auth, db: Session = Depends(get_db), mongo: Session = Depends(get_mongodb_client)):
     practica = db.query(models.practicas).filter(
         models.practicas.id == id).first()
@@ -337,7 +337,7 @@ async def get_practicas_corregidas(user: auth, db: Session = Depends(get_db), mo
 
 
 #Permite a los alumnos subir archivos relacionados con sus prácticas.
-@router.post("/upload")
+@router.post("/upload")##
 async def upload_file(
     user: auth,
     id_practica: int = Form(...),

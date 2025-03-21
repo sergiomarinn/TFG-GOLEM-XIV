@@ -8,7 +8,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from dotenv import load_dotenv
 from backend.api.models import practicas_usuario  # PModels
-from backend.api.mongodb import MongoDBClient  # Conexión a MongoDB
 from backend.api.rpc_client import RpcClient  # Cliente RPC
 
 load_dotenv()
@@ -49,11 +48,13 @@ class Worker:
             
             async with AsyncSessionLocal() as db_session:
                 try:
+                    # Decodificar el mensaje JSON
                     body_json = json.loads(message.body.decode('utf-8'))
                 except json.JSONDecodeError:
                     print("Error al deserialitzar el missatge JSON")
                     return
                 
+                # Llamada al cliente RPC
                 result = await self.rpc_client.call(body_json)
                 print(f"Worker rep de cliet: {result}")
                 
@@ -62,46 +63,46 @@ class Worker:
                 
                 print("La respuesta es de tipo", type(result_dict))
                 
-                id = result_dict["niub"]
+                # Extraer datos del resultado
+                niub = result_dict["niub"]
                 id_curs = result_dict["curs_id"]
                 id_practica = result_dict["practica_id"]
-                info = result_dict["info"]
+                correction = result_dict["info"]
 
                 try:
-                    dbMongo = self.mongo.getDatabase("mydb")
-                    collection = self.mongo.getCollection("mycol")
-                    self.mongo.correccion(id, id_curs, id_practica, info)
+                    # Actualizar la práctica en PostgreSQL
+                    practice = await db_session.exec(
+                        select(Practice).where(Practice.id == id_practica)
+                    ).first()
 
-                    practica_usuario = await db_session.execute(
-                        practicas_usuario.select().filter(
-                            practicas_usuario.user_niub == id,
-                            practicas_usuario.practicas_id == id_practica
+                    practice_user = db_session.exec(select(PracticesUsersLink)
+                        .where(
+                            PracticesUsersLink.user_niub == niub,
+                            PracticesUsersLink.practice_id == practice.id
                         )
-                    )
-                    practica_usuario = practica_usuario.scalar_one_or_none()
+                    ).first()
 
-                    if practica_usuario:
-                        practica_usuario.corregit = True
+                    if practice and practice_user:
+                        # Actualizar el campo `correction` con la información recibida
+                        practice.correction = correction
+                        practice_user.corrected = True
+                        await db_session.add(practice_user)
                         await db_session.commit()
+                        print(f"Práctica {id_practica} actualizada con la corrección.")
                     else:
-                        new_practica_usuario = practicas_usuario(
-                            user_niub=id,
-                            practicas_id=id_practica,
-                            corregit=True
-                        )
-                        db_session.add(new_practica_usuario)
-                        await db_session.commit()
+                        print(f"No se encontró la práctica con ID {id_practica}.")
+                        return
 
+                    # Notificar que la práctica ha sido corregida
                     data = {
                         'id': id,
                         'practica_id': id_practica,
                         'status': 'corrected'
                     }
-
                     await self.notify_practice_corrected(data)
 
                 except Exception as e:
-                    print(f"Error a l'interactuar amb MongoDB: {e}")
+                    print(f"Error al interactuar con PostgreSQL: {e}")
 
     async def start(self):
         connection = await connect_robust("amqp://guest:guest@localhost/")

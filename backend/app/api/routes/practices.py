@@ -24,7 +24,9 @@ from app.models import (
     PracticePublicWithCourse,
     PracticePublicWithUsers,
     PracticePublicWithUsersAndCourse,
+    PracticePublicWithCorrection,
     PracticesPublic,
+    PracticesPublicWithCorrection,
     PracticesUsersLink
 )
 import pandas as pd
@@ -72,7 +74,7 @@ def read_my_practices(session: SessionDep, current_user: CurrentUser, skip: int 
 
     return PracticesPublic(data=practices, count=count)
 
-@router.get("/me/corrected", response_model=PracticesPublic)
+@router.get("/me/corrected", response_model=PracticesPublicWithCorrection)
 def read_my_corrected_practices(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
     """
     Retrieve corrected practices of the current user.
@@ -83,7 +85,7 @@ def read_my_corrected_practices(session: SessionDep, current_user: CurrentUser, 
     )
     count = session.exec(count_statement).one()
 
-    statement = select(Practice).join(PracticesUsersLink).where(
+    statement = select(Practice, PracticesUsersLink.correction).join(PracticesUsersLink).where(
         PracticesUsersLink.user_niub == current_user.niub,
         PracticesUsersLink.corrected == True
     ).offset(skip).limit(limit)
@@ -241,6 +243,7 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
             practice_user.corrected = False
             session.add(practice_user)
             session.commit()
+            session.refresh(practice_user)
 
         if settings.ENABLE_EXTERNAL_SERVICE:
             body = {
@@ -279,3 +282,41 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
         send = Sender(body)
     
     return {"status": "success", "files": saved_files}
+
+@router.get("/{practice_id}/download")
+async def download_practice_file(session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser) -> Any:
+    """
+    Download practice files.
+    """
+    practice = crud.practice.get_practice(session=session, id=practice_id)
+    if not practice:
+        raise HTTPException(status_code=404, detail="Practice not found")
+        
+    if current_user not in practice.users:
+        raise HTTPException(status_code=403, detail="User not in course")
+    
+    course = practice.course
+    if current_user.is_student:
+        file_path = os.path.join(
+            settings.STUDENT_FILES_PATH,
+            course.course,
+            course.name,
+            practice.name,
+            current_user.niub
+        )
+    else:
+        file_path = os.path.join(
+            settings.PROFESSOR_FILES_PATH,
+            course.course,
+            course.name,
+            practice.name
+        )
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    files = []
+    for file in os.listdir(file_path):
+        files.append(file)
+    
+    return {"files": files}

@@ -45,6 +45,14 @@ class PracticePublicWithUsersAndCourse(PracticeBase):
     users: list[UserPublic]
     course: CoursePublic
 
+class PracticePublicWithCorrection(PracticeBase):
+    id: uuid.UUID
+    correction: dict | None
+
 class PracticesPublic(SQLModel):
     data: list[PracticePublic]
+    count: int
+
+class PracticesPublicWithCorrection(SQLModel):
+    data: list[PracticePublicWithCorrection]
     count: int

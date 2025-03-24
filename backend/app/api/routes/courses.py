@@ -123,8 +123,8 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
         raise HTTPException(status_code=500, detail=f"Error procesando archivo: {str(e)}")
 
     try:
-        p_path = os.path.join(settings.PROFESSOR_FILES_PATH, course.course, course.name)
-        a_path = os.path.join(settings.STUDENT_FILES_PATH, course.course, course.name)
+        p_path = os.path.join(settings.PROFESSOR_FILES_PATH, course.academic_year, course.name)
+        a_path = os.path.join(settings.STUDENT_FILES_PATH, course.academic_year, course.name)
         os.makedirs(p_path, exist_ok=True)
         os.makedirs(a_path, exist_ok=True)
     except Exception as e:

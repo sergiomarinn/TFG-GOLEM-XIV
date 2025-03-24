@@ -7,7 +7,7 @@ import uuid
 
 class CourseBase(SQLModel):
     name: str
-    course: str
+    academic_year: str
     description: str
 
 class Course(CourseBase, table=True):
@@ -20,7 +20,7 @@ class CourseCreate(CourseBase):
 
 class CourseUpdate(SQLModel):
     name: str | None
-    course: str | None
+    academic_year: str | None
     description: str | None
 
 class CoursePublic(CourseBase):

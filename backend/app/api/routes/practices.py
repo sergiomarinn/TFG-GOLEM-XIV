@@ -151,8 +151,8 @@ async def create_practice(*, session: SessionDep, practice_in: PracticeCreate, f
     practice = crud.practice.create_practice(session=session, practice_create=practice_in, course=course)
 
     try:
-        p_path = os.path.join(settings.PROFESSOR_FILES_PATH, course.course, course.name, practice.name)
-        a_path = os.path.join(settings.STUDENT_FILES_PATH, course.course, course.name, practice.name)
+        p_path = os.path.join(settings.PROFESSOR_FILES_PATH, course.academic_year, course.name, practice.name)
+        a_path = os.path.join(settings.STUDENT_FILES_PATH, course.academic_year, course.name, practice.name)
         os.makedirs(p_path, exist_ok=True)
         os.makedirs(a_path, exist_ok=True)
     except Exception as e:
@@ -224,7 +224,7 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
     
     body = None
     if current_user.is_student:
-        file_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.course, practice.course.name, practice.name, current_user.niub)
+        file_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name, current_user.niub)
 
         practice_user = session.exec(select(PracticesUsersLink)
             .where(
@@ -249,7 +249,7 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
             }
 
     else:
-        file_path = os.path.join(settings.PROFESSOR_FILES_PATH, practice.course.course, practice.course.name, practice.name)
+        file_path = os.path.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
 
     os.makedirs(file_path, exist_ok=True)
 
@@ -310,7 +310,7 @@ async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, curr
     else:
         base_path = settings.STUDENT_FILES_PATH
     
-    file_path = os.path.join(base_path, practice.course.course, practice.course.name, practice.name)
+    file_path = os.path.join(base_path, practice.course.academic_year, practice.course.name, practice.name)
     user_path = os.path.join(file_path, current_user.niub)
     
     # Create ZIP in memory
@@ -364,7 +364,7 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
     else:
         base_path = settings.STUDENT_FILES_PATH
     
-    file_path = os.path.join(base_path, practice.course.course, practice.course.name, practice.name)
+    file_path = os.path.join(base_path, practice.course.academic_year, practice.course.name, practice.name)
     user_path = os.path.join(file_path, target_user.niub)
     
     # Create ZIP in memory
@@ -401,8 +401,8 @@ async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, cur
         raise HTTPException(status_code=403, detail="Access denied to this practice")
     
     # Base paths
-    prof_base_path = os.path.join(settings.PROFESSOR_FILES_PATH, practice.course.course, practice.course.name, practice.name)
-    student_base_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.course, practice.course.name, practice.name)
+    prof_base_path = os.path.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+    student_base_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
     
     # Create ZIP in memory
     zip_io = BytesIO()

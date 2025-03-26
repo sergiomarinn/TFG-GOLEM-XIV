@@ -98,7 +98,7 @@ class Settings(BaseSettings):
             if self.DB_NAME is None:
                 self.DB_NAME = 'golem_xiv_db'
             database_uri = MultiHostUrl.build(
-                scheme="postgresql+psycopg2",
+                scheme="postgresql+psycopg",
                 username=self.DB_USER,
                 password=self.DB_PASSWORD,
                 host=self.DB_HOST,

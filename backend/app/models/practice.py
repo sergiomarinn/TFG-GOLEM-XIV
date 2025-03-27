@@ -4,8 +4,9 @@ from datetime import date
 from .base import SQLModel
 from .PracticesUsersLink import PracticesUsersLink
 from .user import User, UserPublic
-from .course import Course, CoursePublic
 import uuid
+
+from .course import Course, CoursePublic
 
 class PracticeBase(SQLModel):
     course_id: uuid.UUID | None = Field(default=None, foreign_key="course.id", ondelete="CASCADE")
@@ -34,16 +35,16 @@ class PracticePublic(PracticeBase):
 
 class PracticePublicWithUsers(PracticeBase):
     id: uuid.UUID
-    users: list[UserPublic]
+    users: list[UserPublic] = []
 
 class PracticePublicWithCourse(PracticeBase):
     id: uuid.UUID
-    course: CoursePublic
+    course: CoursePublic | None = None
 
 class PracticePublicWithUsersAndCourse(PracticeBase):
     id: uuid.UUID
-    users: list[UserPublic]
-    course: CoursePublic
+    users: list[UserPublic] = []
+    course: CoursePublic | None = None
 
 class PracticePublicWithCorrection(PracticeBase):
     id: uuid.UUID

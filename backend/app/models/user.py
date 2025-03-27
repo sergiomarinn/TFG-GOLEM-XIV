@@ -58,9 +58,9 @@ class UserPracticesOut(SQLModel):
     data: list["PracticesPublic"]
     count: int
 
-class UserCoursesPracticesOut(UserBase):
-    courses: list["CoursePublic"]
-    practices: list["PracticePublicWithCourse"]
+class UserPublicWithCoursesPractices(UserBase):
+    courses: list["CoursePublic"] = []
+    practices: list["PracticePublicWithCourse"] = []
 
 class Message(SQLModel):
     message: str

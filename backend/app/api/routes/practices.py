@@ -32,7 +32,7 @@ from app.models import (
 )
 import pandas as pd
 import os
-from api.sender import Sender
+from app.api.sender import Sender
 
 router = APIRouter()
 

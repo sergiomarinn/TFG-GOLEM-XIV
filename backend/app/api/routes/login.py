@@ -4,7 +4,6 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi_login.exceptions import InvalidCredentialsException
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
@@ -19,7 +18,7 @@ from app.utils import (
     verify_password_reset_token,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["login"])
 
 
 @router.post("/login/access-token")
@@ -29,26 +28,17 @@ def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    if '@' in form_data.username:
-        user = crud.user.authenticate(
-            session=session, email=form_data.username, password=form_data.password
-        )
-    elif 'niub' in form_data.username:
-        user = crud.user.authenticate(
-            session=session, niub=form_data.username, password=form_data.password
-        )
-    else:
-        raise InvalidCredentialsException
-
-    
+    user = crud.authenticate(
+        session=session, email=form_data.username, password=form_data.password
+    )
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
-    # elif not user.is_active:
-    #     raise HTTPException(status_code=400, detail="Inactive user")
+    elif not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
         access_token=security.create_access_token(
-            user.niub, expires_delta=access_token_expires
+            user.id, expires_delta=access_token_expires
         )
     )
 
@@ -66,7 +56,7 @@ def recover_password(email: str, session: SessionDep) -> Message:
     """
     Password Recovery
     """
-    user = crud.user.get_user_by_email(session=session, email=email)
+    user = crud.get_user_by_email(session=session, email=email)
 
     if not user:
         raise HTTPException(
@@ -93,14 +83,14 @@ def reset_password(session: SessionDep, body: NewPassword) -> Message:
     email = verify_password_reset_token(token=body.token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
-    user = crud.user.get_user_by_email(session=session, email=email)
+    user = crud.get_user_by_email(session=session, email=email)
     if not user:
         raise HTTPException(
             status_code=404,
             detail="The user with this email does not exist in the system.",
         )
-    # elif not user.is_active:
-    #     raise HTTPException(status_code=400, detail="Inactive user")
+    elif not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
     hashed_password = get_password_hash(password=body.new_password)
     user.hashed_password = hashed_password
     session.add(user)
@@ -117,7 +107,7 @@ def recover_password_html_content(email: str, session: SessionDep) -> Any:
     """
     HTML Content for Password Recovery
     """
-    user = crud.user.get_user_by_email(session=session, email=email)
+    user = crud.get_user_by_email(session=session, email=email)
 
     if not user:
         raise HTTPException(

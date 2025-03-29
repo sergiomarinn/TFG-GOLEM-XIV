@@ -44,19 +44,6 @@ def read_courses(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
     return CoursesPublic(data=courses, count=count)
 
-@router.get("/{course_id}", response_model=CoursePublicWithUsersAndPractices)
-def read_course(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
-    """
-    Retrieve course by ID.
-    """
-    course = crud.course.get_course(session=session, id=course_id)
-    if current_user not in course.users:
-        raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
-    
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
-    return course
-
 @router.get("/me", response_model=CoursesPublic)
 def read_my_courses(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
     """
@@ -69,6 +56,19 @@ def read_my_courses(session: SessionDep, current_user: CurrentUser, skip: int = 
     courses = session.exec(statement).all()
 
     return CoursesPublic(data=courses, count=count)
+
+@router.get("/{course_id}", response_model=CoursePublicWithUsersAndPractices)
+def read_course(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Retrieve course by ID.
+    """
+    course = crud.course.get_course(session=session, id=course_id)
+    if current_user not in course.users:
+        raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
+    
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return course
 
 @router.get("/{course_id}/users", response_model=CoursePublicWithUsers)
 def read_course_users(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
@@ -99,7 +99,7 @@ def read_course_practices(course_id: uuid.UUID, session: SessionDep, current_use
     return course
 
 @router.post("/", dependencies=[Depends(get_current_teacher)], response_model=CoursePublic)
-def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadFile) -> Any:
+def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadFile, current_user: CurrentUser) -> Any:
     """
     Create new course.
     """
@@ -107,8 +107,9 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
     if course:
         raise HTTPException(status_code=400, detail="The course already exists")
     course = crud.course.create_course(session=session, course_create=course_in)
+    course.users.append(current_user) # Add teacher to course
 
-    filN, extension = os.path.splitext(file.filename)
+    _, extension = os.path.splitext(file.filename)
     try:
         if extension.lower() == ".csv":
             data = pd.read_csv(file.file)

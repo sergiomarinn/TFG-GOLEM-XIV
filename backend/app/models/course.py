@@ -1,9 +1,11 @@
 from sqlmodel import Field, Relationship
+from pydantic import model_validator
 
 from .base import SQLModel
 from .CoursesUsersLink import CoursesUsersLink
 from .user import User, UserPublic
 import uuid
+import json
 
 class CourseBase(SQLModel):
     name: str
@@ -16,7 +18,14 @@ class Course(CourseBase, table=True):
     practices: list["Practice"] = Relationship(back_populates="course", cascade_delete=True)
 
 class CourseCreate(CourseBase):
-    pass
+    # This validator ensures that if the input is a JSON string, it gets parsed and converted to the appropriate model instance (mostly in form-data request)
+    @model_validator(mode='before')
+    @classmethod
+    def validate_to_json(cls, value):
+        # If the input is a string, try to load it as a JSON object
+        if isinstance(value, str):
+            return cls(**json.loads(value)) # Convert the JSON string to a dict and assign it to the model
+        return value
 
 class CourseUpdate(SQLModel):
     name: str | None

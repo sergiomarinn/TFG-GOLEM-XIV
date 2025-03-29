@@ -49,19 +49,6 @@ def read_practices(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
     return PracticesPublic(data=practices, count=count)
 
-@router.get("/{practice_id}", response_model=PracticePublicWithUsersAndCourse)
-def read_practice(practice_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
-    """
-    Retrieve practice by ID.
-    """
-    practice = crud.practice.get_practice(session=session, id=practice_id)
-    if current_user not in practice.course.users:
-        raise HTTPException(status_code=403, detail="The user is not enrolled in the practice.")
-    
-    if not practice:
-        raise HTTPException(status_code=404, detail="Practice not found")
-    return practice
-
 @router.get("/me", response_model=PracticesPublic)
 def read_my_practices(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
     """
@@ -112,6 +99,19 @@ def read_my_uncorrected_practices(session: SessionDep, current_user: CurrentUser
     practices = session.exec(statement).all()
 
     return PracticesPublic(data=practices, count=count)
+
+@router.get("/{practice_id}", response_model=PracticePublicWithUsersAndCourse)
+def read_practice(practice_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Retrieve practice by ID.
+    """
+    practice = crud.practice.get_practice(session=session, id=practice_id)
+    if current_user not in practice.course.users:
+        raise HTTPException(status_code=403, detail="The user is not enrolled in the practice.")
+    
+    if not practice:
+        raise HTTPException(status_code=404, detail="Practice not found")
+    return practice
 
 @router.get("/{practice_id}/users", response_model=PracticePublicWithUsers)
 def read_practice_users(practice_id: uuid.UUID, session: SessionDep) -> Any:

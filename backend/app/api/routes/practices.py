@@ -311,7 +311,7 @@ async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, curr
         base_path = settings.STUDENT_FILES_PATH
     
     file_path = os.path.join(base_path, practice.course.academic_year, practice.course.name, practice.name)
-    user_path = os.path.join(file_path, current_user.niub)
+    user_path = os.path.join(file_path, current_user.niub) if not current_user.is_teacher else file_path
     
     # Create ZIP in memory
     zip_io = BytesIO()
@@ -322,13 +322,57 @@ async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, curr
     zip_io.seek(0)
     
     # Create response with appropriate headers
-    filename = f"{practice.name}_{current_user.niub}.zip"
+    filename = f"{practice.name}_{"teacher" if current_user.is_teacher else "student"}_{current_user.niub}.zip"
     return StreamingResponse(
         zip_io,
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+@router.get("/{practice_id}/download/all", dependencies=[Depends(get_current_teacher)], response_class=StreamingResponse)
+async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser) -> Any:
+    """
+    Download all files for a practice. Only available to teachers.
+    Creates a ZIP with subdirectories for each user.
+    """
+    
+    # Get practice
+    practice = crud.practice.get_practice(session=session, id=practice_id)
+    if not practice:
+        raise HTTPException(status_code=404, detail="Practice not found")
+    
+    # Check if teacher has access to the practice
+    if current_user not in practice.users:
+        raise HTTPException(status_code=403, detail="Access denied to this practice")
+    
+    # Base paths
+    prof_base_path = os.path.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+    student_base_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+    
+    # Create ZIP in memory
+    zip_io = BytesIO()
+    with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
+        # Add professor files
+        for user in practice.users:
+            if not user.is_teacher:
+                user_path = os.path.join(student_base_path, user.niub)
+                base_dir = f"students/{user.niub}"
+                # Add student files to zip
+                add_files_to_zip(zip_file, user_path, base_dir)
+        
+        # Add teachers files to zip
+        add_files_to_zip(zip_file, prof_base_path, "teachers")
+    
+    # Reset file pointer
+    zip_io.seek(0)
+    
+    # Create response with appropriate headers
+    filename = f"{practice.name}_all_submissions.zip"
+    return StreamingResponse(
+        zip_io,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 @router.get("/{practice_id}/download/{user_niub}", response_class=StreamingResponse)
 async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, user_niub: str, current_user: CurrentUser) -> Any:
@@ -365,7 +409,7 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
         base_path = settings.STUDENT_FILES_PATH
     
     file_path = os.path.join(base_path, practice.course.academic_year, practice.course.name, practice.name)
-    user_path = os.path.join(file_path, target_user.niub)
+    user_path = os.path.join(file_path, target_user.niub) if not current_user.is_teacher else file_path
     
     # Create ZIP in memory
     zip_io = BytesIO()
@@ -376,53 +420,7 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
     zip_io.seek(0)
     
     # Create response with appropriate headers
-    filename = f"{practice.name}_{target_user.niub}.zip"
-    return StreamingResponse(
-        zip_io,
-        media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
-
-
-@router.get("/{practice_id}/download/all", dependencies=[Depends(get_current_teacher)], response_class=StreamingResponse)
-async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser) -> Any:
-    """
-    Download all files for a practice. Only available to teachers.
-    Creates a ZIP with subdirectories for each user.
-    """
-    
-    # Get practice
-    practice = crud.practice.get_practice(session=session, id=practice_id)
-    if not practice:
-        raise HTTPException(status_code=404, detail="Practice not found")
-    
-    # Check if teacher has access to the practice
-    if current_user not in practice.users:
-        raise HTTPException(status_code=403, detail="Access denied to this practice")
-    
-    # Base paths
-    prof_base_path = os.path.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
-    student_base_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
-    
-    # Create ZIP in memory
-    zip_io = BytesIO()
-    with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
-        # Add professor files
-        for user in practice.users:
-            if user.is_teacher:
-                user_path = os.path.join(prof_base_path, user.niub)
-                base_dir = f"professors/{user.niub}"
-            else:
-                user_path = os.path.join(student_base_path, user.niub)
-                base_dir = f"students/{user.niub}"
-
-            add_files_to_zip(zip_file, user_path, base_dir)
-    
-    # Reset file pointer
-    zip_io.seek(0)
-    
-    # Create response with appropriate headers
-    filename = f"{practice.name}_all_submissions.zip"
+    filename = f"{practice.name}_{"teacher" if target_user.is_teacher else "student"}_{target_user.niub}.zip"
     return StreamingResponse(
         zip_io,
         media_type="application/zip",

@@ -242,7 +242,7 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
         if settings.ENABLE_EXTERNAL_SERVICE:
             body = {
                 "name": practice.name,
-                "language": practice.language,
+                "language": practice.programming_language,
                 "niub": current_user.niub,
                 "course_id": str(practice.course_id),
                 "practice_id": str(practice.id)

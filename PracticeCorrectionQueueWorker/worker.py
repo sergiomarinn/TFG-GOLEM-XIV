@@ -1,11 +1,9 @@
-import sys
 import os
 import json
 import asyncio
 from aio_pika import connect_robust, IncomingMessage
 from aiohttp import ClientSession
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlmodel import select
 from dotenv import load_dotenv
 from .models import Practice, PracticesUsersLink

@@ -1,0 +1,68 @@
+from sqlmodel import Field, Relationship
+from pydantic import model_validator
+
+from datetime import date
+from .base import SQLModel
+from .PracticesUsersLink import PracticesUsersLink
+from .user import User, UserPublic
+import uuid
+import json
+
+from .course import Course, CoursePublic
+
+class PracticeBase(SQLModel):
+    course_id: uuid.UUID | None = Field(default=None, foreign_key="course.id", ondelete="CASCADE")
+    name: str
+    description: str
+    programming_language: str
+    due_date: date
+
+class Practice(PracticeBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    users: list[User] = Relationship(back_populates="practices", link_model=PracticesUsersLink)
+    course: Course = Relationship(back_populates="practices")
+
+class PracticeCreate(PracticeBase):
+    # This validator ensures that if the input is a JSON string, it gets parsed and converted to the appropriate model instance (mostly in form-data request)
+    @model_validator(mode='before')
+    @classmethod
+    def validate_to_json(cls, value):
+        # If the input is a string, try to load it as a JSON object
+        if isinstance(value, str):
+            return cls(**json.loads(value)) # Convert the JSON string to a dict and assign it to the model
+        return value
+
+class PracticeUpdate(SQLModel):
+    course_id: uuid.UUID | None
+    name: str | None
+    description: str | None
+    programming_language: str | None
+    due_date: date | None
+
+class PracticePublic(PracticeBase):
+    id: uuid.UUID
+
+class PracticePublicWithUsers(PracticeBase):
+    id: uuid.UUID
+    users: list[UserPublic] = []
+
+class PracticePublicWithCourse(PracticeBase):
+    id: uuid.UUID
+    course: CoursePublic | None = None
+
+class PracticePublicWithUsersAndCourse(PracticeBase):
+    id: uuid.UUID
+    users: list[UserPublic] = []
+    course: CoursePublic | None = None
+
+class PracticePublicWithCorrection(PracticeBase):
+    id: uuid.UUID
+    correction: dict | None
+
+class PracticesPublic(SQLModel):
+    data: list[PracticePublic]
+    count: int
+
+class PracticesPublicWithCorrection(SQLModel):
+    data: list[PracticePublicWithCorrection]
+    count: int

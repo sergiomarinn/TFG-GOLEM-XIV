@@ -32,7 +32,7 @@ from app.models import (
 )
 import pandas as pd
 import os
-from app.services import sender
+from app.services import practice_service
 
 router = APIRouter()
 
@@ -268,7 +268,7 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
                 raise HTTPException(status_code=500, detail=f"Error saving file {file.filename}: {str(e)}")
         
     if body:
-        sender.send_practice_data(body)
+        practice_service.send_practice_data(body)
     
     return {"status": "success", "files": saved_files}
 

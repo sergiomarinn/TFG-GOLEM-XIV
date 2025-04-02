@@ -1,23 +1,15 @@
-import os
 import json
 import asyncio
 from aio_pika import connect_robust, IncomingMessage
 from aiohttp import ClientSession
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlmodel import select
-from dotenv import load_dotenv
-from .models import Practice, PracticesUsersLink
-from .rpc_client import RpcClient
+from models import Practice, PracticesUsersLink
+from services.rpc_client import RpcClient
+from core.db import engine
+from core.config import settings
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-HOST = os.getenv("DB_HOST")
-
-# Configuración de SQLAlchemy para uso asíncrono
-engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
-
 
 class Worker:
     def __init__(self, max_concurrent_tasks=5):
@@ -113,7 +105,7 @@ class Worker:
         task.add_done_callback(self.tasks.discard)
 
     async def start(self):
-        connection = await connect_robust("amqp://guest:guest@localhost/")
+        connection = await connect_robust(settings.CLOUDAMQP_URL)
         channel = await connection.channel()
         # Aumentar el prefetch_count para permitir múltiples mensajes
         await channel.set_qos(prefetch_count=self.max_concurrent_tasks)

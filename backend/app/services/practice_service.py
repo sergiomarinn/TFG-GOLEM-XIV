@@ -1,18 +1,11 @@
 import pika
 import json
-import os
-from dotenv import load_dotenv, find_dotenv
-
-load_dotenv(find_dotenv())
-
-#RABBIT_HOST = os.getenv("rabbit_host")
-#RABBIT_PORT = int(os.getenv("rabbit_port"))
-HOST = os.getenv("DB_HOST")
+from app.core.config import settings
 
 def send_practice_data(body):
     """Envía un mensaje a la cola de RabbitMQ"""
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host=HOST)
+        pika.ConnectionParameters(pika.URLParameters(settings.CLOUDAMQP_URL))
     )
     channel = connection.channel()
 

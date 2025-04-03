@@ -5,15 +5,14 @@ from aiohttp import ClientSession
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlmodel import select
 from models import Practice, PracticesUsersLink
-from services.rpc_client import RpcClient
+from services.rpc_client import AsyncRpcClient
 from core.db import engine
 from core.config import settings
 
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-class Worker:
+class PracticeCorrectionQueueWorker:
     def __init__(self, max_concurrent_tasks=5):
-        self.rpc_client = RpcClient()
         self.max_concurrent_tasks = max_concurrent_tasks
         self.semaphore = asyncio.Semaphore(max_concurrent_tasks)
         self.tasks = set()  # Para mantener un seguimiento de tareas activas
@@ -34,6 +33,10 @@ class Worker:
         async with self.semaphore:
             async with message.process():
                 print(f" [x] Received {message.body.decode('utf-8')}")
+
+                # Crear una instancia de RPC Client para cada mensaje
+                rpc_client = AsyncRpcClient()
+                await rpc_client.connect()
                 
                 async with async_session() as db_session:
                     try:
@@ -44,7 +47,7 @@ class Worker:
                         return
                     
                     # Llamada al cliente RPC
-                    result = await self.rpc_client.call(body_json)
+                    result = await rpc_client.call(body_json)
                     print(f"Worker rep de client: {result}")
                     
                     result_str = result.decode('utf-8')
@@ -124,7 +127,7 @@ class Worker:
 
 if __name__ == "__main__":
     # Puedes ajustar el número de tareas concurrentes según necesites
-    worker = Worker(max_concurrent_tasks=5)
+    worker = PracticeCorrectionQueueWorker(max_concurrent_tasks=5)
     loop = asyncio.get_event_loop()
     connection = loop.run_until_complete(worker.start())
     try:

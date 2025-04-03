@@ -94,6 +94,7 @@ class Settings(BaseSettings):
     DB_PASSWORD: str | None = None
     DB_NAME: str | None = None
     CLOUDAMQP_URL: str = "amqp://guest:guest@localhost:5672/%2f"
+    # CLOUDAMQP_URL: str = "amqp://guest:guest@localhost:5672/"
 
     @computed_field  # type: ignore[misc]
     @property

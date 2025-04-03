@@ -1,61 +1,67 @@
 import uuid
-import time
-import pika
 import json
-import os
-from dotenv import load_dotenv
+import asyncio
+from aio_pika import connect_robust, IncomingMessage, Message
+from core.config import settings
 
-load_dotenv("C:/Users/rocio/IdeaProjects/TFG/backend/.env")
-
-#RABBIT_HOST = os.getenv("rabbit_host")
-#RABBIT_PORT = int(os.getenv("rabbit_port"))
-HOST = os.getenv("DB_HOST")
-
-class RpcClient():
+class AsyncRpcClient():
     def __init__(self):
+        print(" [x] Requesting RPC Client")
+        self.connection = None
+        self.channel = None
+        self.callback_queue = None
+        self.futures = {}
 
-        print(" [x] Requesting RpcClient")
+    async def connect(self):
+        """Establece la conexión con RabbitMQ"""
+        # Conectar con RabbitMQ
+        self.connection = await connect_robust(settings.RPC_URL)
+        self.channel = await self.connection.channel()
 
-        self.connection = pika.BlockingConnection(
-            #pika.ConnectionParameters(host=RABBIT_HOST, port=RABBIT_PORT)
-            pika.ConnectionParameters(host=HOST)
-        )
+        # Crear una cola exclusiva para recibir respuestas
+        self.callback_queue = await self.channel.declare_queue("", exclusive=True)
 
+        # Configurar el consumidor para recibir respuestas
+        await self.callback_queue.consume(self.on_response)
 
-        self.channel = self.connection.channel()
+        print(" [x] RPC Client connected and ready")
+        return self
 
-        result = self.channel.queue_declare(queue="", exclusive=True)
-        self.callback_queue = result.method.queue
+    async def on_response(self, message: IncomingMessage):
+        """ Callback que maneja la respuesta del servidor RPC """
+        async with message.process():
+            correlation_id = message.correlation_id
+            print(f"Respuesta recibida en RPC Client: {message.body.decode('utf-8')}")
+            
+            if correlation_id in self.futures:
+                future: asyncio.Future = self.futures.pop(correlation_id)
+                await message.ack() # Puede llegar a ser innecesario
+                future.set_result(message.body)
+    
+    async def call(self, body):
+        """ Envía un mensaje al servidor RPC y espera la respuesta """
+        if not self.connection or self.connection.is_closed:
+            await self.connect()
+            
+        correlation_id = str(uuid.uuid4())
+        future = asyncio.get_event_loop().create_future()
+        self.futures[correlation_id] = future
 
-        self.channel.basic_consume(
-            queue=self.callback_queue,
-            on_message_callback=self.on_response,
-            auto_ack=True,
-        )
-
-        self.response = None
-        self.corr_id = None
-
-    def on_response(self, ch, method, props, body):
-        print(f"Respuesta recibida en RpcClient: {body.decode('utf-8')}")
-        if self.corr_id == props.correlation_id:
-            self.response = body
-
-    def call(self, body):
-        print("Estoy en el método call de RPC_Client")
-        self.response = None
-        self.corr_id = str(uuid.uuid4())
         body_json = json.dumps(body)
 
-        self.channel.basic_publish(
-            exchange="",
-            routing_key="rpc_queue",
-            properties=pika.BasicProperties(
-                reply_to=self.callback_queue,
-                correlation_id=self.corr_id,
+        await self.channel.default_exchange.publish(
+            Message(
+                body=body_json.encode(),
+                correlation_id=correlation_id,
+                reply_to=self.callback_queue.name,
             ),
-            body=body_json,
+            routing_key="rpc_queue",
         )
-        self.connection.process_data_events(time_limit=None)
-        print("RPC_Client devuelve", self.response)
-        return self.response
+
+        print(f"Mensaje RPC enviado, esperando respuesta (correlation_id: {correlation_id})")
+        return await future
+
+    async def close(self):
+        """Cierra la conexión"""
+        if self.connection and not self.connection.is_closed:
+            await self.connection.close()

@@ -47,7 +47,7 @@ class PracticeCorrectionQueueWorker:
                         return
                     
                     # Llamada al cliente RPC
-                    result = await rpc_client.call(body_json)
+                    result: bytes = await rpc_client.call(body_json)
                     print(f"Worker rep de client: {result}")
                     
                     result_str = result.decode('utf-8')

@@ -426,3 +426,20 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.post("/test-send-practice-data", dependencies=[Depends(get_current_active_superuser)], response_model=Message)
+def test_send_practice_data(*, session: SessionDep, practice_in: PracticeCreate, files: list[UploadFile] = File(None)) -> Any:
+    """
+    Test practice service to send practice data.
+    """
+    body = {
+        "name": practice_in.name,
+        "language": practice_in.programming_language,
+        "niub": "niub12345678",
+        "course_id": str(practice_in.course_id),
+        "practice_id": str(uuid.uuid4())
+    }
+
+    practice_service.send_practice_data(body)
+
+    return Message(message="Practice data sent successfully")

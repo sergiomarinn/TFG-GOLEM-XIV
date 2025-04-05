@@ -5,7 +5,7 @@ from app.core.config import settings
 def send_practice_data(body):
     """Envía un mensaje a la cola de RabbitMQ"""
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(pika.URLParameters(settings.CLOUDAMQP_URL))
+        pika.URLParameters(settings.CLOUDAMQP_URL)
     )
     channel = connection.channel()
 

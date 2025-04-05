@@ -24,19 +24,22 @@ class AsyncRpcClient():
         # Configurar el consumidor para recibir respuestas
         await self.callback_queue.consume(self.on_response)
 
-        print(" [x] RPC Client connected and ready")
+        print(" [i] RPC Client connected and ready")
         return self
 
     async def on_response(self, message: IncomingMessage):
         """ Callback que maneja la respuesta del servidor RPC """
         async with message.process():
             correlation_id = message.correlation_id
-            print(f"Respuesta recibida en RPC Client: {message.body.decode('utf-8')}")
+            print(f" [x] Respuesta recibida en RPC Client: {message.body.decode('utf-8')}")
             
-            if correlation_id in self.futures:
-                future: asyncio.Future = self.futures.pop(correlation_id)
-                await message.ack() # Puede llegar a ser innecesario
-                future.set_result(message.body)
+            try:
+                if correlation_id in self.futures:
+                    future: asyncio.Future = self.futures.pop(correlation_id)
+                    await message.ack()
+                    future.set_result(message.body)
+            except Exception as e:
+                print(f" [E] Error procesando el mensaje con correlation_id {correlation_id}: {e}")
     
     async def call(self, body):
         """ Envía un mensaje al servidor RPC y espera la respuesta """
@@ -58,7 +61,7 @@ class AsyncRpcClient():
             routing_key="rpc_queue",
         )
 
-        print(f"Mensaje RPC enviado, esperando respuesta (correlation_id: {correlation_id})")
+        print(f" [*] Mensaje RPC enviado, esperando respuesta (correlation_id: {correlation_id})")
         return await future
 
     async def close(self):

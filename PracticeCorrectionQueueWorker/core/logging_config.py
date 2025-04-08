@@ -17,11 +17,10 @@ class ColorFormatter(logging.Formatter):
 
         # Obtener color según el levelname
         color = self.COLORS.get(record.levelname, "")
-        padded_levelname = f"{record.levelname:<7}"  # Alineado a la derecha
-        record.levelname = f"{bold}{color}{padded_levelname}{reset}"
+        record.levelname = f"{bold}{color}{record.levelname}{reset}"
 
         # Colorear el filename en azul
-        record.filename = f"{blue}{record.filename:<13}{reset}"
+        record.filename = f"{blue}{record.filename}{reset}"
 
         return super().format(record)
 
@@ -34,7 +33,7 @@ def configure_logging():
     # Configure handler explicitly
     handler = logging.StreamHandler()
     formatter = ColorFormatter(
-        "\033[1m%(asctime)s | %(levelname)s | %(filename)s >> %(message)s",
+        "\033[1m%(asctime)s %(levelname)s@%(filename)s >> %(message)s",
         datefmt="%d-%m-%Y %H:%M:%S"
     )
     handler.setFormatter(formatter)

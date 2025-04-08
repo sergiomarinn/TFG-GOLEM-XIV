@@ -1,8 +1,14 @@
 import os
 import json
 import time
+import random
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MOCK_DELAY_MIN = float(os.getenv("MOCK_DELAY_MIN", 15))
+MOCK_DELAY_MAX = float(os.getenv("MOCK_DELAY_MAX", 30))
 
 def load_mock_result(filename):
     with open(os.path.join(BASE_DIR, "mocks", filename), "r") as f:
@@ -22,7 +28,7 @@ def fake_test_result(name: str, language: str):
 
 def handle_java(name: str, original_data: dict) -> dict:
     print(" [JAVA] Procesando práctica:", name)
-    time.sleep(60)  # Simulando un tiempo de espera para la respuesta
+    time.sleep(random.uniform(MOCK_DELAY_MIN, MOCK_DELAY_MAX))  # Simulando un tiempo de espera para la respuesta
     test_result = fake_test_result(name, "java")
     original_data["info"] = test_result
 
@@ -31,7 +37,7 @@ def handle_java(name: str, original_data: dict) -> dict:
 
 def handle_python(name: str, original_data: dict) -> dict:
     print(" [PYTHON] Procesando práctica:", name)
-    time.sleep(60)  # Simulando un tiempo de espera para la respuesta
+    time.sleep(random.uniform(MOCK_DELAY_MIN, MOCK_DELAY_MAX))  # Simulando un tiempo de espera para la respuesta
     test_result = fake_test_result(name, "python")
     original_data["info"] = test_result
 

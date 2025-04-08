@@ -36,8 +36,8 @@ class AsyncRpcClient():
             try:
                 if correlation_id in self.futures:
                     future: asyncio.Future = self.futures.pop(correlation_id)
-                    await message.ack()
                     future.set_result(message.body)
+                    
             except Exception as e:
                 print(f" [E] Error procesando el mensaje con correlation_id {correlation_id}: {e}")
     

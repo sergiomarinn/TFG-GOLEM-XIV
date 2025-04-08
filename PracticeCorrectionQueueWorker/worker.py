@@ -1,6 +1,8 @@
 import json
 import asyncio
-from aio_pika import connect_robust, IncomingMessage
+import platform
+import os
+from aio_pika import connect_robust, ExchangeType, IncomingMessage, Message
 from aiohttp import ClientSession
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlmodel import select
@@ -11,11 +13,20 @@ from core.config import settings
 
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
+# Set the correct event loop policy for Windows
+if platform.system() == 'Windows':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+print(f" [i] Usant el event loop: {asyncio.get_event_loop_policy()}")
+print(f" [i] Número de processos: {os.cpu_count()}")
+
 class PracticeCorrectionQueueWorker:
-    def __init__(self, max_concurrent_tasks=5):
+    def __init__(self, max_concurrent_tasks=5, max_retries=3):
         self.max_concurrent_tasks = max_concurrent_tasks
+        self.max_retries = max_retries
         self.semaphore = asyncio.Semaphore(max_concurrent_tasks)
         self.tasks = set()  # Para mantener un seguimiento de tareas activas
+        self.channel = None
 
     async def notify_practice_corrected(self, data):
         async with ClientSession() as session:
@@ -31,7 +42,7 @@ class PracticeCorrectionQueueWorker:
     async def process_message(self, message: IncomingMessage):
         # Usamos semáforo para limitar la cantidad de tareas concurrentes
         async with self.semaphore:
-            async with message.process():
+            async with message.process(ignore_processed=True):
                 print(f" [x] Received {message.body.decode('utf-8')}")
 
                 # Crear una instancia de RPC Client para cada mensaje
@@ -40,56 +51,62 @@ class PracticeCorrectionQueueWorker:
                 
                 async with async_session() as db_session:
                     try:
-                        # Decodificar el mensaje JSON
-                        body_json = json.loads(message.body.decode('utf-8'))
-                    except json.JSONDecodeError:
-                        print(" [E] Error al deserialitzar el missatge JSON")
-                        return
-                    
-                    # Llamada al cliente RPC
-                    result: bytes = await rpc_client.call(body_json)
-                    if not result:
-                        print(" [!] No se recibió respuesta del servidor RPC")
-                        return
-                    
-                    print(" [i] Respuesta del servidor RPC:", result.decode('utf-8'))
-                    
-                    result_str = result.decode('utf-8')
-                    result_dict = json.loads(result_str)
-                    
-                    print(" [i] La respuesta es de tipo", type(result_dict))
-                    
-                    # Extraer datos del resultado
-                    niub = result_dict["niub"]
-                    id_curs = result_dict["course_id"]
-                    id_practice = result_dict["practice_id"]
-                    correction = result_dict["info"]
+                        try:
+                            # Decodificar el mensaje JSON
+                            body_json = json.loads(message.body.decode('utf-8'))
+                        except json.JSONDecodeError:
+                            raise ValueError(" [E] Error al deserialitzar el missatge JSON")
+                        
+                        if not body_json.get("niub") and not body_json.get("practice_id") and not body_json.get("language"):
+                            raise ValueError(" [!] El missatge no conté els camps necessaris: niub, practice_id o language")
+                        
+                        # Llamada al cliente RPC
+                        result: bytes = await rpc_client.call(body_json)
+                        if not result:
+                            raise ValueError(" [!] No se recibió respuesta del servidor RPC")
+                        
+                        print(" [i] Respuesta del servidor RPC:", result.decode('utf-8'))
+                        
+                        result_str = result.decode('utf-8')
+                        result_dict = json.loads(result_str)
+                                                
+                        # Extraer datos del resultado
+                        niub = result_dict["niub"]
+                        id_curs = result_dict["course_id"]
+                        id_practice = result_dict["practice_id"]
+                        practice_name = result_dict["name"]
+                        correction = result_dict["info"]
 
-                    try:
-                        # Actualizar la práctica en PostgreSQL
-                        practice = await db_session.execute(
-                            select(Practice).where(Practice.id == id_practice)
-                        )
-                        practice = practice.scalar_one_or_none()
-
-                        practice_user = await db_session.execute(select(PracticesUsersLink)
-                            .where(
-                                PracticesUsersLink.user_niub == niub,
-                                PracticesUsersLink.practice_id == practice.id
+                        try:
+                            # Actualizar la práctica en PostgreSQL
+                            practice = await db_session.execute(
+                                select(Practice).where(Practice.id == id_practice)
                             )
-                        )
-                        practice_user = practice_user.scalar_one_or_none()
+                            practice = practice.scalar_one_or_none()
 
-                        if practice and practice_user:
+                            if not practice:
+                                raise Exception(f"No se encontró la práctica con ID {id_practice}")
+
+                            practice_user = await db_session.execute(select(PracticesUsersLink)
+                                .where(
+                                    PracticesUsersLink.user_niub == niub,
+                                    PracticesUsersLink.practice_id == practice.id
+                                )
+                            )
+                            practice_user = practice_user.scalar_one_or_none()
+
+                            if not practice_user:
+                                raise Exception(f"No se encontró la práctica del usuario con NIUB {niub} y ID de práctica {id_practice}")
+
                             # Actualizar el campo `correction` con la información recibida
                             practice_user.correction = correction
                             practice_user.corrected = True
                             await db_session.add(practice_user)
                             await db_session.commit()
                             print(f" [x] Práctica {id_practice} actualizada con la corrección.")
-                        else:
-                            print(f" [!] No se encontró la práctica con ID {id_practice}.")
-                            return
+
+                        except Exception as e:
+                            raise Exception(f" [E] Error al interactuar con PostgreSQL: {e}")
 
                         # Notificar que la práctica ha sido corregida
                         data = {
@@ -99,45 +116,79 @@ class PracticeCorrectionQueueWorker:
                         }
                         await self.notify_practice_corrected(data)
 
+                        await message.ack()
+                        print(f" [+] Correction for NIUB {niub} completed successfully for practice {result_dict['name']}", message.body)
+
                     except Exception as e:
-                        print(f" [E] Error al interactuar con PostgreSQL: {e}")
-        
-        print(f" [+] Correction for NIUB {niub} completed successfully for practice {result_dict['name']}", message.body)
+                        print(e)
+                        
+                        # Obtener contador de reintentos
+                        headers = message.headers or {}
+                        retry_count = headers.get("retry_count", 0)
 
-    # async def callback(self, message: IncomingMessage):
-    #     # Crear una nueva tarea para procesar el mensaje
-    #     task = asyncio.create_task(self.process_message(message))
-    #     self.tasks.add(task)
+                        print(f" [!] Failded practice correction for NIUB {niub} and practice {id_practice}.")
+                        
+                        if retry_count >= self.max_retries:
+                            print(f" [!] Permanent failure after {retry_count} attempts. Sending to DLQ.")
+                            
+                            # Enviar a la cola DLQ final
+                            await self.channel.default_exchange.publish(
+                                Message(
+                                    body=message.body,
+                                    headers=headers
+                                ),
+                                routing_key="practicas.dlq"
+                            )
+                            await message.ack()
+                            
+                        else:
+                            # Incrementar contador y rechazar (irá a retry.practicas)
+                            new_headers = {**headers, "retry_count": retry_count + 1}
 
-    #     def on_task_done(task):
-    #         try:
-    #             # Si la tarea se completó con éxito, confirmar el mensaje
-    #             message.ack()
-    #         except Exception as e:
-    #             print(f" [E] Error procesando mensaje: {e}")
-    #             message.reject(requeue=True)  # Devuelve el mensaje a la cola si falla
-    #         finally:
-    #             self.tasks.discard(task)
-
-    #     # Configurar callback para eliminar la tarea una vez completada
-    #     task.add_done_callback(on_task_done)
+                            # Reintenta el mensaje con el contador actualizado
+                            await self.channel.default_exchange.publish(
+                                Message(
+                                    body=message.body,
+                                    headers=new_headers,
+                                    delivery_mode=message.delivery_mode
+                                ),
+                                routing_key="retry.practicas"
+                            )
+                            
+                            await message.ack()
+                            print(f" [!] Retrying ({retry_count + 1}/{self.max_retries})...")
+                            
 
     async def callback(self, message: IncomingMessage):
         # Crear una nueva tarea para procesar el mensaje
-        await message.ack()  # Confirmar el mensaje inmediatamente para evitar reintentos
         task = asyncio.create_task(self.process_message(message))
         self.tasks.add(task)
-        # Configurar callback para eliminar la tarea una vez completada
         task.add_done_callback(self.tasks.discard)
 
     async def start(self):
-        print(f' [x] Starting worker...')
+        print(f' [*] Starting worker...')
         connection = await connect_robust(settings.CLOUDAMQP_URL)
-        channel = await connection.channel()
-        # Aumentar el prefetch_count para permitir múltiples mensajes
-        await channel.set_qos(prefetch_count=self.max_concurrent_tasks)
-        queue = await channel.declare_queue('practicas', durable=True)
-        await queue.consume(self.callback)
+        self.channel = await connection.channel()
+        await self.channel.set_qos(prefetch_count=self.max_concurrent_tasks)
+        
+        # Cola principal
+        main_queue = await self.channel.declare_queue('practicas', durable=True)
+        
+        # Cola de reintentos con TTL
+        retry_queue = await self.channel.declare_queue(
+            'retry.practicas',
+            durable=True,
+            arguments={
+                "x-message-ttl": 5000,  # 5 segundos de retraso
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": "practicas"
+            }
+        )
+        
+        # Cola DLQ final para mensajes que han fallado demasiadas veces
+        await self.channel.declare_queue('practicas.dlq', durable=True)
+        
+        await main_queue.consume(self.callback)
         print(f' [x] Worker iniciado con capacidad para {self.max_concurrent_tasks} tareas concurrentes')
         print(' [*] Waiting for messages. To exit press CTRL+C')
         return connection
@@ -150,15 +201,19 @@ class PracticeCorrectionQueueWorker:
         await engine.dispose()
 
 if __name__ == "__main__":
-    # Puedes ajustar el número de tareas concurrentes según necesites
     worker = PracticeCorrectionQueueWorker(max_concurrent_tasks=5)
-    loop = asyncio.get_event_loop()
-    connection = loop.run_until_complete(worker.start())
+
+    async def main():
+        connection = await worker.start()
+        try:
+            await asyncio.Future() # Wait indefinitely
+        except KeyboardInterrupt:
+            print("Interrupció de l'usuari")
+        finally:
+            await connection.close()
+            await worker.close()
+    
     try:
-        loop.run_forever()
+        asyncio.run(main())
     except KeyboardInterrupt:
         print("Interrupció de l'usuari")
-    finally:
-        loop.run_until_complete(connection.close())
-        loop.run_until_complete(worker.close())
-        loop.close()

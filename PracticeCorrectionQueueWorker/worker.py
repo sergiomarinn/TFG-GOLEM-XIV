@@ -121,7 +121,7 @@ class PracticeCorrectionQueueWorker:
                             # Actualizar el campo `correction` con la información recibida
                             practice_user.correction = correction
                             practice_user.corrected = True
-                            await db_session.add(practice_user)
+                            db_session.add(practice_user)
                             await db_session.commit()
                             logger.info(f"Práctica {id_practice} actualizada con la corrección.")
 
@@ -137,7 +137,7 @@ class PracticeCorrectionQueueWorker:
                         await self.notify_practice_corrected(data)
 
                         await message.ack()
-                        logger.info(f"Correction for NIUB {niub} completed successfully for practice {practice_name}", message.body)
+                        logger.info(f"Correction for NIUB {niub} completed successfully for practice {practice_name}")
 
                     except Exception as e:
                         logger.error(e)

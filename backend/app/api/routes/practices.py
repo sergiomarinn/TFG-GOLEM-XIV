@@ -443,3 +443,24 @@ def test_send_practice_data(*, session: SessionDep, practice_in: PracticeCreate,
     practice_service.send_practice_data(body)
 
     return Message(message="Practice data sent successfully")
+
+@router.post("/test-send-practice-data/{practice_id}/{niub}", dependencies=[Depends(get_current_active_superuser)], response_model=Message)
+def test_send_practice_data(*, session: SessionDep, practice_id: str, niub: str) -> Any:
+    """
+    Test practice service to send practice data with a specific practica and niub.
+    """
+    practice = crud.practice.get_practice(session=session, id=practice_id)
+    if not practice:
+        raise HTTPException(status_code=404, detail="Practice not found")
+    
+    body = {
+        "name": practice.name,
+        "language": practice.programming_language,
+        "niub": niub,
+        "course_id": str(practice.course_id),
+        "practice_id": str(practice_id)
+    }
+
+    practice_service.send_practice_data(body)
+
+    return Message(message="Practice data sent successfully")

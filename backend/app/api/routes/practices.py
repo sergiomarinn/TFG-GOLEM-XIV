@@ -32,7 +32,7 @@ from app.models import (
 )
 import pandas as pd
 import os
-from app.services import sender
+from app.services import practice_service
 
 router = APIRouter()
 
@@ -268,7 +268,7 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
                 raise HTTPException(status_code=500, detail=f"Error saving file {file.filename}: {str(e)}")
         
     if body:
-        sender.send_practice_data(body)
+        practice_service.send_practice_data(body)
     
     return {"status": "success", "files": saved_files}
 
@@ -426,3 +426,41 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.post("/test-send-practice-data", dependencies=[Depends(get_current_active_superuser)], response_model=Message)
+def test_send_practice_data(*, session: SessionDep, practice_in: PracticeCreate, files: list[UploadFile] = File(None)) -> Any:
+    """
+    Test practice service to send practice data.
+    """
+    body = {
+        "name": practice_in.name,
+        "language": practice_in.programming_language,
+        "niub": "niub12345678",
+        "course_id": str(practice_in.course_id),
+        "practice_id": str(uuid.uuid4())
+    }
+
+    practice_service.send_practice_data(body)
+
+    return Message(message="Practice data sent successfully")
+
+@router.post("/test-send-practice-data/{practice_id}/{niub}", dependencies=[Depends(get_current_active_superuser)], response_model=Message)
+def test_send_practice_data(*, session: SessionDep, practice_id: str, niub: str) -> Any:
+    """
+    Test practice service to send practice data with a specific practica and niub.
+    """
+    practice = crud.practice.get_practice(session=session, id=practice_id)
+    if not practice:
+        raise HTTPException(status_code=404, detail="Practice not found")
+    
+    body = {
+        "name": practice.name,
+        "language": practice.programming_language,
+        "niub": niub,
+        "course_id": str(practice.course_id),
+        "practice_id": str(practice_id)
+    }
+
+    practice_service.send_practice_data(body)
+
+    return Message(message="Practice data sent successfully")

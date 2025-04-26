@@ -1,3 +1,5 @@
+'use server'
+
 import { createSession, deleteSession } from '@/app/lib/session'
 import { SignupFormSchema, LoginFormSchema, FormState, User } from '@/app/lib/definitions'
 import { redirect } from 'next/navigation'
@@ -45,7 +47,7 @@ export async function signup(state: FormState, formData: FormData) {
     redirect('/login')
   } catch (error) {
     return {
-      message: 'Something went wrong. Please try again.',
+      message: 'An error occurred while creating your account. Please try again.',
     }
   }
 }
@@ -103,7 +105,7 @@ export async function login(state: FormState, formData: FormData) {
     redirect('/dashboard')
   } catch (error) {
     return {
-      message: 'Something went wrong. Please try again.',
+      message: 'An error occurred while logging in. Please try again.',
     }
   }
 }

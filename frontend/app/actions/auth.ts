@@ -24,7 +24,7 @@ export async function signup(state: FormState, formData: FormData) {
     const { niub, name, surnames, email, password } = validatedFields.data
     
     // 2. Signup user
-    const res = await fetch('/api/users/signup', {
+    const res = await fetch(`${process.env.BACKEND_URL}/api/v1/users/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ niub, name, surnames, email, password }),
@@ -32,22 +32,40 @@ export async function signup(state: FormState, formData: FormData) {
 
     if (!res.ok) {
       const errorData = await res.json()
-      return {
-        errors: {
-          niub: [errorData.error || 'Error signing up'],
-          name: [errorData.error || 'Error signing up'],
-          surnames: [errorData.error || 'Error signing up'],
-          email: [errorData.error || 'Error signing up'],
-          password: [errorData.error || 'Error signing up'],
-        },
+      switch (errorData.detail) {
+        case 'EMAIL_AND_NIUB_ALREADY_EXISTS':
+          return {
+            errors: {
+              email: ['Aquest email ja està registrat'],
+              niub: ['Aquest NIUB ja està registrat'],
+            }
+          }
+        case 'EMAIL_ALREADY_EXISTS':
+          return {
+            errors: {
+              email: ['Aquest email ja està registrat'],
+            }
+          }
+        case 'NIUB_ALREADY_EXISTS':
+          return {
+            errors: {
+              niub: ['Aquest NIUB ja està registrat'],
+            }
+          }
+        default:
+          throw new Error('Unexpected error')
       }
     }
 
     // 3. Redirect user to login page
-    redirect('/login')
+    return {
+      success: true,
+      message: "Seràs redirigit a la pàgina d'inici de sessió.",
+    }
   } catch (error) {
     return {
-      message: 'An error occurred while creating your account. Please try again.',
+      success: false,
+      message: "S'ha produït un error en crear el teu compte. Torna-ho a intentar.",
     }
   }
 }
@@ -69,27 +87,41 @@ export async function login(state: FormState, formData: FormData) {
     const { email, password } = validatedFields.data
     
     // 2. Token and user data from the API
-    const loginResponse = await fetch('/api/login', {
+    const formBody = new URLSearchParams()
+    formBody.append('grant_type', 'password')
+    formBody.append('username', email)
+    formBody.append('password', password)
+
+    const loginResponse = await fetch(`${process.env.BACKEND_URL}/api/v1/login/access-token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: formBody.toString(),
     })
 
     if (!loginResponse.ok) {
       const errorData = await loginResponse.json()
-      return {
-        errors: {
-          email: [errorData.error || 'Invalid credentials'],
-          password: [errorData.error || 'Invalid credentials'],
-        },
+      if (loginResponse.status === 400) {
+        return {
+          errors: {
+            email: ['Invalid credentials'],
+            password: ['Invalid credentials'],
+          },
+        }
       }
+      throw new Error('Unexpected error')
     }
 
     const { access_token } = await loginResponse.json()
 
-    const res = await fetch('/api/users/me', {
+    const res = await fetch(`${process.env.BACKEND_URL}/api/v1/users/me`, {
       method: 'GET',
-      headers: { 'Authorization': `Bearer ${access_token}` },
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Accept': 'application/json',
+      }
     })
     
     if (!res.ok) {
@@ -105,7 +137,8 @@ export async function login(state: FormState, formData: FormData) {
     redirect('/dashboard')
   } catch (error) {
     return {
-      message: 'An error occurred while logging in. Please try again.',
+      success: false,
+      message: "S'ha produït un error a l'inicia sessió. Torna-ho a intentar.",
     }
   }
 }

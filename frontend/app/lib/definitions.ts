@@ -3,43 +3,44 @@ import { z } from 'zod'
 export const SignupFormSchema = z.object({
   niub: z
     .string()
-    .regex(/^niub\d{8}$/, { message: 'NIUB must start with "niub" followed by 8 digits.' })
+    .regex(/^niub\d{8}$/, { message: "Ha de començar amb 'niub' seguit de 8 dígits." })
     .trim(),
   name: z
     .string()
-    .min(2, { message: 'Name must be at least 2 characters long.' })
+    .min(2, { message: 'Ha de tenir almenys 2 caràcters.' })
     .trim(),
   surnames: z
     .string()
-    .min(2, { message: 'Name must be at least 2 characters long.' })
+    .min(2, { message: 'Ha de tenir almenys 2 caràcters.' })
     .trim(),
-  email: z.string().email({ message: 'Please enter a valid email.' }).trim(),
+  email: z.string().email({ message: 'Introdueix un correu electrònic vàlid.' }).trim(),
   password: z
     .string()
-    .min(8, { message: 'Be at least 8 characters long' })
-    .regex(/[a-zA-Z]/, { message: 'Contain at least one letter.' })
-    .regex(/[0-9]/, { message: 'Contain at least one number.' })
+    .min(8, { message: 'Ha de tenir almenys 8 caràcters.' })
+    .regex(/[a-zA-Z]/, { message: 'Ha de contenir almenys una lletra.' })
+    .regex(/[0-9]/, { message: 'Ha de contenir almenys un número.' })
     .regex(/[^a-zA-Z0-9]/, {
-      message: 'Contain at least one special character.',
+      message: 'Ha de contenir almenys un caràcter especial.',
     })
     .trim(),
 })
 
 export const LoginFormSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email.' }).trim(),
+  email: z.string().email({ message: 'Si us plau, introdueix un correu electrònic vàlid.' }).trim(),
   password: z
     .string()
-    .min(8, { message: 'Be at least 8 characters long' })
-    .regex(/[a-zA-Z]/, { message: 'Contain at least one letter.' })
-    .regex(/[0-9]/, { message: 'Contain at least one number.' })
+    .min(8, { message: 'Ha de tenir almenys 8 caràcters.' })
+    .regex(/[a-zA-Z]/, { message: 'Ha de contenir almenys una lletra.' })
+    .regex(/[0-9]/, { message: 'Ha de contenir almenys un número.' })
     .regex(/[^a-zA-Z0-9]/, {
-      message: 'Contain at least one special character.',
+      message: 'Ha de contenir almenys un caràcter especial.',
     })
     .trim(),
 })
  
 export type FormState =
   | {
+      success?: boolean
       errors?: Record<string, string[]>
       message?: string
     }

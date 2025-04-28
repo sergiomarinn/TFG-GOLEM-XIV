@@ -145,11 +145,22 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     """
     Create new user without the need to be logged in.
     """
-    user = crud.user.get_user_by_email(session=session, email=user_in.email)
-    if user:
+    user_email = crud.user.get_user_by_email(session=session, email=user_in.email)
+    user_niub = crud.user.get_user_by_niub(session=session, niub=user_in.niub)
+    if user_email and user_niub:
         raise HTTPException(
             status_code=400,
-            detail="The user with this email already exists in the system",
+            detail="EMAIL_AND_NIUB_ALREADY_EXISTS",
+        )
+    elif user_email:
+        raise HTTPException(
+            status_code=400,
+            detail="EMAIL_ALREADY_EXISTS",
+        )
+    elif user_niub:
+        raise HTTPException(
+            status_code=400,
+            detail="NIUB_ALREADY_EXISTS",
         )
     user_create = UserCreate.model_validate(user_in)
     user = crud.user.create_user(session=session, user_create=user_create)

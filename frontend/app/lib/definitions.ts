@@ -26,6 +26,10 @@ export const SignupFormSchema = z.object({
 })
 
 export const LoginFormSchema = z.object({
+  niub: z
+    .string()
+    .regex(/^niub\d{8}$/, { message: "Ha de començar amb 'niub' seguit de 8 dígits." })
+    .trim(),
   email: z.string().email({ message: 'Si us plau, introdueix un correu electrònic vàlid.' }).trim(),
   password: z
     .string()

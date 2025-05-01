@@ -1,69 +1,45 @@
+import { 
+  DashboardIcon,
+  DashboardIconFilled,
+  PracticesIcon,
+  PracticesIconFilled
+} from '@/components/icons'
+
+import { ChatBubbleOvalLeftEllipsisIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
+import { 
+  ChatBubbleOvalLeftEllipsisIcon as ChatBubbleOvalLeftEllipsisIconFilled,
+  CalendarDaysIcon as CalendarDaysIconFilled,
+ } from '@heroicons/react/24/solid';
+
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "Next.js + HeroUI",
+  name: "Golem XIV",
   description: "Make beautiful websites regardless of your design experience.",
   navItems: [
     {
-      label: "Home",
-      href: "/",
-    },
-    {
-      label: "Docs",
-      href: "/docs",
-    },
-    {
-      label: "Pricing",
-      href: "/pricing",
-    },
-    {
-      label: "Blog",
-      href: "/blog",
-    },
-    {
-      label: "About",
-      href: "/about",
-    },
-  ],
-  navMenuItems: [
-    {
-      label: "Profile",
-      href: "/profile",
-    },
-    {
       label: "Dashboard",
-      href: "/dashboard",
+      href: "/",
+      icon: DashboardIcon,
+      iconFilled: DashboardIconFilled,
     },
     {
-      label: "Projects",
-      href: "/projects",
+      label: "Missatges",
+      href: "/messages",
+      icon: ChatBubbleOvalLeftEllipsisIcon,
+      iconFilled: ChatBubbleOvalLeftEllipsisIconFilled,
     },
     {
-      label: "Team",
-      href: "/team",
+      label: "Pràctiques",
+      href: "/practices",
+      icon: PracticesIcon,
+      iconFilled: PracticesIconFilled,
     },
     {
-      label: "Calendar",
+      label: "Calendari",
       href: "/calendar",
-    },
-    {
-      label: "Settings",
-      href: "/settings",
-    },
-    {
-      label: "Help & Feedback",
-      href: "/help-feedback",
-    },
-    {
-      label: "Logout",
-      href: "/logout",
-    },
-  ],
-  links: {
-    github: "https://github.com/heroui-inc/heroui",
-    twitter: "https://twitter.com/hero_ui",
-    docs: "https://heroui.com",
-    discord: "https://discord.gg/9b6yyZKmH4",
-    sponsor: "https://patreon.com/jrgarciadev",
-  },
+      icon: CalendarDaysIcon,
+      iconFilled: CalendarDaysIconFilled,
+    }
+  ]
 };

@@ -74,6 +74,7 @@ export async function login(state: FormState, formData: FormData) {
   try {
     // 1. Validate form fields
     const validatedFields = LoginFormSchema.safeParse({
+      niub: formData.get('niub'),
       email: formData.get('email'),
       password: formData.get('password'),
     })
@@ -106,8 +107,9 @@ export async function login(state: FormState, formData: FormData) {
       if (loginResponse.status === 400) {
         return {
           errors: {
-            email: ['Invalid credentials'],
-            password: ['Invalid credentials'],
+            niub: ['Credencials incorrectes'],
+            email: ['Credencials incorrectes'],
+            password: ['Credencials incorrectes'],
           },
         }
       }

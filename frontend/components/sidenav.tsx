@@ -28,7 +28,7 @@ export const SideNav = () => {
 	return (
   	<aside
 			className={clsx(
-				"h-screen flex flex-col justify-between px-4 py-7 transition-all duration-300 ease-in-out",
+				"flex flex-col justify-between px-4 py-5 transition-all duration-300 ease-in-out",
 				isCollapsed ? "w-[80px]" : "w-[220px]"
 			)}
 		>
@@ -37,7 +37,9 @@ export const SideNav = () => {
         aria-label="Toggle sidebar"
         onClick={toggleSidebar}
         className={clsx(
-          "absolute top-10 z-10 border rounded-full p-[0.16rem] text-primary bg-white hover:bg-default-100 active:scale-90 transform transition-all duration-300 ease-in-out",
+          "absolute top-10 z-50 border rounded-full p-[0.16rem] active:scale-90 transform transition-all duration-300 ease-in-out",
+          "text-primary bg-white hover:bg-default-100",
+          "dark:bg-black dark:text-white dark:hover:bg-default-200 dark:border-default-300",
           isCollapsed ? "left-[69px]" : "left-52"
         )}
       >
@@ -80,7 +82,7 @@ export const SideNav = () => {
 				</div>
 
 				<span className={clsx(
-					"uppercase text-[0.65rem] font-light text-default-500 tracking-wide transition-all duration-100 ease-in-out",
+					"uppercase text-[0.65rem] font-light text-default-500 tracking-wide transition-all duration-200 ease-in-out",
 					isCollapsed ? "" : "pl-[1.45rem]")}
 				>
 					General
@@ -104,7 +106,7 @@ export const SideNav = () => {
                 className={clsx(
 									"transition-all duration-300 ease-in-out relative",
 									isCollapsed ? "w-12" : "w-full justify-start gap-2",
-									isActive ? "text-black font-semibold" : "")}
+									isActive ? "text-black dark:text-white font-semibold" : "")}
               >
 								<div className="flex items-center absolute">
                   {ActiveIcon && (

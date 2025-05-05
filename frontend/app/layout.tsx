@@ -8,6 +8,7 @@ import { Providers } from "./providers";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { SideNav } from "@/components/sidenav";
+import { Navbar } from "@/components/navbar";
 
 export const metadata: Metadata = {
   title: {
@@ -44,9 +45,12 @@ export default function RootLayout({
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           <div className="relative flex h-screen">
             <SideNav />
-            <main className="flex-1">
-              {children}
-            </main>
+            <div className="flex-1 flex flex-col">
+              <Navbar />
+              <main className="overflow-y-auto flex-1">
+                {children}
+              </main>
+            </div>
           </div>
         </Providers>
       </body>

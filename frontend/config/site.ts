@@ -41,5 +41,31 @@ export const siteConfig = {
       icon: CalendarDaysIcon,
       iconFilled: CalendarDaysIconFilled,
     }
+  ],
+  navMenuItems: [
+    {
+      label: "Dashboard",
+      href: "/"
+    },
+    {
+      label: "Missatges",
+      href: "/messages"
+    },
+    {
+      label: "Pràctiques",
+      href: "/practices"
+    },
+    {
+      label: "Calendari",
+      href: "/calendar"
+    },
+    {
+      label: "Configuració",
+      href: "/settings"
+    },
+    {
+      label: "Tancar sessió",
+      href: "/logout"
+    }
   ]
 };

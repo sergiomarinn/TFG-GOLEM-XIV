@@ -6,7 +6,7 @@ import { WeekCalendarDemo } from "@/components/week-calendar";
 
 export default function Home() {
   return (
-    <section className="px-8 flex items-start h-full gap-16 bg-slate-100 dark:bg-neutral-900">
+    <section className="px-8 flex items-start min-h-screen gap-16 bg-slate-100 dark:bg-neutral-900">
       <div className="w-4/6 flex flex-col">
         <h2 className={title({ size: "sm" })}>Cursos recents</h2>
         

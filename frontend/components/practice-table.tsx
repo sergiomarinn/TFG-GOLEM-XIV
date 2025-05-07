@@ -26,14 +26,7 @@ import {
 } from "@heroui/dropdown";
 
 import { SearchIcon, ChevronDownIcon, EyeIcon } from '@/components/icons'
-
-export type IconSvgProps = SVGProps<SVGSVGElement> & {
-  size?: number;
-};
-
-export function capitalize(s: string) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-};
+import { practiceStatusOptions as statusOptions, practiceStatusColorMap as statusColorMap, practices } from "@/types";
 
 export const columns = [
   {name: "PRÀCTICA", uid: "name", sortable: true},
@@ -44,181 +37,12 @@ export const columns = [
   {name: "ACCIONS", uid: "actions"},
 ];
 
-export const statusOptions = [
-  { name: "No entregada", uid: "not_submitted" },
-  { name: "Pendent de correcció", uid: "pending" },
-  { name: "En revisió", uid: "reviewing" },
-  { name: "Corregida", uid: "corrected" },
-  { name: "Rebutjada", uid: "rejected" },
-];
-
 export const dueDateRangesOptions = [
   { name: "Propers 7 dies", uid: "next_7_days" },
   { name: "Propers 30 dies", uid: "next_30_days" },
   { name: "Propers 3 mesos", uid: "next_3_months" },
   { name: "Propers 6 mesos", uid: "next_6_months" },
 ];
-
-export const practices = [
-  {
-    id: 1,
-    name: "Introducció a JavaScript",
-    course: "Web Bàsica",
-    teacher: "Laura Soler",
-    teacherEmail: "laura.soler@ub.edu",
-    status: "pending",
-    due_date: "2025-10-10",
-    avatar: "https://i.pravatar.cc/150?u=1",
-  },
-  {
-    id: 2,
-    name: "Components en React",
-    course: "Desenvolupament Frontend",
-    teacher: "Marc Vidal",
-    teacherEmail: "marc.vidal@ub.edu",
-    status: "reviewing",
-    due_date: "2025-08-08",
-    avatar: "https://i.pravatar.cc/150?u=2",
-  },
-  {
-    id: 3,
-    name: "API REST amb Node.js",
-    course: "Backend amb JavaScript",
-    teacher: "Carla Rius",
-    teacherEmail: "carla.rius@ub.edu",
-    status: "corrected",
-    due_date: "2025-12-30",
-    avatar: "https://i.pravatar.cc/150?u=3",
-  },
-  {
-    id: 4,
-    name: "Estil amb TailwindCSS",
-    course: "Disseny Web",
-    teacher: "Joan Serra",
-    teacherEmail: "joan.serra@ub.edu",
-    status: "rejected",
-    due_date: "2025-05-09",
-    avatar: "https://i.pravatar.cc/150?u=4",
-  },
-  {
-    id: 5,
-    name: "CRUD amb Supabase",
-    course: "Bases de dades modernes",
-    teacher: "Núria Bosch",
-    teacherEmail: "nuria.bosch@ub.edu",
-    status: "pending",
-    due_date: "2025-05-12",
-    avatar: "https://i.pravatar.cc/150?u=5",
-  },
-  {
-    id: 6,
-    name: "Validació de formularis",
-    course: "Web Bàsica",
-    teacher: "Laura Soler",
-    teacherEmail: "laura.soler@ub.edu",
-    status: "reviewing",
-    due_date: "2025-05-09",
-    avatar: "https://i.pravatar.cc/150?u=6",
-  },
-  {
-    id: 7,
-    name: "Rutes dinàmiques en Next.js",
-    course: "Desenvolupament Frontend",
-    teacher: "Marc Vidal",
-    teacherEmail: "marc.vidal@ub.edu",
-    status: "not_submitted",
-    due_date: "2025-05-07",
-    avatar: "https://i.pravatar.cc/150?u=7",
-  },
-  {
-    id: 8,
-    name: "Autenticació amb Supabase",
-    course: "Backend amb JavaScript",
-    teacher: "Carla Rius",
-    teacherEmail: "carla.rius@ub.edu",
-    status: "corrected",
-    due_date: "2025-12-29",
-    avatar: "https://i.pravatar.cc/150?u=8",
-  },
-  {
-    id: 9,
-    name: "Introducció a CSS Grid",
-    course: "Disseny Web",
-    teacher: "Joan Serra",
-    teacherEmail: "joan.serra@ub.edu",
-    status: "rejected",
-    due_date: "2025-09-04",
-    avatar: "https://i.pravatar.cc/150?u=9",
-  },
-  {
-    id: 10,
-    name: "Relacions en PostgreSQL",
-    course: "Bases de dades modernes",
-    teacher: "Núria Bosch",
-    teacherEmail: "nuria.bosch@ub.edu",
-    status: "pending",
-    due_date: "2025-05-11",
-    avatar: "https://i.pravatar.cc/150?u=10",
-  },
-  {
-    id: 11,
-    name: "Intro a HTML semàntic",
-    course: "Web Bàsica",
-    teacher: "Laura Soler",
-    teacherEmail: "laura.soler@ub.edu",
-    status: "corrected",
-    due_date: "2025-05-05",
-    avatar: "https://i.pravatar.cc/150?u=11",
-  },
-  {
-    id: 12,
-    name: "Hooks personalitzats",
-    course: "Desenvolupament Frontend",
-    teacher: "Marc Vidal",
-    teacherEmail: "marc.vidal@ub.edu",
-    status: "reviewing",
-    due_date: "2025-05-10",
-    avatar: "https://i.pravatar.cc/150?u=12",
-  },
-  {
-    id: 13,
-    name: "Autenticació amb tokens",
-    course: "Backend amb JavaScript",
-    teacher: "Carla Rius",
-    teacherEmail: "carla.rius@ub.edu",
-    status: "not_submitted",
-    due_date: "2025-05-01",
-    avatar: "https://i.pravatar.cc/150?u=13",
-  },
-  {
-    id: 14,
-    name: "Flexbox avançat",
-    course: "Disseny Web",
-    teacher: "Joan Serra",
-    teacherEmail: "joan.serra@ub.edu",
-    status: "corrected",
-    due_date: "2025-05-06",
-    avatar: "https://i.pravatar.cc/150?u=14",
-  },
-  {
-    id: 15,
-    name: "Indexos i consultes eficients",
-    course: "Bases de dades modernes",
-    teacher: "Núria Bosch",
-    teacherEmail: "nuria.bosch@ub.edu",
-    status: "pending",
-    due_date: "2025-05-13",
-    avatar: "https://i.pravatar.cc/150?u=15",
-  },
-];
-
-const statusColorMap: Record<string, ChipProps["color"]> = {
-  corrected: "success",
-  rejected: "danger",
-  not_submitted: "danger",
-  reviewing: "warning",
-  pending: "warning",
-};
 
 type Practice = (typeof practices)[0];
 
@@ -418,8 +242,8 @@ export const PracticeTable = () => {
                 onSelectionChange={setSelectedDueRangeFilter}
               >
                 {dueDateRangesOptions.map((dueDateRange) => (
-                  <DropdownItem key={dueDateRange.uid} className="capitalize">
-                    {capitalize(dueDateRange.name)}
+                  <DropdownItem key={dueDateRange.uid}>
+                    {dueDateRange.name}
                   </DropdownItem>
                 ))}
               </DropdownMenu>
@@ -439,8 +263,8 @@ export const PracticeTable = () => {
                 onSelectionChange={setStatusFilter}
               >
                 {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.name)}
+                  <DropdownItem key={status.uid}>
+                    {status.name}
                   </DropdownItem>
                 ))}
               </DropdownMenu>

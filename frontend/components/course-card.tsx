@@ -3,13 +3,15 @@ import { Button } from "@heroui/button";
 import { Progress } from "@heroui/progress";
 import { Avatar, AvatarGroup, AvatarIcon } from "@heroui/avatar";
 import { DocumentArrowUpIcon, DocumentCheckIcon, ArrowRightIcon, CalendarIcon, UsersIcon } from "@heroicons/react/24/outline";
+import { redirect } from "next/navigation";
 
 interface CourseCardProps {
+  id?: string;
   title?: string;
   students_number?: number;
 	academic_year?: string;
   programmingLanguage?: string;
-  color?: "blue" | "purple" | "green" | "orange" | "pink";
+  color?: "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "red" | "indigo" | "lime" | "default";
   image?: string;
   completedPractices?: number;
   totalPractices?: number;
@@ -28,11 +30,12 @@ export const Tag = ({ label }: TagProps) => {
 }
 
 export const CourseCard = ({
+  id = "algorismica-avancada",
   title = "Algorísmica Avançada",
   students_number = 40,
   academic_year = "2023-2024",
 	programmingLanguage = "Python",
-  color = "blue",
+  color = "default",
   image,
   completedPractices = 2,
   totalPractices = 3
@@ -44,7 +47,12 @@ export const CourseCard = ({
     purple: "bg-gradient-to-br from-purple-500 to-pink-600",
     green: "bg-gradient-to-br from-emerald-500 to-teal-700",
     orange: "bg-gradient-to-br from-amber-500 to-orange-600",
-    pink: "bg-gradient-to-br from-pink-400 to-rose-600"
+    pink: "bg-gradient-to-br from-pink-400 to-rose-600",
+    cyan: "bg-gradient-to-br from-cyan-400 to-cyan-600",
+    red: "bg-gradient-to-br from-red-500 to-rose-700",
+    indigo: "bg-gradient-to-br from-indigo-500 to-purple-700",
+    lime: "bg-gradient-to-br from-lime-400 to-green-600",
+    default: "bg-gradient-to-br from-gray-500 to-gray-700"
   };
   
   // Seleccionar el gradiente según el color
@@ -84,7 +92,7 @@ export const CourseCard = ({
 					</div>
 
           {/* Course Title */}
-          <h2 className="text-xl font-semibold text-white mb-1">{title}</h2>
+          <h2 className="text-xl font-semibold text-white line-clamp-2 mb-1">{title}</h2>
 
           {/* Course Info */}
 					<div className="flex items-center justify-between w-full text-white text-[0.82rem] font-light mb-4">
@@ -123,6 +131,7 @@ export const CourseCard = ({
 						endContent={
 							<ArrowRightIcon className="size-5"/>
 						}
+            onPress={() => redirect(`/courses/${id}`)}
 					>
 						Ves al curs
 					</Button>

@@ -5,10 +5,11 @@ import {
   PracticesIconFilled
 } from '@/components/icons'
 
-import { ChatBubbleOvalLeftEllipsisIcon, CalendarDaysIcon } from '@heroicons/react/24/outline';
+import { ChatBubbleOvalLeftEllipsisIcon, CalendarDaysIcon, BookOpenIcon } from '@heroicons/react/24/outline';
 import { 
   ChatBubbleOvalLeftEllipsisIcon as ChatBubbleOvalLeftEllipsisIconFilled,
   CalendarDaysIcon as CalendarDaysIconFilled,
+  BookOpenIcon as BookOpenIconFilled
  } from '@heroicons/react/24/solid';
 
 export type SiteConfig = typeof siteConfig;
@@ -24,10 +25,10 @@ export const siteConfig = {
       iconFilled: DashboardIconFilled,
     },
     {
-      label: "Missatges",
-      href: "/messages",
-      icon: ChatBubbleOvalLeftEllipsisIcon,
-      iconFilled: ChatBubbleOvalLeftEllipsisIconFilled,
+      label: "Cursos",
+      href: "/courses",
+      icon: BookOpenIcon,
+      iconFilled: BookOpenIconFilled,
     },
     {
       label: "Pràctiques",

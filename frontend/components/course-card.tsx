@@ -1,0 +1,142 @@
+import Image from "next/image"
+import { Button } from "@heroui/button";
+import { Progress } from "@heroui/progress";
+import { Avatar, AvatarGroup, AvatarIcon } from "@heroui/avatar";
+import { DocumentArrowUpIcon, DocumentCheckIcon, ArrowRightIcon, CalendarIcon, UsersIcon } from "@heroicons/react/24/outline";
+
+interface CourseCardProps {
+  title?: string;
+  students_number?: number;
+	academic_year?: string;
+  programmingLanguage?: string;
+  color?: "blue" | "purple" | "green" | "orange" | "pink";
+  image?: string;
+  completedPractices?: number;
+  totalPractices?: number;
+}
+
+interface TagProps {
+  label: string;
+};
+
+export const Tag = ({ label }: TagProps) => {
+	return (
+		<div className="flex items-center justify-center rounded-md backdrop-blur-md bg-white/60">
+			<span className="text-xs text-white font-light px-2 py-1">{label}</span>
+		</div>
+	);
+}
+
+export const CourseCard = ({
+  title = "Algorísmica Avançada",
+  students_number = 40,
+  academic_year = "2023-2024",
+	programmingLanguage = "Python",
+  color = "blue",
+  image,
+  completedPractices = 2,
+  totalPractices = 3
+}: CourseCardProps) => {
+  
+  // Definir gradientes para diferentes colores
+  const gradients = {
+    blue: "bg-gradient-to-br from-blue-500 to-violet-600",
+    purple: "bg-gradient-to-br from-purple-500 to-pink-600",
+    green: "bg-gradient-to-br from-emerald-500 to-teal-700",
+    orange: "bg-gradient-to-br from-amber-500 to-orange-600",
+    pink: "bg-gradient-to-br from-pink-400 to-rose-600"
+  };
+  
+  // Seleccionar el gradiente según el color
+  const backgroundGradient = gradients[color];
+
+  return (
+    <div className="relative mx-auto w-full overflow-hidden rounded-3xl shadow-lg">
+      {/* Background Image */}
+      <div className="relative h-[350px] w-full">
+        {/* Gradient or Image Background */}
+        {image ? (
+          <Image src={image} alt={`${title} background`} fill className="object-cover" priority />
+        ) : (
+          <div className={`absolute inset-0 ${backgroundGradient}`} />
+        )}
+
+				{/* Pattern Overlay (optional) */}
+        <div className="absolute inset-0 opacity-10" 
+          style={{
+            backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+          }}
+        />
+
+        {/* Upper part - visible area */}
+        <div className="absolute top-0 left-0 w-full h-32">
+          {/* Optional decorative elements */}
+          <div className="absolute top-8 right-8 w-16 h-16 rounded-full bg-white opacity-10"></div>
+          <div className="absolute top-12 left-10 w-8 h-8 rounded-full bg-white opacity-10"></div>
+        </div>
+
+        {/* Content Container */}
+        <div className="absolute bottom-0 left-0 w-full px-6 pt-6 pb-6 backdrop-blur-lg bg-zinc-800/30">
+          {/* Category Tag */}
+					<div className="flex items-center gap-2 mb-2">
+						<Tag label={academic_year}></Tag>
+						<Tag label={programmingLanguage}></Tag>
+					</div>
+
+          {/* Course Title */}
+          <h2 className="text-xl font-semibold text-white mb-1">{title}</h2>
+
+          {/* Course Info */}
+					<div className="flex items-center justify-between w-full text-white text-[0.82rem] font-light mb-4">
+						<span className="inline-flex items-start gap-1">
+							<CalendarIcon className="size-[1.1rem] text-default-200"/>
+							Primavera
+						</span>
+						<span className="inline-flex items-start gap-1">
+							<UsersIcon className="size-[1.1rem] text-default-200"/>
+							{students_number} Estudiants
+						</span>
+						
+					</div>
+
+          {/* Practices progess */}
+          <Progress
+						className="pt-1"
+						aria-label="Pràctiques fetes"
+						size="sm"
+						color={ completedPractices === totalPractices ? "success" : "primary" }
+						value={completedPractices}
+						maxValue={totalPractices}
+					/>
+					<div className="flex items-start justify-start gap-2 mt-1.5 mb-5 text-default-300">
+						<span className="text-[0.75rem] pr-1 inline-flex items-center">
+						{completedPractices === totalPractices ? (
+							<DocumentCheckIcon className="size-[1.1rem] inline-block mr-1" />
+						) : (
+							<DocumentArrowUpIcon className="size-[1.1rem] inline-block mr-1" />
+						)}
+							{completedPractices}/{totalPractices} Pràctiques</span>
+					</div>
+					<Button
+						color="primary"
+						fullWidth
+						endContent={
+							<ArrowRightIcon className="size-5"/>
+						}
+					>
+						Ves al curs
+					</Button>
+
+          {/* Teachers Avatars */}
+          <div className="absolute right-5 -top-[1.55rem]">
+						<AvatarGroup max={3} isBordered>
+							<Avatar showFallback src="https://i.pravatar.cc/150?u=a042581f4e29026024d" />
+							<Avatar showFallback src="https://images.unsplash.com/broken" />
+							<Avatar showFallback src="https://i.pravatar.cc/150?u=a042581f4e29026704d" />
+						</AvatarGroup>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

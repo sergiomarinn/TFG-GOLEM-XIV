@@ -1,3 +1,5 @@
+'use client';
+
 import Image from "next/image"
 import { Button } from "@heroui/button";
 import { Progress } from "@heroui/progress";

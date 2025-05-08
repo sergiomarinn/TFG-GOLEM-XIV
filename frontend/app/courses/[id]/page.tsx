@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useParams } from 'next/navigation';
-import { PracticeCard } from '@/components/practice-card';
+import { PracticeCourseCard } from '@/components/practice-course-card';
 import { Input } from "@heroui/input";
 import { Button } from '@heroui/button';
 import { Chip } from "@heroui/chip";
@@ -203,12 +203,12 @@ export default function CoursePage() {
             {sortedPractices.length !== 0 ? (
               <div className="flex flex-col gap-3">
                 {sortedPractices.map((practice) => (
-                  <PracticeCard 
+                  <PracticeCourseCard 
                     key={practice.id}
                     name={practice.name}
                     due_date={practice.due_date}
                     status={practice.status}>
-                  </PracticeCard>
+                  </PracticeCourseCard>
                 ))}
               </div>) 
               : practices.length > 0 ? (

@@ -6,6 +6,7 @@ import { Progress } from "@heroui/progress";
 import { Avatar, AvatarGroup, AvatarIcon } from "@heroui/avatar";
 import { DocumentArrowUpIcon, DocumentCheckIcon, ArrowRightIcon, CalendarIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { redirect } from "next/navigation";
+import { Link } from "@heroui/link";
 
 interface CourseCardProps {
   id?: string;
@@ -129,11 +130,12 @@ export const CourseCard = ({
 					</div>
 					<Button
 						color="primary"
+            as={Link}
 						fullWidth
 						endContent={
 							<ArrowRightIcon className="size-5"/>
 						}
-            onPress={() => redirect(`/courses/${id}`)}
+            href={`/courses/${id}`}
 					>
 						Ves al curs
 					</Button>

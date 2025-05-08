@@ -6,19 +6,19 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
 };
 
 export const practiceStatusOptions = [
-  { name: "No entregada", uid: "not_submitted" },
-  { name: "Pendent de correcció", uid: "pending" },
-  { name: "Corregint-se", uid: "correcting" },
-  { name: "Corregida", uid: "corrected" },
-  { name: "Rebutjada", uid: "rejected" },
+  { name: "No entregada", uid: "not_submitted", value: 0 },
+  { name: "Entregada", uid: "submitted", value: 1 },
+  { name: "Corregint-se", uid: "correcting", value: 2 },
+  { name: "Corregida", uid: "corrected", value: 3 },
+  { name: "Rebutjada", uid: "rejected", value: 3 },
 ];
 
 export const practiceStatusColorMap: Record<string, ChipProps["color"]> = {
+  not_submitted: "danger",
+  submitted: "primary",
+  correcting: "warning",
   corrected: "success",
   rejected: "danger",
-  not_submitted: "danger",
-  correcting: "warning",
-  pending: "warning",
 };
 
 export const practices = [
@@ -28,8 +28,8 @@ export const practices = [
     course: "Web Bàsica",
     teacher: "Laura Soler",
     teacherEmail: "laura.soler@ub.edu",
-    status: "pending",
-    due_date: "2025-10-10",
+    status: "submitted",
+    due_date: "2025-10-10T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=1",
   },
   {
@@ -39,7 +39,7 @@ export const practices = [
     teacher: "Marc Vidal",
     teacherEmail: "marc.vidal@ub.edu",
     status: "correcting",
-    due_date: "2025-08-08",
+    due_date: "2025-08-08T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=2",
   },
   {
@@ -49,7 +49,7 @@ export const practices = [
     teacher: "Carla Rius",
     teacherEmail: "carla.rius@ub.edu",
     status: "corrected",
-    due_date: "2025-12-30",
+    due_date: "2025-12-30T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=3",
   },
   {
@@ -59,7 +59,7 @@ export const practices = [
     teacher: "Joan Serra",
     teacherEmail: "joan.serra@ub.edu",
     status: "rejected",
-    due_date: "2025-05-09",
+    due_date: "2025-05-09T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=4",
   },
   {
@@ -68,8 +68,8 @@ export const practices = [
     course: "Bases de dades modernes",
     teacher: "Núria Bosch",
     teacherEmail: "nuria.bosch@ub.edu",
-    status: "pending",
-    due_date: "2025-05-12",
+    status: "submitted",
+    due_date: "2025-05-12T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=5",
   },
   {
@@ -79,7 +79,7 @@ export const practices = [
     teacher: "Laura Soler",
     teacherEmail: "laura.soler@ub.edu",
     status: "correcting",
-    due_date: "2025-05-09",
+    due_date: "2025-05-0923:59:59",
     avatar: "https://i.pravatar.cc/150?u=6",
   },
   {
@@ -89,7 +89,7 @@ export const practices = [
     teacher: "Marc Vidal",
     teacherEmail: "marc.vidal@ub.edu",
     status: "not_submitted",
-    due_date: "2025-05-07",
+    due_date: "2025-05-07T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=7",
   },
   {
@@ -99,7 +99,7 @@ export const practices = [
     teacher: "Carla Rius",
     teacherEmail: "carla.rius@ub.edu",
     status: "corrected",
-    due_date: "2025-12-29",
+    due_date: "2025-12-29T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=8",
   },
   {
@@ -109,7 +109,7 @@ export const practices = [
     teacher: "Joan Serra",
     teacherEmail: "joan.serra@ub.edu",
     status: "rejected",
-    due_date: "2025-09-04",
+    due_date: "2025-09-04T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=9",
   },
   {
@@ -118,8 +118,8 @@ export const practices = [
     course: "Bases de dades modernes",
     teacher: "Núria Bosch",
     teacherEmail: "nuria.bosch@ub.edu",
-    status: "pending",
-    due_date: "2025-05-11",
+    status: "submitted",
+    due_date: "2025-05-11T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=10",
   },
   {
@@ -129,7 +129,7 @@ export const practices = [
     teacher: "Laura Soler",
     teacherEmail: "laura.soler@ub.edu",
     status: "corrected",
-    due_date: "2025-05-05",
+    due_date: "2025-05-05T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=11",
   },
   {
@@ -139,7 +139,7 @@ export const practices = [
     teacher: "Marc Vidal",
     teacherEmail: "marc.vidal@ub.edu",
     status: "correcting",
-    due_date: "2025-05-10",
+    due_date: "2025-05-10T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=12",
   },
   {
@@ -149,7 +149,7 @@ export const practices = [
     teacher: "Carla Rius",
     teacherEmail: "carla.rius@ub.edu",
     status: "not_submitted",
-    due_date: "2025-05-01",
+    due_date: "2025-05-01T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=13",
   },
   {
@@ -159,7 +159,7 @@ export const practices = [
     teacher: "Joan Serra",
     teacherEmail: "joan.serra@ub.edu",
     status: "corrected",
-    due_date: "2025-05-06",
+    due_date: "2025-05-06T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=14",
   },
   {
@@ -168,8 +168,8 @@ export const practices = [
     course: "Bases de dades modernes",
     teacher: "Núria Bosch",
     teacherEmail: "nuria.bosch@ub.edu",
-    status: "pending",
-    due_date: "2025-05-13",
+    status: "submitted",
+    due_date: "2025-05-13T23:59:59",
     avatar: "https://i.pravatar.cc/150?u=15",
   },
 ];

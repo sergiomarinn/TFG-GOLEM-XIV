@@ -1,73 +1,79 @@
-import { Button } from "@heroui/button";
-import { ArrowRightIcon, CalendarIcon, CodeBracketIcon } from "@heroicons/react/24/outline";
-import { Chip } from "@heroui/chip";
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { ArrowRightIcon, CalendarIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { Button } from '@heroui/button';
+import { Progress } from '@heroui/progress';
 import { practiceStatusOptions as statusOptions, practiceStatusColorMap as statusColorMap } from "@/types";
 
-interface PracticeCardProps {
-  name?: string;
-  programmingLanguage?: string;
-	due_date?: string;
-	status?: string,
-}
+// Componente de tarjeta de práctica
+export const PracticeCard = ({ practice }) => {
+  const getStatusName = (uid: string) =>
+		statusOptions.find((option) => option.uid === uid)?.name || uid;
+	
+	const getStatusValue = (uid: string) =>
+		statusOptions.find((option) => option.uid === uid)?.value || 0;
 
-export const PracticeCard = ({
-  name = "Programació Dinàmica",
-  programmingLanguage = "Python",
-	due_date = "2025-05-19",
-	status = "corrected"
-}: PracticeCardProps) => {
-
-	const getStatusName = (uid: string) =>
-			statusOptions.find((option) => option.uid === uid)?.name || uid; 
+	const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { 
+      day: '2-digit', 
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
-    <div className="flex flex-row w-full rounded-3xl overflow-hidden shadow-lg">
-      {/* Purple sidebar */}
-      <div className="relative h-48 w-full bg-[#002E62] text-white p-8 overflow-hidden">
-        {/* Pattern Overlay */}
-        <div className="absolute inset-0 opacity-10">
-          <svg className="w-full h-full" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="dots-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-                <circle cx="3" cy="3" r="1.5" fill="white" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#dots-pattern)" />
-          </svg>
+    <div className="flex rounded-3xl overflow-hidden shadow-lg bg-white dark:bg-neutral-800">
+      {/* Panel lateral izquierdo */}
+      <div className="w-1/3 bg-indigo-900 dark:bg-indigo-950 p-7 flex flex-col justify-between">
+        <div>
+          <div className="text-gray-400 text-sm font-light tracking-wider mb-1">CURS</div>
+          <h2 className="text-white text-2xl font-semibold">{practice.course.name}</h2>
         </div>
-        
-        {/* Content */}
-        <div className="relative z-10 h-full flex justify-between">
-					<div className="h-full flex flex-col items-start justify-between">
-						<div className="space-y-1">
-							<span className="text-xs text-gray-400 font-light leading-none block">PRÀCTICA</span>
-							<h2 className="text-[1.35rem] font-semibold leading-tight">{name}</h2>
+        <Link
+          href={`/courses/${practice.course.id}`} 
+          className="flex items-center text-gray-400 hover:text-white transition-colors"
+        >
+          <span>Veure el curs</span>
+          <ChevronRightIcon className="size-4 ml-1" />
+        </Link>
+      </div>
 
-							{/* Programming Language Badge */}
-              <div className="flex items-center mt-2">
-                <CodeBracketIcon className="size-4 text-gray-300 mr-1" />
-                <span className="text-sm text-gray-300 leading-none">{programmingLanguage}</span>
-              </div>
-						</div>
-						<span className="inline-flex items-center justify-center gap-1 text-[0.9rem] font-light text-gray-200 leading-none">
-							<CalendarIcon className="-translate-y-[0.1rem] size-[1.2rem] text-gray-200"/>
-							{due_date}
-						</span>
+      {/* Contenido principal */}
+      <div className="w-3/4 p-7 flex flex-col justify-between gap-7">
+				<div className="flex items-start justify-between gap-3">
+					<div className="w-[60%]">
+						<div className="text-default-500 text-sm font-light tracking-wide mb-1">PRÀCTICA</div>
+						<h2 className="text-default-800 text-wrap text-2xl font-semibold mb-4 line-clamp-2">{practice.name}</h2>
 					</div>
-					<div className="flex flex-col items-end justify-between">
-						<Chip color={statusColorMap[status]} size="sm" variant="shadow" className="text-gray-100">
-							{getStatusName(status)}
-						</Chip>
-						<Button
-							color="primary"
-							radius="full"
-							endContent={<ArrowRightIcon className="size-5"/>}
-						>
-							Ves
-						</Button>
+					<div className="w-[35%] flex flex-col items-end gap-1">
+						<Progress aria-label={practice.status} color={statusColorMap[practice.status]} value={getStatusValue(practice.status)} maxValue={statusOptions.length-2} />
+						<span className="text-sm text-default-500 font-light mr-1">{getStatusName(practice.status)}</span>
 					</div>
+				</div>
+        
+        <div className="flex justify-between">
+					<div className="flex items-center gap-1 text-default-500 text-sm font-light">
+						<CalendarIcon className="-translate-y-[0.05rem] size-4" />
+						<span>{"Data límit: " + formatDate(practice.due_date)}</span>
+					</div>
+					<Button
+						color="primary"
+            as={Link}
+						radius="full"
+						endContent={
+							<ArrowRightIcon className="size-5"/>
+						}
+            href={`/practices/${practice.id}`}
+					>
+						Ves a la pràctica
+					</Button>
         </div>
       </div>
     </div>
   );
-}
+};

@@ -1,16 +1,17 @@
 import { SVGProps } from "react";
 import { ChipProps } from "@heroui/chip";
+import { ArrowPathIcon, CheckCircleIcon, ClockIcon, ExclamationTriangleIcon, XCircleIcon } from "@heroicons/react/24/outline";
 
 export type IconSvgProps = SVGProps<SVGSVGElement> & {
   size?: number;
 };
 
 export const practiceStatusOptions = [
-  { name: "No entregada", uid: "not_submitted", value: 0 },
-  { name: "Entregada", uid: "submitted", value: 1 },
-  { name: "Corregint-se", uid: "correcting", value: 2 },
-  { name: "Corregida", uid: "corrected", value: 3 },
-  { name: "Rebutjada", uid: "rejected", value: 3 },
+  { name: "No entregada", uid: "not_submitted", value: 0, icon: XCircleIcon },
+  { name: "Entregada", uid: "submitted", value: 1, icon: ArrowPathIcon },
+  { name: "Corregint-se", uid: "correcting", value: 2, icon: ClockIcon },
+  { name: "Corregida", uid: "corrected", value: 3, icon: CheckCircleIcon },
+  { name: "Rebutjada", uid: "rejected", value: 3, icon: XCircleIcon },
 ];
 
 export const practiceStatusColorMap: Record<string, ChipProps["color"]> = {
@@ -19,6 +20,14 @@ export const practiceStatusColorMap: Record<string, ChipProps["color"]> = {
   correcting: "warning",
   corrected: "success",
   rejected: "danger",
+};
+
+export const practiceStatusIconColorMap: Record<string, string> = {
+  not_submitted: "text-danger-500",
+  submitted: "text-primary-500",
+  correcting: "text-warning-500",
+  corrected: "text-success-500",
+  rejected: "text-danger-500"
 };
 
 export const practices = [

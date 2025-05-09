@@ -34,7 +34,7 @@ const sortOptions = [
   { name: "Més llunyanes", uid: "desc" }
 ];
 
-export default function CoursePage() {
+export default function CourseDetailPage() {
   const params = useParams();
   const courseId = params.id;
 

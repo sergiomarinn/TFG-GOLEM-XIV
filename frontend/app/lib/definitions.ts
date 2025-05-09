@@ -51,13 +51,24 @@ export type FormState =
   | undefined
 
 export type User = {
-    niub: string
-    email: string
-    name: string
-    surnames: string
-    is_student: boolean
-    is_teacher: boolean
-    is_admin: boolean
+  niub?: string
+  email: string
+  name: string
+  surnames: string
+  is_student?: boolean
+  is_teacher?: boolean
+  is_admin?: boolean
+  password?: string
+}
+
+export type Users = {
+  users: User[]
+  count: number
+}
+
+export type UpdatePassword = {
+  current_password: string
+  new_password: string
 }
 
 export type SessionPayload = {

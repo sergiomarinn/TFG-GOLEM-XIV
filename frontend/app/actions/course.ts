@@ -4,9 +4,11 @@ import { getTokenFromSession } from "@/app/lib/session";
 const API_URL = process.env.BACKEND_URL;
 
 export async function getAllCourses(): Promise<Courses> {
-  const res = await fetch(`${API_URL}/api/courses`, {
+  const res = await fetch(`${API_URL}/api/v1/courses`, {
     method: "GET",
-    credentials: "include",
+    headers: {
+			"Authorization": `Bearer ${await getTokenFromSession()}`
+		}
   })
 
   if (!res.ok) {
@@ -18,7 +20,7 @@ export async function getAllCourses(): Promise<Courses> {
 }
 
 export async function getCourseById(id: string): Promise<Course> {
-  const res = await fetch(`${API_URL}/api/courses/${id}`, {
+  const res = await fetch(`${API_URL}/api/v1/courses/${id}`, {
     method: "GET",
 		headers: {
 			"Authorization": `Bearer ${await getTokenFromSession()}`
@@ -34,7 +36,7 @@ export async function getCourseById(id: string): Promise<Course> {
 }
 
 export async function getCoursesMe(): Promise<Courses> {
-	const res = await fetch(`${API_URL}/api/courses/me`, {
+	const res = await fetch(`${API_URL}/api/v1/courses/me`, {
 		method: "GET",
 		headers: {
 			"Authorization": `Bearer ${await getTokenFromSession()}`
@@ -50,7 +52,7 @@ export async function getCoursesMe(): Promise<Courses> {
 }
 
 export async function getCourseWithUsers(id: string): Promise<Course> {
-	const res = await fetch(`${API_URL}/api/courses/${id}/users`, {
+	const res = await fetch(`${API_URL}/api/v1/courses/${id}/users`, {
 		method: "GET",
 		headers: {
 			"Authorization": `Bearer ${await getTokenFromSession()}`
@@ -66,7 +68,7 @@ export async function getCourseWithUsers(id: string): Promise<Course> {
 }
 
 export async function getCourseWithPractices(id: string): Promise<Course> {
-	const res = await fetch(`${API_URL}/api/courses/${id}/practices`, {
+	const res = await fetch(`${API_URL}/api/v1/courses/${id}/practices`, {
 		method: "GET",
 		headers: {
 			"Authorization": `Bearer ${await getTokenFromSession()}`
@@ -81,8 +83,8 @@ export async function getCourseWithPractices(id: string): Promise<Course> {
 	return res.json()
 }
 
-export async function createCourse(data: Partial<Course>) {
-  const res = await fetch(`${API_URL}/api/courses`, {
+export async function createCourse(data: Partial<Course>): Promise<Course> {
+  const res = await fetch(`${API_URL}/api/v1/courses`, {
     method: "POST",
     headers: { 
 			"Content-Type": "application/json",
@@ -99,8 +101,8 @@ export async function createCourse(data: Partial<Course>) {
   return res.json()
 }
 
-export async function updateCourse(id: string, data: Partial<Course>) {
-	const res = await fetch(`${API_URL}/api/courses/${id}`, {
+export async function updateCourse(id: string, data: Partial<Course>): Promise<Course> {
+	const res = await fetch(`${API_URL}/api/v1/courses/${id}`, {
 		method: "PUT",
 		headers: { 
 			"Content-Type": "application/json",
@@ -117,8 +119,8 @@ export async function updateCourse(id: string, data: Partial<Course>) {
 	return res.json()
 }
 
-export async function deleteCourse(id: string) {
-	const res = await fetch(`${API_URL}/api/courses/${id}`, {
+export async function deleteCourse(id: string): Promise<void> {
+	const res = await fetch(`${API_URL}/api/v1/courses/${id}`, {
 		method: "DELETE",
 		headers: {
 			"Authorization": `Bearer ${await getTokenFromSession()}`
@@ -134,7 +136,7 @@ export async function deleteCourse(id: string) {
 }
 
 export async function downloadStudentsTemplateCSV(): Promise<void> {
-  const res = await fetch(`${API_URL}/api/course/course-get_students_template_csv`, {
+  const res = await fetch(`${API_URL}/api/v1/courses/students-template/csv`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${await getTokenFromSession()}`
@@ -158,7 +160,7 @@ export async function downloadStudentsTemplateCSV(): Promise<void> {
 }
 
 export async function downloadStudentsTemplateXLSX(): Promise<void> {
-  const res = await fetch(`${API_URL}/api/course/course-get_students_template_xlsx`, {
+  const res = await fetch(`${API_URL}/api/v1/courses/students-template/xlsx`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${await getTokenFromSession()}`

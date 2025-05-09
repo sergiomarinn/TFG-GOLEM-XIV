@@ -136,7 +136,7 @@ export async function login(state: FormState, formData: FormData) {
     await createSession(user, access_token)
 
     // 4. Redirect user
-    redirect('/dashboard')
+    redirect('/')
   } catch (error) {
     return {
       success: false,

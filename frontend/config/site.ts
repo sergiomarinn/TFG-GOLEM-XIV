@@ -5,11 +5,11 @@ import {
   PracticesIconFilled
 } from '@/components/icons'
 
-import { ChatBubbleOvalLeftEllipsisIcon, CalendarDaysIcon, BookOpenIcon } from '@heroicons/react/24/outline';
+import { ChatBubbleOvalLeftEllipsisIcon, CalendarDaysIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
 import { 
   ChatBubbleOvalLeftEllipsisIcon as ChatBubbleOvalLeftEllipsisIconFilled,
   CalendarDaysIcon as CalendarDaysIconFilled,
-  BookOpenIcon as BookOpenIconFilled
+  AcademicCapIcon as AcademicCapIconFilled
  } from '@heroicons/react/24/solid';
 
 export type SiteConfig = typeof siteConfig;
@@ -27,8 +27,8 @@ export const siteConfig = {
     {
       label: "Cursos",
       href: "/courses",
-      icon: BookOpenIcon,
-      iconFilled: BookOpenIconFilled,
+      icon: AcademicCapIcon,
+      iconFilled: AcademicCapIconFilled,
     },
     {
       label: "Pràctiques",

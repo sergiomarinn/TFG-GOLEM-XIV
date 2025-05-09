@@ -7,7 +7,6 @@ import { addToast } from "@heroui/toast";
 import { Link } from "@heroui/link";
 import { Tabs, Tab } from "@heroui/tabs";
 import { useActionState, useState, useEffect } from 'react';
-import { redirect } from 'next/navigation';
 import { 
   MailIcon, 
   EyeSlashFilledIcon, 
@@ -101,7 +100,7 @@ export default function LoginPage() {
           {pending ? 'Iniciant sessió...' : 'Inicia sessió'}
         </Button>
         <span
-          className="mt-2 inline-flex items-center justify-center text-[0.85rem] text-default-500 dark:text-gray-300"
+          className="mt-5 inline-flex items-center justify-center text-[0.85rem] text-default-500 dark:text-gray-300"
         >
           No estàs registrat?
           <Link 

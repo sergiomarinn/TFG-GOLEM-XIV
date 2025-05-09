@@ -1,14 +1,12 @@
 import "@/styles/globals.css";
 import { Metadata, Viewport } from "next";
-import { Link } from "@heroui/link";
 import clsx from "clsx";
 
 import { Providers } from "./providers";
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
-import { SideNav } from "@/components/sidenav";
-import { Navbar } from "@/components/navbar";
+import { RootLayoutClient } from "./root-layout-client";
 
 export const metadata: Metadata = {
   title: {
@@ -35,7 +33,6 @@ export default function RootLayout({
 }) {
   return (
     <html suppressHydrationWarning lang="ca">
-      <head />
       <body
         className={clsx(
           "min-h-screen bg-background font-sans antialiased",
@@ -43,15 +40,9 @@ export default function RootLayout({
         )}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          <div className="relative flex h-screen">
-            <SideNav />
-            <div className="flex-1 flex flex-col">
-              <Navbar />
-              <main className="overflow-y-auto flex-1">
-                {children}
-              </main>
-            </div>
-          </div>
+          <RootLayoutClient>
+            {children}
+          </RootLayoutClient>
         </Providers>
       </body>
     </html>

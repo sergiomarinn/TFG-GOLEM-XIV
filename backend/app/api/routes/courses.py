@@ -1,10 +1,11 @@
+from datetime import datetime
 from io import BytesIO
 import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, logger
 from fastapi.responses import StreamingResponse
-from sqlmodel import col, delete, func, select
+from sqlmodel import col, delete, func, select, desc, update
 
 from app import crud
 from app.api.deps import (
@@ -24,7 +25,11 @@ from app.models import (
     CoursePublicWithUsersAndPractices,
     CoursePublicWithUsers,
     CoursePublicWithPractices,
-    CoursesPublic
+    CoursesPublic,
+    CoursesUsersLink,
+    Practice,
+    PracticesUsersLink,
+    StatusEnum
 )
 import pandas as pd
 import os
@@ -44,6 +49,34 @@ def read_courses(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
     return CoursesPublic(data=courses, count=count)
 
+def enrich_courses_with_practice_stats(session: SessionDep, user_niub: str, courses: list[Course]) -> list[CoursePublic]:
+    result: list[CoursePublic] = []
+
+    for course in courses:
+        # Count total practices for this course
+        total_practices_count = len(course.practices)
+
+        # Count corrected practices for this user in this course
+        # Practices are considered corrected if status is CORRECTED
+        corrected_practices_count = session.exec(
+            select(func.count())
+            .select_from(Practice)
+            .join(PracticesUsersLink, Practice.id == PracticesUsersLink.practice_id)
+            .where(
+                Practice.course_id == course.id,
+                PracticesUsersLink.user_niub == user_niub,
+                PracticesUsersLink.status == StatusEnum.CORRECTED
+            )
+        ).one()
+
+        course_response = CoursePublic.model_validate(course)
+        course_response.total_practices = total_practices_count
+        course_response.corrected_practices = corrected_practices_count
+
+        result.append(course_response)
+
+    return result
+
 @router.get("/me", response_model=CoursesPublic)
 def read_my_courses(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
     """
@@ -55,7 +88,29 @@ def read_my_courses(session: SessionDep, current_user: CurrentUser, skip: int = 
     statement = select(Course).where(Course.users.contains(current_user)).offset(skip).limit(limit)
     courses = session.exec(statement).all()
 
-    return CoursesPublic(data=courses, count=count)
+    enriched_courses = enrich_courses_with_practice_stats(session, current_user.niub, courses)
+
+    return CoursesPublic(data=enriched_courses, count=count)
+
+@router.get("/me/recent", response_model=CoursesPublic)
+def read_my_recent_courses(session: SessionDep, current_user: CurrentUser, limit: int = 5) -> Any:
+    """
+    Retrieve the most recently accessed courses of the current user.
+    Orders by last_access timestamp (newest first) and limits to the specified count.
+    
+    - By default, only returns courses with non-null last_access values.
+    """
+
+    statement = select(Course).join(CoursesUsersLink).where(
+        CoursesUsersLink.user_niub == current_user.niub,
+        CoursesUsersLink.last_access.is_not(None)
+    ).order_by(desc(CoursesUsersLink.last_access)).limit(limit)
+    
+    courses = session.exec(statement).all()
+
+    enriched_courses = enrich_courses_with_practice_stats(session, current_user.niub, courses)
+
+    return CoursesPublic(data=enriched_courses, count=len(courses))
 
 @router.get("/{course_id}", response_model=CoursePublicWithUsersAndPractices)
 def read_course(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
@@ -161,6 +216,28 @@ def update_course(
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
     course = crud.course.update_course(session=session, course=course, course_in=course_in)
     return course
+
+@router.patch("/me/{course_id}/access", response_model=Message)
+def update_course_last_access(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Update the last access timestamp for a specific course of the current user.
+    """
+    course_user = select(CoursesUsersLink).where(
+        CoursesUsersLink.course_id == course_id,
+        CoursesUsersLink.user_niub == current_user.niub
+    )
+    course_user = session.exec(course_user).first()
+
+    if not course_user:
+        raise HTTPException(status_code=404, detail="Course not found or you don't have access to it")
+
+    course_user.last_access = datetime.now()
+
+    session.add(course_user)
+    session.commit()
+    session.refresh(course_user)
+    
+    return Message(message="Last access updated successfully")
 
 @router.delete("/{course_id}", dependencies=[Depends(get_current_teacher)], response_model=Message)
 def delete_course(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:

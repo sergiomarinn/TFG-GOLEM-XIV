@@ -48,6 +48,8 @@ class CourseUpdate(SQLModel):
 
 class CoursePublic(CourseBase):
     id: uuid.UUID
+    corrected_practices: int = 0
+    total_practices: int = 0
 
 class CoursePublicWithUsersAndPractices(CourseBase):
     id: uuid.UUID

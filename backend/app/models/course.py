@@ -1,4 +1,4 @@
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, Enum, Column
 from pydantic import model_validator
 
 from .base import SQLModel
@@ -6,11 +6,25 @@ from .CoursesUsersLink import CoursesUsersLink
 from .user import User, UserPublic
 import uuid
 import json
+import enum
+
+class ColorEnum(str, enum.Enum):
+    DEFAULT = "default"
+    RED = "red"
+    GREEN = "green"
+    BLUE = "blue"
+    LIME = "lime"
+    ORANGE = "orange"
+    PURPLE = "purple"
+    PINK = "pink"
+    CYAN = "cyan"
+    INDIGO = "indigo"
 
 class CourseBase(SQLModel):
     name: str
     academic_year: str
     description: str
+    color: ColorEnum = Field(default=ColorEnum.DEFAULT, sa_column=Column(Enum(ColorEnum), nullable=False, server_default='DEFAULT'))
 
 class Course(CourseBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)

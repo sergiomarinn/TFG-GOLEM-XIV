@@ -454,6 +454,21 @@ def test_send_practice_data(*, session: SessionDep, practice_id: str, niub: str)
     if not practice:
         raise HTTPException(status_code=404, detail="Practice not found")
     
+    practice_user = session.exec(select(PracticesUsersLink)
+        .where(
+            PracticesUsersLink.user_niub == niub,
+            PracticesUsersLink.practice_id == practice_id
+        )
+    ).first()
+    
+    if practice_user:
+        practice_user.status = StatusEnum.SUBMITTED
+        practice_user.submission_date = datetime.now()
+        practice_user.submission_file_name = "test.zip"
+        session.add(practice_user)
+        session.commit()
+        session.refresh(practice_user)
+    
     body = {
         "name": practice.name,
         "language": practice.programming_language,

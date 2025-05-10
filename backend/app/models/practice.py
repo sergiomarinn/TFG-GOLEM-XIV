@@ -4,7 +4,7 @@ from pydantic import model_validator
 
 from datetime import datetime
 from .base import SQLModel
-from .PracticesUsersLink import PracticesUsersLink
+from .PracticesUsersLink import PracticesUsersLink, StatusEnum
 from .user import User, UserPublic
 import uuid
 import json
@@ -49,27 +49,28 @@ class PracticeUpdate(SQLModel):
     course_id: uuid.UUID | None
     name: str | None
     description: str | None
-    programming_language: str | None
+    programming_language: ProgrammingLanguageEnum | None
     due_date: datetime | None
 
 class PracticePublic(PracticeBase):
     id: uuid.UUID
+    submission_date: datetime | None = None
+    status: StatusEnum | None = None
+    submission_file_name: str | None = None
 
 class PracticePublicWithUsers(PracticeBase):
     id: uuid.UUID
     users: list[UserPublic] = []
 
-class PracticePublicWithCourse(PracticeBase):
-    id: uuid.UUID
-    course: CoursePublic | None = None
+class PracticePublicWithCourse(PracticePublic):
+    course: CoursePublic | None
 
-class PracticePublicWithUsersAndCourse(PracticeBase):
-    id: uuid.UUID
+class PracticePublicWithUsersAndCourse(PracticePublic):
     users: list[UserPublic] = []
-    course: CoursePublic | None = None
+    course: CoursePublic | None
+    correction: dict | None
 
-class PracticePublicWithCorrection(PracticeBase):
-    id: uuid.UUID
+class PracticePublicWithCorrection(PracticePublic):
     correction: dict | None
 
 class PracticesPublic(SQLModel):

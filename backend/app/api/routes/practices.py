@@ -1,3 +1,4 @@
+from datetime import datetime
 from io import BytesIO
 import uuid
 import aiofiles
@@ -25,10 +26,10 @@ from app.models import (
     PracticePublicWithCourse,
     PracticePublicWithUsers,
     PracticePublicWithUsersAndCourse,
-    PracticePublicWithCorrection,
     PracticesPublic,
     PracticesPublicWithCorrection,
-    PracticesUsersLink
+    PracticesUsersLink,
+    StatusEnum
 )
 import pandas as pd
 import os
@@ -211,16 +212,19 @@ def delete_practice(session: SessionDep, practice_id: uuid.UUID) -> Any:
     return Message(message="Practice deleted")
 
 @router.post("/{practice_id}/upload")
-async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser, files: list[UploadFile]) -> Any:
+async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser, file: UploadFile) -> Any:
     """
     Upload practice files.
     """
     practice = crud.practice.get_practice(session=session, id=practice_id)
     if not practice:
-        raise HTTPException(status_code=404, detail="Practice not found")
+        raise HTTPException(status_code=400, detail="Practice not found")
         
     if current_user not in practice.users:
-        raise HTTPException(status_code=403, detail="User not in course")
+        raise HTTPException(status_code=400, detail="User not in course")
+    
+    if not file.filename.lower().endswith(".zip"):
+        raise HTTPException(status_code=400, detail="Only ZIP files are allowed")
     
     body = None
     if current_user.is_student:
@@ -234,7 +238,9 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
         ).first()
         
         if practice_user:
-            practice_user.corrected = False
+            practice_user.status = StatusEnum.SUBMITTED
+            practice_user.submission_date = datetime.now()
+            practice_user.submission_file_name = file.filename
             session.add(practice_user)
             session.commit()
             session.refresh(practice_user)
@@ -253,24 +259,19 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
 
     os.makedirs(file_path, exist_ok=True)
 
-    if files:
-        saved_files = []
-        for file in files:
-            try:
-                async with aiofiles.open(file_path, 'wb') as out_file:
-                    chunk_size = 1024 * 1024  # 1MB
-                    while content := await file.read(chunk_size):
-                        await out_file.write(content)
-                    
-                saved_files.append(file.filename)
-                    
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Error saving file {file.filename}: {str(e)}")
-        
+    try:
+        async with aiofiles.open(file_path, 'wb') as out_file:
+            chunk_size = 1024 * 1024  # 1MB
+            while content := await file.read(chunk_size):
+                await out_file.write(content)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving file {file.filename}: {str(e)}")
+    
     if body:
         practice_service.send_practice_data(body)
     
-    return {"status": "success", "files": saved_files}
+    return {"status": "success", "file": file.filename}
 
 def add_files_to_zip(zip_file: zipfile.ZipFile, user_path: str, base_dir: str = "") -> None:
     """

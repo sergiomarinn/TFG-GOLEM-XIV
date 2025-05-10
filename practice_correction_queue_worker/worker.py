@@ -7,7 +7,7 @@ from aio_pika import connect_robust, IncomingMessage, Message
 from aiohttp import ClientSession
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlmodel import select
-from models import Practice, PracticesUsersLink
+from models import Practice, PracticesUsersLink, StatusEnum
 from services.rpc_client import AsyncRpcClient
 from core.db import engine
 from core.config import settings
@@ -72,6 +72,30 @@ class PracticeCorrectionQueueWorker:
                         id_practice = body_json["practice_id"]
                         practice_name = body_json["name"]
 
+                        practice = await db_session.execute(
+                            select(Practice).where(Practice.id == id_practice)
+                        )
+                        practice = practice.scalar_one_or_none()
+
+                        if not practice:
+                            raise Exception(f"No se encontró la práctica con ID {id_practice}")
+
+                        practice_user = await db_session.execute(select(PracticesUsersLink)
+                            .where(
+                                PracticesUsersLink.user_niub == niub,
+                                PracticesUsersLink.practice_id == practice.id
+                            )
+                        )
+                        practice_user = practice_user.scalar_one_or_none()
+
+                        if not practice_user:
+                            raise Exception(f"No se encontró la práctica del usuario con NIUB {niub} y ID de práctica {id_practice}")
+                        
+                        practice_user.status = StatusEnum.CORRECTING
+                        db_session.add(practice_user)
+                        await db_session.commit()
+                        await db_session.refresh(practice_user)
+
                         # Llamada al cliente RPC
                         result: bytes = await asyncio.wait_for(rpc_client.call(body_json), timeout=600)
                         await rpc_client.close()
@@ -97,36 +121,13 @@ class PracticeCorrectionQueueWorker:
                         
                         correction = result_dict["info"]
 
-                        try:
-                            # Actualizar la práctica en PostgreSQL
-                            practice = await db_session.execute(
-                                select(Practice).where(Practice.id == id_practice)
-                            )
-                            practice = practice.scalar_one_or_none()
-
-                            if not practice:
-                                raise Exception(f"No se encontró la práctica con ID {id_practice}")
-
-                            practice_user = await db_session.execute(select(PracticesUsersLink)
-                                .where(
-                                    PracticesUsersLink.user_niub == niub,
-                                    PracticesUsersLink.practice_id == practice.id
-                                )
-                            )
-                            practice_user = practice_user.scalar_one_or_none()
-
-                            if not practice_user:
-                                raise Exception(f"No se encontró la práctica del usuario con NIUB {niub} y ID de práctica {id_practice}")
-
-                            # Actualizar el campo `correction` con la información recibida
-                            practice_user.correction = correction
-                            practice_user.corrected = True
-                            db_session.add(practice_user)
-                            await db_session.commit()
-                            logger.info(f"Práctica {id_practice} actualizada con la corrección.")
-
-                        except Exception as e:
-                            raise Exception(f"Error al interactuar con PostgreSQL: {e}")
+                        # Actualizar el campo `correction` con la información recibida
+                        practice_user.status = StatusEnum.CORRECTED
+                        practice_user.correction = correction
+                        db_session.add(practice_user)
+                        await db_session.commit()
+                        await db_session.refresh(practice_user)
+                        logger.info(f"Práctica {id_practice} actualizada con la corrección.")
 
                         # Notificar que la práctica ha sido corregida
                         data = {
@@ -150,6 +151,12 @@ class PracticeCorrectionQueueWorker:
                             logger.warning(f"Failded practice correction for NIUB {niub} and practice {practice_name}.")
                         
                         if retry_count >= self.max_retries or hasInvalidFields:
+                            if not hasInvalidFields:
+                                practice_user.status = StatusEnum.REJECTED
+                                db_session.add(practice_user)
+                                await db_session.commit()
+                                await db_session.refresh(practice_user)
+
                             logger.warning(f"Permanent failure after {retry_count} attempts. Sending to DLQ.")
                             if hasInvalidFields:
                                 logger.warning(f"Message has invalid fields")

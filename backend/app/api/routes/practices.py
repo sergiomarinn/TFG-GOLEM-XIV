@@ -27,6 +27,7 @@ from app.models import (
     PracticePublicWithUsers,
     PracticePublicWithUsersAndCourse,
     PracticesPublic,
+    PracticesPublicWithCourse,
     PracticesPublicWithCorrection,
     PracticesUsersLink,
     StatusEnum
@@ -50,7 +51,7 @@ def read_practices(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
     return PracticesPublic(data=practices, count=count)
 
-@router.get("/me", response_model=PracticesPublic)
+@router.get("/me", response_model=PracticesPublicWithCourse)
 def read_my_practices(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
     """
     Retrieve practices of the current user.

@@ -16,7 +16,7 @@ export async function getAllPractices(): Promise<Practices> {
     throw new Error(errorData.detail || "Failed to fetch practices");
   }
 
-  return res.json();
+  return await res.json();
 }
 
 export async function getPracticeById(id: string): Promise<Practice> {
@@ -32,10 +32,10 @@ export async function getPracticeById(id: string): Promise<Practice> {
     throw new Error(errorData.detail || "Failed to fetch practice");
   }
 
-  return res.json();
+  return await res.json();
 }
 
-export async function getPracitcesMe(): Promise<Practices> {
+export async function getMyPracitces(): Promise<Practices> {
 	const res = await fetch(`${API_URL}/api/v1/practices/me`, {
 		method: "GET",
 		headers: {
@@ -51,7 +51,7 @@ export async function getPracitcesMe(): Promise<Practices> {
 	return res.json()
 }
 
-export async function getPracticesMeCorrected(): Promise<Practices> {
+export async function getMyPracticesCorrected(): Promise<Practices> {
 	const res = await fetch(`${API_URL}/api/v1/practices/me/corrected`, {
 		method: "GET",
 		headers: {
@@ -67,7 +67,7 @@ export async function getPracticesMeCorrected(): Promise<Practices> {
 	return res.json()
 }
 
-export async function getPracticesMeUncorrected(): Promise<Practices> {
+export async function getMyPracticesUncorrected(): Promise<Practices> {
 	const res = await fetch(`${API_URL}/api/v1/practices/me/uncorrected`, {
 		method: "GET",
 		headers: {
@@ -96,7 +96,7 @@ export async function getPracticeWithUsers(id: string): Promise<Practice> {
 		throw new Error(errorData.detail || "Failed to fetch practice with users");
 	}
 
-	return res.json();
+	return await res.json();
 }
 
 export async function getPracticeWithCourse(id: string): Promise<Practice> {
@@ -133,7 +133,7 @@ export async function createPractice(data: string, file: File): Promise<Practice
     throw new Error(errorData.detail || "Failed to create practice");
   }
 
-  return res.json();
+  return await res.json();
 }
 
 export async function updatePractice(practiceId: string, data: string): Promise<Practice> {
@@ -151,7 +151,7 @@ export async function updatePractice(practiceId: string, data: string): Promise<
 		throw new Error(errorData.detail || "Failed to update practice");
 	}
 
-	return res.json();
+	return await res.json();
 }
 
 export async function uploadPractice(practiceId: string, file: File): Promise<void> {

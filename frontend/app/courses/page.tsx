@@ -17,9 +17,7 @@ import {
 import { Selection } from '@react-types/shared';
 import { SearchIcon, ChevronDownIcon, AlphabeticalSortIcon } from '@/components/icons';
 import { 
-  AcademicCapIcon, 
-  FunnelIcon,
-  BookOpenIcon,
+  AcademicCapIcon,
 	CodeBracketIcon,
 	CalendarIcon,
 	ClockIcon

@@ -16,7 +16,7 @@ export async function getAllCourses(): Promise<Courses> {
     throw new Error(errorData.detail || "Failed to fetch courses")
   }
 
-  return res.json()
+  return await res.json();
 }
 
 export async function getCourseById(id: string): Promise<Course> {
@@ -32,10 +32,10 @@ export async function getCourseById(id: string): Promise<Course> {
     throw new Error(errorData.detail || "Failed to fetch course")
   }
 
-  return res.json()
+  return await res.json();
 }
 
-export async function getCoursesMe(): Promise<Courses> {
+export async function getMyCourses(): Promise<Courses> {
 	const res = await fetch(`${API_URL}/api/v1/courses/me`, {
 		method: "GET",
 		headers: {
@@ -48,7 +48,23 @@ export async function getCoursesMe(): Promise<Courses> {
 		throw new Error(errorData.detail || "Failed to fetch courses")
 	}
 
-	return res.json()
+	return await res.json();
+}
+
+export async function getMyRecentCourses(limit = 5): Promise<Courses> {
+	const res = await fetch(`${API_URL}/api/v1/courses/me/recent?limit=${limit}`, {
+		method: "GET",
+		headers: {
+			"Authorization": `Bearer ${await getTokenFromSession()}`
+		}
+	})
+
+	if (!res.ok) {
+		const errorData = await res.json()
+		throw new Error(errorData.detail || "Failed to fetch courses")
+	}
+
+	return await res.json();
 }
 
 export async function getCourseWithUsers(id: string): Promise<Course> {
@@ -64,7 +80,7 @@ export async function getCourseWithUsers(id: string): Promise<Course> {
 		throw new Error(errorData.detail || "Failed to fetch courses")
 	}
 
-	return res.json()
+	return await res.json();
 }
 
 export async function getCourseWithPractices(id: string): Promise<Course> {
@@ -80,7 +96,7 @@ export async function getCourseWithPractices(id: string): Promise<Course> {
 		throw new Error(errorData.detail || "Failed to fetch courses")
 	}
 
-	return res.json()
+	return await res.json();
 }
 
 export async function createCourse(data: Partial<Course>): Promise<Course> {
@@ -98,7 +114,21 @@ export async function createCourse(data: Partial<Course>): Promise<Course> {
     throw new Error(errorData.detail || "Failed to create course")
   }
 
-  return res.json()
+  return await res.json();
+}
+
+export async function updateCourseLastAccess(id: string): Promise<void> {
+	const res = await fetch(`${API_URL}/api/v1/courses/me/${id}/access`, {
+		method: "PATCH",
+		headers: {
+			'Authorization': `Bearer ${await getTokenFromSession()}`
+		}
+	})
+
+	if (!res.ok) {
+		const errorData = await res.json()
+		throw new Error(errorData.detail || "Failed to update last access course")
+	}
 }
 
 export async function updateCourse(id: string, data: Partial<Course>): Promise<Course> {
@@ -116,7 +146,7 @@ export async function updateCourse(id: string, data: Partial<Course>): Promise<C
 		throw new Error(errorData.detail || "Failed to update course")
 	}
 
-	return res.json()
+	return await res.json();
 }
 
 export async function deleteCourse(id: string): Promise<void> {
@@ -132,7 +162,7 @@ export async function deleteCourse(id: string): Promise<void> {
 		throw new Error(errorData.detail || "Failed to delete course")
 	}
 
-	return res.json()
+	return await res.json();
 }
 
 export async function downloadStudentsTemplateCSV(): Promise<void> {

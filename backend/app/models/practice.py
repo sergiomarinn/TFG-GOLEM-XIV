@@ -77,6 +77,10 @@ class PracticesPublic(SQLModel):
     data: list[PracticePublic]
     count: int
 
+class PracticesPublicWithCourse(SQLModel):
+    data: list[PracticePublicWithCourse]
+    count: int
+
 class PracticesPublicWithCorrection(SQLModel):
     data: list[PracticePublicWithCorrection]
     count: int

@@ -11,66 +11,9 @@ import { SearchIcon } from '@/components/icons';
 import { UserIcon, UsersIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { Alert } from '@heroui/alert';
 import { Tooltip } from "@heroui/tooltip";
+import { User } from '@/app/lib/definitions';
 
-// Ejemplo de datos de usuarios (esto vendría de tu backend)
-const courseUsers = [
-  { 
-    id: 1, 
-    name: "Maria García", 
-    email: "maria.garcia@upc.edu", 
-    role: "student", 
-    avatar: "https://i.pravatar.cc/150?img=1",
-    lastAccess: "2025-05-01T15:30:00"
-  },
-  { 
-    id: 2, 
-    name: "Carlos López", 
-    email: "carlos.lopez@upc.edu", 
-    role: "student", 
-    avatar: "https://i.pravatar.cc/150?img=2",
-    lastAccess: "2025-05-04T09:45:00"
-  },
-  { 
-    id: 3, 
-    name: "Laura Martínez", 
-    email: "laura.martinez@upc.edu", 
-    role: "student", 
-    avatar: "https://i.pravatar.cc/150?img=3",
-    lastAccess: "2025-05-02T11:20:00"
-  },
-  { 
-    id: 4, 
-    name: "Jordi Garcia", 
-    email: "jordi.garcia@upc.edu", 
-    role: "professor", 
-    avatar: "https://i.pravatar.cc/150?img=4",
-    lastAccess: "2025-05-05T10:15:00"
-  },
-  { 
-    id: 5, 
-    name: "Elena Ruiz", 
-    email: "elena.ruiz@upc.edu",
-    role: "professor",
-    avatar: "https://i.pravatar.cc/150?img=5",
-    lastAccess: "2025-05-03T16:40:00"
-  },
-  { 
-    id: 6, 
-    name: "Pablo Sánchez", 
-    email: "pablo.sanchez@upc.edu", 
-    role: "student", 
-    avatar: "https://i.pravatar.cc/150?img=6",
-    lastAccess: "2025-05-01T14:10:00"
-  }
-];
-
-const roleOptions = [
-  { name: "Tots", uid: "all" },
-  { name: "Professors", uid: "professor" },
-  { name: "Estudiants", uid: "student" }
-];
-
-const getRelativeTime = (dateString) => {
+const getRelativeTime = (dateString: string) => {
   const date = new Date(dateString);
   const now = new Date();
   const diffTime = Math.abs(now - date);
@@ -91,25 +34,17 @@ const getRelativeTime = (dateString) => {
   }
 };
 
-const getRoleName = (role: string) => {
-  switch(role) {
-    case 'professor': return 'Professor';
-    case 'teaching_assistant': return 'Professor assistent';
-    case 'student': return 'Estudiant';
-    default: return role;
-  }
+const getRoleName = (isStudent: boolean, isTeacher: boolean) => {
+  if (isStudent) return 'Estudiant';
+  if (isTeacher) return 'Professor';
 };
 
-const getRoleColor = (role: string) => {
-  switch(role) {
-    case 'professor': return 'primary';
-    case 'teaching_assistant': return 'secondary';
-    case 'student': return 'default';
-    default: return 'default';
-  }
+const getRoleColor = (isStudent: boolean, isTeacher: boolean) => {
+  if (isStudent) return 'default';
+  if (isTeacher) return 'primary';
 };
 
-export function ParticipantsSection() {
+export function ParticipantsSection({courseUsers}: {courseUsers: User[]}) {
   const [filterValue, setFilterValue] = React.useState("");
   const [tabSelection, setTabSelection] = React.useState("all");
   
@@ -120,7 +55,15 @@ export function ParticipantsSection() {
 
     // Apply tab filter first
     if (tabSelection !== "all") {
-      filteredUsers = filteredUsers.filter((user) => user.role === tabSelection);
+      filteredUsers = filteredUsers.filter((user) => {
+        if (tabSelection === "professor") {
+          return user.is_teacher === true;
+        }
+        if (tabSelection === "student") {
+          return user.is_student === true;
+        }
+        return false;
+      });
     }
 
     // Then apply text search
@@ -176,7 +119,7 @@ export function ParticipantsSection() {
           title={
             <div className="flex items-center gap-2">
               <UserIcon className="size-4" />
-              <span>Professors ({courseUsers.filter(u => u.role === "professor").length})</span>
+              <span>Professors ({courseUsers.filter(u => u.is_teacher === true).length})</span>
             </div>
           }
         />
@@ -185,7 +128,7 @@ export function ParticipantsSection() {
           title={
             <div className="flex items-center gap-2">
               <UserIcon className="size-4" />
-              <span>Estudiants ({courseUsers.filter(u => u.role === "student").length})</span>
+              <span>Estudiants ({courseUsers.filter(u => u.is_student === true).length})</span>
             </div>
           }
         />
@@ -195,18 +138,18 @@ export function ParticipantsSection() {
       
       <div className="flex flex-col gap-3">
         {filteredUsers.map((user) => (
-          <Card key={user.id} className="w-full">
+          <Card key={user.niub} className="w-full">
             <CardBody className="flex flex-row items-center py-3">
-              <Avatar src={user.avatar} className="mr-4" />
+              <Avatar name={user.name} className="mr-4" />
               <div className="flex-grow">
                 <div className="flex items-center">
                   <h3 className="font-semibold text-lg mr-2">{user.name}</h3>
                   <Chip 
-                    color={getRoleColor(user.role)}
+                    color={getRoleColor(user.is_student, user.is_teacher)}
                     size="sm" 
                     variant="flat"
                   >
-                    {getRoleName(user.role)}
+                    {getRoleName(user?.is_student, user.is_teacher)}
                   </Chip>
                 </div>
                 <p className="text-default-500">{user.email}</p>

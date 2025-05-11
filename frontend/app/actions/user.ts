@@ -13,7 +13,7 @@ export async function getAllUsers(): Promise<Users> {
     throw new Error(errorData.detail || "Failed to fetch users")
   }
 
-  return res.json()
+  return await res.json();
 }
 
 export async function getCourseByNIUB(niub: string): Promise<User> {
@@ -29,10 +29,10 @@ export async function getCourseByNIUB(niub: string): Promise<User> {
     throw new Error(errorData.detail || "Failed to fetch user")
   }
 
-  return res.json()
+  return await res.json();
 }
 
-export async function getUserMe(): Promise<User> {
+export async function getMyUser(): Promise<User> {
     const res = await fetch(`${API_URL}/api/v1/users/me`, {
 			method: "GET",
 			headers: {
@@ -45,7 +45,7 @@ export async function getUserMe(): Promise<User> {
 			throw new Error(errorData.detail || "Failed to fetch user")
     }
 
-    return res.json()
+    return await res.json();
 }
 
 export async function createUser(data: Partial<User>): Promise<User> {
@@ -63,7 +63,7 @@ export async function createUser(data: Partial<User>): Promise<User> {
     throw new Error(errorData.detail || "Failed to create course")
   }
 
-  return res.json()
+  return await res.json();
 }
 
 export async function updateUser(niub: string, data: Partial<User>): Promise<User> {
@@ -81,10 +81,10 @@ export async function updateUser(niub: string, data: Partial<User>): Promise<Use
 			throw new Error(errorData.detail || "Failed to update course")
 	}
 
-	return res.json()
+	return await res.json();
 }
 
-export async function updateUserMe(	data: Partial<User>): Promise<User> {
+export async function updateMyUser(data: Partial<User>): Promise<User> {
 	const res = await fetch(`${API_URL}/api/v1/courses/me/password`, {
 			method: "PATCH",
 			headers: { 
@@ -99,10 +99,10 @@ export async function updateUserMe(	data: Partial<User>): Promise<User> {
 			throw new Error(errorData.detail || "Failed to update course")
 	}
 
-	return res.json()
+	return await res.json();
 }
 
-export async function updateUserMePassword(data: Partial<UpdatePassword>): Promise<void> {
+export async function updateMyUserPassword(data: Partial<UpdatePassword>): Promise<void> {
 	const res = await fetch(`${API_URL}/api/v1/courses/me/password`, {
 			method: "PATCH",
 			headers: { 
@@ -117,7 +117,7 @@ export async function updateUserMePassword(data: Partial<UpdatePassword>): Promi
 			throw new Error(errorData.detail || "Failed to update course")
 	}
 
-	return res.json()
+	return await res.json();
 }
 
 export async function deleteUser(niub: string): Promise<void> {
@@ -133,10 +133,10 @@ export async function deleteUser(niub: string): Promise<void> {
 		throw new Error(errorData.detail || "Failed to delete user")
 	}
 
-	return res.json()
+	return await res.json();
 }
 
-export async function deleteUserMe(): Promise<void> {
+export async function deleteMyUser(): Promise<void> {
 	const res = await fetch(`${API_URL}/api/v1/users/me`, {
 		method: "DELETE",
 		headers: {
@@ -149,5 +149,5 @@ export async function deleteUserMe(): Promise<void> {
 		throw new Error(errorData.detail || "Failed to delete user")
 	}
 
-	return res.json()
+	return await res.json();
 }

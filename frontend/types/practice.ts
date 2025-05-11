@@ -8,6 +8,8 @@ export interface Practice {
 	programming_language: string
 	due_date: string
 	submission_date?: string
+	status?: string
+	submission_file_name?: string
 	course_id: string
 	correction?: any
 	course?: Course

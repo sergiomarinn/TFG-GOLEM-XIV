@@ -17,17 +17,14 @@ import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs";
 import { Divider } from "@heroui/divider";
 import { Selection } from '@react-types/shared';
 import { SearchIcon, ChevronDownIcon } from '@/components/icons'
-import { practiceStatusOptions, practices } from "@/types";
+import { practiceStatusOptions, coursePractices } from "@/types";
 import { AcademicCapIcon, DocumentArrowUpIcon, FunnelIcon, ArrowLongUpIcon, ArrowLongDownIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { ParticipantsSection } from '@/components/participants-section';
-
-const courseInfo = {
-  name: "Algorísmica Avançada",
-  description: "Aquest curs d'Algorísmica Avançada aprofundeix en l'anàlisi i disseny d'algorismes complexos. S'estudiaran estructures de dades avançades, tècniques d'optimització i paradigmes algorítmics com la programació dinàmica, dividir i vèncer, i algorismes voraces. L'alumnat desenvoluparà competències per resoldre problemes computacionals d'alta complexitat i aplicar aquestes tècniques en àmbits com la intel·ligència artificial, la criptografia i l'anàlisi de dades massives.",
-  year: "2024-2025",
-  semester: "Primavera",
-  professor: "Jordi Garcia"
-};
+import { getCourseById } from '@/app/actions/course';
+import { Course } from '@/types/course';
+import { Practice } from '@/types/practice';
+import { User } from '@/app/lib/definitions';
+import { set } from 'zod';
 
 const sortOptions = [
   { name: "Més properes", uid: "asc" },
@@ -36,7 +33,36 @@ const sortOptions = [
 
 export default function CourseDetailPage() {
   const params = useParams();
-  const courseId = params.id;
+  const courseId = params.id as string;
+
+  const [courseInfo, setCourseInfo] = React.useState<Course>();
+  const [coursePractices, setCoursePractices] = React.useState<Practice[]>([]);
+  const [courseUsers, setCourseUsers] = React.useState<User[]>([]);
+
+  React.useEffect(() => {
+    const fetchCourseData = async () => {
+      try {
+        const course = await getCourseById(courseId);
+        setCourseInfo(courseInfo);
+        setCoursePractices(course.practices || []);
+        setCourseUsers(course.users || []);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    if (courseId) {
+      fetchCourseData();
+    }
+  }, [courseId]);
+
+  const courseTeacher = React.useMemo(() => {
+    if (courseInfo?.users) {
+      const teacher = courseInfo.users.find((user) => user.is_teacher);
+      return teacher ? teacher.name : "";
+    }
+    return "";
+  }, [courseInfo]);
 
   const [filterValue, setFilterValue] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
@@ -49,7 +75,7 @@ export default function CourseDetailPage() {
     }, [dateSort]);
 
   const filteredPractices = React.useMemo(() => {
-    let filteredPractices = [...practices];
+    let filteredPractices = [...coursePractices];
 
     if (hasSearchFilter) {
       filteredPractices = filteredPractices.filter((practice) =>
@@ -63,7 +89,7 @@ export default function CourseDetailPage() {
     }
 
     return filteredPractices;
-  }, [practices, filterValue, statusFilter]);
+  }, [coursePractices, filterValue, statusFilter]);
 
   const sortedPractices = React.useMemo(() => {
     let sortedData = [...filteredPractices];
@@ -159,7 +185,7 @@ export default function CourseDetailPage() {
     filterValue,
     statusFilter,
     dateSort,
-    practices.length,
+    coursePractices.length,
     hasSearchFilter,
   ]);
 
@@ -168,31 +194,31 @@ export default function CourseDetailPage() {
       <Breadcrumbs>
         <BreadcrumbItem href="/">Dashboard</BreadcrumbItem>
         <BreadcrumbItem href="/courses">Cursos</BreadcrumbItem>
-        <BreadcrumbItem href={`/courses/${courseId}`}>{courseInfo.name}</BreadcrumbItem>
+        <BreadcrumbItem href={`/courses/${courseId}`}>{courseInfo?.name}</BreadcrumbItem>
       </Breadcrumbs>
       
       {/* Header section */}
       <div className="container px-2 pt-8 pb-5">
         <div className="flex items-center mb-2">
           <Chip color="primary" size="sm" variant="flat" className="mr-2">
-            {courseInfo.year}
+            {courseInfo?.academic_year}
           </Chip>
           <Chip color="primary" size="sm" variant="flat" className="mr-2">
-            {courseInfo.semester}
+            {courseInfo?.semester}
           </Chip>
         </div>
-        <h1 className="text-4xl font-bold mb-2">{courseInfo.name}</h1>
+        <h1 className="text-4xl font-bold mb-2">{courseInfo?.name}</h1>
         <div className="pl-0.5 flex items-center text-default-800 mb-3">
           <AcademicCapIcon className="size-5 mr-1" />
-          <span>{courseInfo.professor}</span>
+          <span>{courseTeacher}</span>
         </div>
-        <p className="text-default-600 pl-0.5">{courseInfo.description}</p>
+        <p className="text-default-600 pl-0.5">{courseInfo?.description}</p>
       </div>
       <Divider className="mb-8" />
 
       {/* Layout of 2 columns */}
       <div className="flex flex-row gap-6">
-        {/* Practices */}
+        {/* coursePractices */}
         <div className="w-[63%]">
           <div className="flex items-center mb-4 pl-4">
             <DocumentArrowUpIcon className="size-9 text-primary-600 mr-2" />
@@ -211,7 +237,7 @@ export default function CourseDetailPage() {
                   </PracticeCourseCard>
                 ))}
               </div>) 
-              : practices.length > 0 ? (
+              : coursePractices.length > 0 ? (
                 <Alert
                   hideIcon
                   color="warning"
@@ -221,8 +247,8 @@ export default function CourseDetailPage() {
               ) : null
             }
         
-            {/* Empty state (will show if no practices) */}
-            {practices.length === 0 && (
+            {/* Empty state (will show if no coursePractices) */}
+            {coursePractices.length === 0 && (
               <Alert
                 color="primary"
                 title="Cap pràctica disponible"
@@ -237,7 +263,7 @@ export default function CourseDetailPage() {
             <UsersIcon className="size-9 text-primary-600 mr-2" />
             <h2 className="text-3xl font-semibold text-default-900">Participants</h2>
           </div>
-          <ParticipantsSection />
+          <ParticipantsSection courseUsers={courseUsers} />
         </div>
       </div>
     </div>

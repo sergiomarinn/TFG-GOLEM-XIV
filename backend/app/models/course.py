@@ -37,10 +37,10 @@ class Course(CourseBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     users: list[User] = Relationship(back_populates="courses", link_model=CoursesUsersLink)
     practices: list["Practice"] = Relationship(back_populates="course", cascade_delete=True)
-    students_number: ClassVar[hybrid_property]
+    students_count: ClassVar[hybrid_property]
     
     @hybrid_property
-    def students_number(self) -> int:
+    def students_count(self) -> int:
         return sum(user.is_student for user in self.users if hasattr(user, "is_student"))
 
 class CourseCreate(CourseBase):
@@ -64,7 +64,7 @@ class CoursePublic(CourseBase):
     id: uuid.UUID
     corrected_practices: int = 0
     total_practices: int = 0
-    students_number: int
+    students_count: int
 
 class CoursePublicWithUsersAndPractices(CourseBase):
     id: uuid.UUID

@@ -20,9 +20,14 @@ class ColorEnum(str, enum.Enum):
     CYAN = "cyan"
     INDIGO = "indigo"
 
+class SemesterEnum(str, enum.Enum):
+    TARDOR = "tardor"
+    PRIMAVERA = "primavera"
+
 class CourseBase(SQLModel):
     name: str
     academic_year: str
+    semester: SemesterEnum = Field(default=SemesterEnum.TARDOR, sa_column=Column(Enum(SemesterEnum), nullable=False, server_default='TARDOR'))
     description: str
     color: ColorEnum = Field(default=ColorEnum.DEFAULT, sa_column=Column(Enum(ColorEnum), nullable=False, server_default='DEFAULT'))
 
@@ -44,7 +49,9 @@ class CourseCreate(CourseBase):
 class CourseUpdate(SQLModel):
     name: str | None
     academic_year: str | None
+    semester: SemesterEnum | None
     description: str | None
+    color: ColorEnum | None
 
 class CoursePublic(CourseBase):
     id: uuid.UUID

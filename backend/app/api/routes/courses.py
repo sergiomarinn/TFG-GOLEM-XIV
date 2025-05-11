@@ -29,7 +29,8 @@ from app.models import (
     CoursesUsersLink,
     Practice,
     PracticesUsersLink,
-    StatusEnum
+    StatusEnum,
+    UserPublic
 )
 import pandas as pd
 import os
@@ -137,6 +138,22 @@ def read_course_users(course_id: uuid.UUID, session: SessionDep, current_user: C
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
+    return course
+
+@router.get("/{course_id}/teachers", response_model=list[UserPublic])
+def read_course_teachers(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Retrieve teachers of the course by ID.
+    """
+    course = crud.course.get_course(session=session, id=course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    if current_user not in course.users:
+        raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
+    
+    course.users = [user for user in course.users if user.is_teacher]
+
     return course
 
 @router.get("/{course_id}/practices", response_model=CoursePublicWithPractices)

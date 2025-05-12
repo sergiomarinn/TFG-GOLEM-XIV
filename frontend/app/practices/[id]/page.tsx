@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -28,6 +27,9 @@ import {
 	practiceStatusIconColorMap as statusIconColorMap
 } from "@/types";
 import { addToast } from '@heroui/toast';
+import { useParams } from 'next/navigation';
+import { getPracticeById, uploadPractice } from '@/app/actions/practice';
+import { Practice } from '@/types/practice';
 
 const PracticeStatus = ({ status }: {status: string}) => {
   const getStatusName = (uid: string) =>
@@ -321,26 +323,29 @@ const practiceSample = {
 };
 
 // Página principal
-export default function PracticeDetailPage({ params }) {
-  const router = useRouter();
-  const [practice, setPractice] = useState(practiceSample);
-  const [files, setFiles] = useState([]);
+export default function PracticeDetailPage() {
+  const params = useParams();
+  const practiceId = params.id as string;
+
+  const [practice, setPractice] = useState<Practice>();
+
+  useEffect(() => {
+    const fetchPractice = async () => {
+      try {
+        const practice = await getPracticeById(practiceId);
+        setPractice(practice);
+      } catch (error) {
+        console.error("Error fetching practice:", error);
+      }
+    };
+    if (practiceId) {
+      fetchPractice();
+    }
+  }, [practiceId]);
+  
+  const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResubmit, setShowResubmit] = useState(false);
-
-  // En una implementación real, aquí se cargarían los datos de la práctica
-  // useEffect(() => {
-  //   const fetchPractice = async () => {
-  //     try {
-  //       const response = await fetch(`/api/practices/${params.id}`);
-  //       const data = await response.json();
-  //       setPractice(data);
-  //     } catch (error) {
-  //       console.error("Error fetching practice:", error);
-  //     }
-  //   };
-  //   fetchPractice();
-  // }, [params.id]);
 
   // Función para formatear fechas
   const formatDate = (dateString: string) => {
@@ -354,49 +359,53 @@ export default function PracticeDetailPage({ params }) {
     });
   };
 
-  // Función para manejar la subida de archivos
   const handleSubmit = async () => {
+    if (!practice) return;
     if (files.length === 0) {
-      alert("Has d'afegir almenys un arxiu per enviar la pràctica.");
+      addToast({
+        title: "Cap arxiu seleccionat",
+        description: "Has d'afegir almenys un arxiu per poder enviar la pràctica.",
+        color: "danger"
+      })
       return;
     }
-
-    setIsSubmitting(true);
     
-    // Aquí iría el código para enviar los archivos al servidor
-    // const formData = new FormData();
-    // files.forEach(fileObj => {
-    //   formData.append('files', fileObj.file);
-    // });
-    // formData.append('practiceId', practice.id);
-    
-    // try {
-    //   await fetch('/api/submissions', {
-    //     method: 'POST',
-    //     body: formData
-    //   });
-    //   router.refresh();
-    // } catch (error) {
-    //   console.error("Error submitting practice:", error);
-    // }
-
-    // Simulación de envío
-    setTimeout(() => {
-      alert("Pràctica enviada correctament!");
+    try {
+      setIsSubmitting(true);
+      await uploadPractice(practice.id, files[0])
+      
       setIsSubmitting(false);
       setShowResubmit(false);
-      
-      // Actualizar el estado de la práctica (simulación)
+
       setPractice({
         ...practice,
-        status: 'submitted',
+        status: "submitted",
         submission_date: new Date().toISOString()
       });
-    }, 1500);
+
+      addToast({
+        title: "Pràctica enviada amb èxit",
+        color: "success",
+        timeout: 5000,
+        shouldShowTimeoutProgress: true,
+      })
+    } catch (error) {
+      console.error("Error submitting practice:", error);
+      addToast({
+        title: "Error en enviar la pràctica",
+        description: "Torna-ho a intentar més tard"
+        color: "danger"
+      });
+    }
   };
 
-  const canSubmit = ['not_submitted', 'rejected'].includes(practice.status) || showResubmit;
-  const isPastDue = new Date(practice.due_date) < new Date();
+  const canSubmit = useMemo(() => {
+    return ['not_submitted', 'rejected'].includes(practice?.status) || showResubmit;
+  }, [practice?.status, showResubmit]);
+
+  const isPastDue = useMemo(() => {
+    return new Date(practice?.due_date) < new Date();
+  }, [practice?.due_date]);
 
   return (
     <div className="px-8 pb-12 min-h-screen bg-slate-100 dark:bg-neutral-900">
@@ -413,21 +422,21 @@ export default function PracticeDetailPage({ params }) {
       <div className="mt-2 mb-8">
         <div className="flex items-end justify-between gap-2 mb-2">
           <Chip color="primary" variant="flat">
-						{practice.course.name}
+						{practice?.course?.name}
 					</Chip>
-          <PracticeStatus status={practice.status} />
+          <PracticeStatus status={practice?.status || "not_submitted"} />
         </div>
-        <h1 className="text-3xl font-bold mb-3">{practice.name}</h1>
+        <h1 className="text-3xl font-bold mb-3">{practice?.name}</h1>
         <div className="flex flex-wrap gap-7 text-default-700">
           <div className="flex items-center gap-1">
             <CalendarIcon className="size-4" />
-            <span>Data límit: {formatDate(practice.due_date)}</span>
+            <span>Data límit: {formatDate(practice?.due_date)}</span>
           </div>
           <div className="flex items-center gap-1">
             <CodeBracketIcon className="size-4" />
-            <span>Llenguatge: {practice.language}</span>
+            <span>Llenguatge: {practice?.programming_language}</span>
           </div>
-          {practice.submission_date && (
+          {practice?.submission_date && (
             <div className="flex items-center gap-1">
               <PaperClipIcon className="size-4" />
               <span>Últim lliurament: {formatDate(practice.submission_date)}</span>
@@ -447,27 +456,27 @@ export default function PracticeDetailPage({ params }) {
             <Divider />
             <CardBody>
               <div className="text-default-700 whitespace-pre-line px-2 pb-1">
-                {practice.description}
+                {practice?.description}
               </div>
             </CardBody>
           </Card>
           
           {/* Sección de retroalimentación, si existe */}
-          {(practice.status === 'corrected' || practice.status === 'rejected') && (
+          {(practice?.status === 'corrected') && (
             <div className="mb-6">
-              <FeedbackSection feedback={practice.feedback} grade={practice.grade} />
+              <FeedbackSection feedback={practice.correction} grade={8} />
             </div>
           )}
 
           {/* Archivos actuales, si hay una entrega */}
-          {practice.submitted_files && practice.submitted_files.length > 0 && (
+          {practice?.submission_file_name && practice?.submission_file_name.length > 0 && (
             <Card className="mb-6">
               <CardHeader>
                 <h2 className="text-xl font-semibold px-2 pt-1">Arxius enviats</h2>
               </CardHeader>
               <Divider />
               <CardBody>
-                <FileList files={practice.submitted_files} onDelete={null} />
+                <FileList files={practice?.submission_file_name ? [practice.submission_file_name] : []} onDelete={null} />
               </CardBody>
             </Card>
           )}
@@ -484,11 +493,13 @@ export default function PracticeDetailPage({ params }) {
             </CardHeader>
             <Divider />
             <CardBody>
-              {practice.status === 'corrected' && !showResubmit ? (
+              {practice?.status === 'corrected' && !showResubmit ? (
                 <div className="text-center py-4">
                   <CheckCircleIcon className="size-12 mx-auto mb-3 text-success-500" />
                   <p className="mb-4 px-1.5">Aquesta pràctica ja ha estat corregida i avaluada.</p>
-                  {practice.resubmit_available && (
+                  
+                  {/* Prepare for resubmit_available boolean condition for future*/}
+                  {true && (
                     <Button 
                       color="primary" 
                       variant="flat" 
@@ -498,7 +509,7 @@ export default function PracticeDetailPage({ params }) {
                     </Button>
                   )}
                 </div>
-              ) : isPastDue && !practice.submission_date ? (
+              ) : isPastDue && !practice?.submission_date ? (
                 <div className="text-center py-4">
                   <ExclamationTriangleIcon className="size-12 mx-auto mb-3 text-danger-500" />
                   <p className="text-danger-500 font-medium mb-2">La data límit ha passat</p>
@@ -508,7 +519,7 @@ export default function PracticeDetailPage({ params }) {
                 <FileUploader 
                   files={files} 
                   setFiles={setFiles} 
-                  disabled={!canSubmit || ['correcting', 'submitted'].includes(practice.status)}
+                  disabled={!canSubmit || ['correcting', 'submitted'].includes(practice?.status)}
                 />
               )}
             </CardBody>

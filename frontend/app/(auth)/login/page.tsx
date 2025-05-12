@@ -24,7 +24,16 @@ export default function LoginPage() {
   };
 
   useEffect(() => {
-    if (state?.success === false) {
+    if (state?.success) {
+      addToast({
+        title: "Acabes d'inicia de sessió correctament",
+        description: state?.message,
+        timeout: 3500,
+        shouldShowTimeoutProgress: true,
+        color: "success",
+      });
+    }
+    else if (state?.success === false) {
       addToast({
         title: "Error a l'inica sessió",
         description: state?.message,

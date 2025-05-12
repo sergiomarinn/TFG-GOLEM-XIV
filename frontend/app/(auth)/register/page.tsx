@@ -27,7 +27,7 @@ export default function RegisterPage() {
       addToast({
         title: "Registre completat",
         description: state.message,
-        timeout: 3000,
+        timeout: 3500,
         shouldShowTimeoutProgress: true,
         color: "success",
       });

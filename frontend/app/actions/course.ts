@@ -1,5 +1,6 @@
 import { Course, Courses } from "@/types/course"
 import { getTokenFromSession } from "@/app/lib/session";
+import { User } from "@/app/lib/definitions";
 
 const API_URL = process.env.BACKEND_URL;
 
@@ -77,7 +78,23 @@ export async function getCourseWithUsers(id: string): Promise<Course> {
 
 	if (!res.ok) {
 		const errorData = await res.json()
-		throw new Error(errorData.detail || "Failed to fetch courses")
+		throw new Error(errorData.detail || "Failed to fetch course with users")
+	}
+
+	return await res.json();
+}
+
+export async function getCourseTeachers(id: string): Promise<User[]> {
+	const res = await fetch(`${API_URL}/api/v1/courses/${id}/teachers`, {
+		method: "GET",
+		headers: {
+			"Authorization": `Bearer ${await getTokenFromSession()}`
+		}
+	})
+
+	if (!res.ok) {
+		const errorData = await res.json()
+		throw new Error(errorData.detail || "Failed to fetch course teachers")
 	}
 
 	return await res.json();
@@ -93,7 +110,7 @@ export async function getCourseWithPractices(id: string): Promise<Course> {
 
 	if (!res.ok) {
 		const errorData = await res.json()
-		throw new Error(errorData.detail || "Failed to fetch courses")
+		throw new Error(errorData.detail || "Failed to fetch course with practices")
 	}
 
 	return await res.json();

@@ -25,21 +25,16 @@ export const SignupFormSchema = z.object({
     .trim(),
 })
 
-export const LoginFormSchema = z.object({
-  niub: z
-    .string()
+export const LoginFormSchemaNiub = z.object({
+  niub: z.string()
     .regex(/^niub\d{8}$/, { message: "Ha de començar amb 'niub' seguit de 8 dígits." })
     .trim(),
+  password: z.string().trim(),
+})
+
+export const LoginFormSchemaEmail = z.object({
   email: z.string().email({ message: 'Si us plau, introdueix un correu electrònic vàlid.' }).trim(),
-  password: z
-    .string()
-    .min(8, { message: 'Ha de tenir almenys 8 caràcters.' })
-    .regex(/[a-zA-Z]/, { message: 'Ha de contenir almenys una lletra.' })
-    .regex(/[0-9]/, { message: 'Ha de contenir almenys un número.' })
-    .regex(/[^a-zA-Z0-9]/, {
-      message: 'Ha de contenir almenys un caràcter especial.',
-    })
-    .trim(),
+  password: z.string().trim(),
 })
  
 export type FormState =

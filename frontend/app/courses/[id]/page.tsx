@@ -17,14 +17,13 @@ import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs";
 import { Divider } from "@heroui/divider";
 import { Selection } from '@react-types/shared';
 import { SearchIcon, ChevronDownIcon } from '@/components/icons'
-import { practiceStatusOptions, coursePractices } from "@/types";
+import { practiceStatusOptions } from "@/types";
 import { AcademicCapIcon, DocumentArrowUpIcon, FunnelIcon, ArrowLongUpIcon, ArrowLongDownIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { ParticipantsSection } from '@/components/participants-section';
 import { getCourseById } from '@/app/actions/course';
 import { Course } from '@/types/course';
 import { Practice } from '@/types/practice';
 import { User } from '@/app/lib/definitions';
-import { set } from 'zod';
 
 const sortOptions = [
   { name: "Més properes", uid: "asc" },
@@ -40,7 +39,7 @@ export default function CourseDetailPage() {
   const [courseUsers, setCourseUsers] = React.useState<User[]>([]);
 
   React.useEffect(() => {
-    const fetchCourseData = async () => {
+    const fetchCourse = async () => {
       try {
         const course = await getCourseById(courseId);
         setCourseInfo(courseInfo);
@@ -52,7 +51,7 @@ export default function CourseDetailPage() {
     };
 
     if (courseId) {
-      fetchCourseData();
+      fetchCourse();
     }
   }, [courseId]);
 

@@ -1,7 +1,7 @@
 'use server'
 
 import { createSession, deleteSession } from '@/app/lib/session'
-import { SignupFormSchema, LoginFormSchema, FormState, User } from '@/app/lib/definitions'
+import { SignupFormSchema, FormState, User, LoginFormSchemaEmail, LoginFormSchemaNiub } from '@/app/lib/definitions'
 import { redirect } from 'next/navigation'
  
 export async function signup(state: FormState, formData: FormData) {
@@ -73,24 +73,42 @@ export async function signup(state: FormState, formData: FormData) {
 export async function login(state: FormState, formData: FormData) {
   try {
     // 1. Validate form fields
-    const validatedFields = LoginFormSchema.safeParse({
-      niub: formData.get('niub'),
-      email: formData.get('email'),
-      password: formData.get('password'),
-    })
+    let validatedFields = null;
+    let username = '';
     
+    if (formData.get('niub')) {
+      validatedFields = LoginFormSchemaNiub.safeParse({
+        niub: formData.get('niub'),
+        password: formData.get('password'),
+      });
+
+      if (validatedFields.success) {
+        username = validatedFields.data.niub;
+      }
+    }
+    else {
+      validatedFields = LoginFormSchemaEmail.safeParse({
+        email: formData.get('email'),
+        password: formData.get('password'),
+      })
+
+      if (validatedFields.success) {
+        username = validatedFields.data.email;
+      }
+    }
+
     if (!validatedFields.success) {
       return {
         errors: validatedFields.error.flatten().fieldErrors,
       }
     }
     
-    const { email, password } = validatedFields.data
+    const password = validatedFields.data.password;
     
     // 2. Token and user data from the API
     const formBody = new URLSearchParams()
     formBody.append('grant_type', 'password')
-    formBody.append('username', email)
+    formBody.append('username', username)
     formBody.append('password', password)
 
     const loginResponse = await fetch(`${process.env.BACKEND_URL}/api/v1/login/access-token`, {
@@ -136,8 +154,12 @@ export async function login(state: FormState, formData: FormData) {
     await createSession(user, access_token)
 
     // 4. Redirect user
-    redirect('/')
+    return {
+      success: true,
+      message: "Seràs redirigit al Dashboard.",
+    }
   } catch (error) {
+    console.error(error)
     return {
       success: false,
       message: "S'ha produït un error a l'inicia sessió. Torna-ho a intentar.",

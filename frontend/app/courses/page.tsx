@@ -22,83 +22,8 @@ import {
 	CalendarIcon,
 	ClockIcon
 } from '@heroicons/react/24/outline';
-
-// Datos de ejemplo para los cursos
-const sampleCourses = [
-  {
-    id: "eda",
-    title: "Algorísmica Avançada",
-    students_number: 40,
-    academic_year: "2024-2025",
-    programmingLanguage: "Python",
-    color: "blue",
-    completedPractices: 2,
-    totalPractices: 3
-  },
-  {
-    id: "ia",
-    title: "Intel·ligència Artificial",
-    students_number: 65,
-    academic_year: "2024-2025",
-    programmingLanguage: "Python",
-    color: "green",
-    completedPractices: 1,
-    totalPractices: 4
-  },
-  {
-    id: "bd",
-    title: "Bases de Dades",
-    students_number: 85,
-    academic_year: "2024-2025",
-    programmingLanguage: "SQL",
-    color: "orange",
-    completedPractices: 3,
-    totalPractices: 5
-  },
-  {
-    id: "pds",
-    title: "Projecte Integrat de Software",
-    students_number: 30,
-    academic_year: "2024-2025",
-    programmingLanguage: "JavaScript",
-    color: "purple",
-    completedPractices: 4,
-    totalPractices: 6
-  },
-  {
-    id: "xar",
-    title: "Xarxes de Computadors",
-    students_number: 55,
-    academic_year: "2024-2025",
-    programmingLanguage: "C",
-    color: "red",
-    completedPractices: 0,
-    totalPractices: 2
-  },
-  {
-    id: "so",
-    title: "Sistemes Operatius",
-    students_number: 75,
-    academic_year: "2024-2025",
-    programmingLanguage: "C",
-    color: "cyan",
-    completedPractices: 2,
-    totalPractices: 3
-  }
-];
-
-const academicYearOptions = [
-	{ name: "Actual", uid: "2024-2025" },
-  { name: "2023-2024", uid: "2023-2024" },
-  { name: "2022-2023", uid: "2022-2023" }
-];
-
-const languageOptions = [
-  { name: "Python", uid: "Python" },
-  { name: "C", uid: "C" },
-  { name: "SQL", uid: "SQL" },
-  { name: "JavaScript", uid: "JavaScript" }
-];
+import { Course } from '@/types/course';
+import { getMyCourses } from '../actions/course';
 
 const sortOptions = [
 	{ name: "Per Nom", uid: "name", icon: <AlphabeticalSortIcon className="size-4" /> },
@@ -106,6 +31,44 @@ const sortOptions = [
 ];
 
 export default function CoursesPage() {
+  const [courses, setCourses] = React.useState<Course[]>([]);
+  
+  React.useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const { courses } = await getMyCourses();
+        setCourses(courses);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    }
+    fetchCourses();
+  }, []);
+
+  const programmingLanguageOptions = React.useMemo(() => {
+    const languages = new Set<string>();
+    courses.forEach((course) => {
+      course.programming_languages.forEach((language) => {
+        languages.add(language);
+      });
+    });
+    return Array.from(languages).map((language) => ({
+      name: language,
+      uid: language
+    }));
+  }, [courses]);
+
+  const academicYearOptions = React.useMemo(() => {
+    const years = new Set<string>();
+    courses.forEach((course) => {
+      years.add(course.academic_year);
+    });
+    return Array.from(years).map((year) => ({
+      name: year,
+      uid: year
+    }));
+  }, [courses]);
+
   const [filterValue, setFilterValue] = React.useState("");
   const [academicYearFilter, setAcademicYearFilter] = React.useState<Selection>("all");
   const [languageFilter, setLanguageFilter] = React.useState<Selection>("all");
@@ -123,12 +86,12 @@ export default function CoursesPage() {
 
   // Filtrar cursos según búsqueda y filtros
   const filteredCourses = React.useMemo(() => {
-    let filtered = [...sampleCourses];
+    let filtered = [...courses];
 
     // Filtro de búsqueda
     if (hasSearchFilter) {
       filtered = filtered.filter((course) => 
-        course.title.toLowerCase().includes(filterValue.toLowerCase())
+        course.name.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
@@ -140,23 +103,23 @@ export default function CoursesPage() {
     }
 
     // Filtro de lenguaje de programación
-    if (languageFilter !== "all" && Array.from(languageFilter).length !== languageOptions.length) {
-      filtered = filtered.filter((course) => 
-        Array.from(languageFilter).includes(course.programmingLanguage)
+    if (languageFilter !== "all" && Array.from(languageFilter).length !== programmingLanguageOptions.length) {
+      filtered = filtered.filter((course) =>
+        course.programming_languages.some(lang => languageFilter.has(lang))
       );
     }
 
     return filtered;
-  }, [sampleCourses, filterValue, academicYearFilter, languageFilter]);
+  }, [courses, filterValue, academicYearFilter, languageFilter]);
 
 	const sortedData = React.useMemo(() => {
 		let sorted = [...filteredCourses];
 		const sortKey = Array.from(sortFilter)[0] as string;
 		switch(sortKey) {
 			case "name": // Sort by course name (alphabetical)
-				return sorted.sort((a, b) => a.title.localeCompare(b.title));
+				return sorted.sort((a, b) => a.name.localeCompare(b.name));
 			case "recently_accessed": // Sort by recently accessed (example logic)
-				return sorted.sort((a, b) => b.students_number - a.students_number); // Example: sort by number of students
+				return sorted.sort((a, b) => b.students_count - a.students_count); // Example: sort by number of students
 			default:
 				return sorted;
 		}
@@ -245,7 +208,7 @@ export default function CoursesPage() {
               selectionMode="multiple"
               onSelectionChange={setLanguageFilter}
             >
-              {languageOptions.map((option) => (
+              {programmingLanguageOptions.map((option) => (
                 <DropdownItem key={option.uid}>
                   {option.name}
                 </DropdownItem>
@@ -256,10 +219,12 @@ export default function CoursesPage() {
       </div>
     );
   }, [
+    hasSearchFilter,
     filterValue,
     academicYearFilter,
     languageFilter,
-		sortFilter
+		sortFilter,
+    courses.length
   ]);
 
   // Estado para contar los cursos por semestre
@@ -310,14 +275,7 @@ export default function CoursesPage() {
             {sortedData.map((course) => (
               <CourseCard
                 key={course.id}
-								id={course.id}
-                title={course.title}
-                students_number={course.students_number}
-                academic_year={course.academic_year}
-                programmingLanguage={course.programmingLanguage}
-                color={course.color}
-                completedPractices={course.completedPractices}
-                totalPractices={course.totalPractices}
+                course={course}
               />
             ))}
           </div>

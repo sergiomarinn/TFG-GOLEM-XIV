@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTokenFromSession } from '@/app/lib/session'
+import { deleteSession, getTokenFromSession } from '@/app/lib/session'
  
 // 1. Specify protected and public routes
 const publicRoutes = ['/login', '/register']
@@ -13,13 +13,29 @@ export default async function middleware(req: NextRequest) {
   const token = await getTokenFromSession()
  
   // 4. Redirect to /login if the user is not authenticated
-  if (!isPublicRoute && !token) {
-    return NextResponse.redirect(new URL('/login', req.nextUrl))
+  if (!token) {
+    if (!isPublicRoute) {
+      return NextResponse.redirect(new URL('/login', req.nextUrl))
+    }
+    return NextResponse.next()
   }
  
-  // 5. Redirect to / if the user is authenticated
+  // 5. Redirect to home page if the user is authenticated
   if (isPublicRoute && token) {
     return NextResponse.redirect(new URL('/', req.nextUrl))
+  }
+
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/login/test-token`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json',
+    }
+  })
+
+  if (!res.ok) {
+    await deleteSession();
+    return NextResponse.redirect(new URL('/login', req.nextUrl))
   }
  
   return NextResponse.next()

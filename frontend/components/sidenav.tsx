@@ -5,11 +5,12 @@ import Image from 'next/image';
 import LogoUB from "@/public/logo-ub.svg";
 import LogoUBExtended from "@/public/logo-ub-extended.svg";
 import { Button } from "@heroui/button";
-import { usePathname } from 'next/navigation';
+import { redirect, usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { siteConfig } from "@/config/site";
 import { ArrowLeftStartOnRectangleIcon, Cog6ToothIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
+import { logout } from '@/app/actions/auth';
 
 export const SideNav = () => {
 	const pathname = usePathname()
@@ -157,13 +158,14 @@ export const SideNav = () => {
             color="danger"
             variant="light"
             startContent={<ArrowLeftStartOnRectangleIcon className="size-6" />}
-            aria-label="Tanca sessió"
+            aria-label="Tancar sessió"
+            onPress={async () => {await logout(); redirect('/login');}}
           >
 						<span className={clsx(
               "origin-left transition-all duration-150 ease-in-out whitespace-nowrap",
               isCollapsed ? "opacity-0 w-0 scale-0" : "opacity-100 w-auto scale-100"
             )}>
-              Tanca sessió
+              Tancar sessió
             </span>
           </Button>
 				</div>

@@ -34,7 +34,7 @@ export default function RegisterPage() {
 
       const timeout = setTimeout(() => {
         redirect('/login');
-      }, 3100);
+      }, 1000);
 
       return () => clearTimeout(timeout);
     }

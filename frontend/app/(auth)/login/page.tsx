@@ -14,6 +14,7 @@ import {
   CardIcon,
   ArrowUpRightIcon
 } from '@/components/icons'
+import { redirect } from 'next/navigation';
 
 export default function LoginPage() {
   const [state, action, pending] = useActionState(login, undefined)
@@ -26,12 +27,13 @@ export default function LoginPage() {
   useEffect(() => {
     if (state?.success) {
       addToast({
-        title: "Acabes d'inicia de sessió correctament",
+        title: "Inici de sessió correcte",
         description: state?.message,
         timeout: 3500,
         shouldShowTimeoutProgress: true,
         color: "success",
       });
+      redirect('/');
     }
     else if (state?.success === false) {
       addToast({

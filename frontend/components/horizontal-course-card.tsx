@@ -3,17 +3,13 @@ import { Button } from "@heroui/button";
 import { Progress } from "@heroui/progress";
 import { Avatar, AvatarGroup } from "@heroui/avatar";
 import { DocumentArrowUpIcon, DocumentCheckIcon, ArrowRightIcon, CalendarIcon, UsersIcon } from "@heroicons/react/24/outline";
+import { Course } from "@/types/course";
+import { User } from "@/app/lib/definitions";
+import { useState, useEffect } from "react";
+import { getCourseTeachers } from "@/app/actions/course";
 
 interface HorizontalCourseCardProps {
-  title?: string;
-  students_number?: number;
-  academic_year?: string;
-  programmingLanguage?: string;
-  color?: "blue" | "purple" | "green" | "orange" | "pink";
-  image?: string;
-  completedPractices?: number;
-  totalPractices?: number;
-  description?: string;
+  course: Course;
 }
 
 interface TagProps {
@@ -28,40 +24,41 @@ export const Tag = ({ label }: TagProps) => {
   );
 }
 
-export const HorizontalCourseCard = ({
-  title = "Algorísmica Avançada",
-  students_number = 40,
-  academic_year = "2023-2024",
-  programmingLanguage = "Python",
-  color = "blue",
-  image,
-  completedPractices = 2,
-  totalPractices = 3,
-  description = "Curs avançat d'algorísmica per a estudiants del grau d'informàtica. Aprofundeix en estructures de dades complexes i algoritmes eficients."
-}: HorizontalCourseCardProps) => {
+export const HorizontalCourseCard = ({course}: HorizontalCourseCardProps) => {
+  const [teachers, setTeachers] = useState<User[]>([]);
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const teachers = await getCourseTeachers(course.id);
+        setTeachers(teachers);
+      } catch (error) {
+        console.error("Error fetching course teachers:", error);
+      }
+    }
+    fetchTeachers();
+  }, [course.id])
   
-  // Definir gradientes para diferentes colores
   const gradients = {
-    blue: "bg-gradient-to-r from-blue-500 to-violet-600",
-    purple: "bg-gradient-to-r from-purple-500 to-pink-600",
-    green: "bg-gradient-to-r from-emerald-500 to-teal-700",
-    orange: "bg-gradient-to-r from-amber-500 to-orange-600",
-    pink: "bg-gradient-to-r from-pink-400 to-rose-600"
+    blue: "bg-gradient-to-br from-blue-500 to-violet-600",
+    purple: "bg-gradient-to-br from-purple-500 to-pink-600",
+    green: "bg-gradient-to-br from-emerald-500 to-teal-700",
+    orange: "bg-gradient-to-br from-amber-500 to-orange-600",
+    pink: "bg-gradient-to-br from-pink-400 to-rose-600",
+    cyan: "bg-gradient-to-br from-cyan-400 to-cyan-600",
+    red: "bg-gradient-to-br from-red-500 to-rose-700",
+    indigo: "bg-gradient-to-br from-indigo-500 to-purple-700",
+    lime: "bg-gradient-to-br from-lime-400 to-green-600",
+    default: "bg-gradient-to-br from-gray-500 to-gray-700"
   };
   
-  // Seleccionar el gradiente según el color
-  const backgroundGradient = gradients[color];
+  const backgroundGradient = gradients[course.color];
 
   return (
     <div className="relative mx-auto w-full overflow-hidden rounded-3xl shadow-lg">
       {/* Background with gradient or image */}
       <div className="relative h-[265px] md:h-[280px] w-full transition-all duration-400 transform">
         {/* Gradient or Image Background */}
-        {image ? (
-          <Image src={image} alt={`${title} background`} fill className="object-cover" priority />
-        ) : (
-          <div className={`absolute inset-0 ${backgroundGradient}`} />
-        )}
+        <div className={`absolute inset-0 ${backgroundGradient}`} />
 
         {/* Pattern Overlay */}
         <div className="absolute inset-0 opacity-10" 
@@ -76,13 +73,15 @@ export const HorizontalCourseCard = ({
           <div className="w-full md:w-[36.5%] px-6 py-6 backdrop-blur-lg bg-zinc-800/30 flex flex-col justify-between">
             {/* Category Tags */}
             <div className="flex items-center gap-2 mb-2">
-              <Tag label={academic_year}></Tag>
-              <Tag label={programmingLanguage}></Tag>
+              <Tag label={course.academic_year}></Tag>
+              {course.programming_languages.map((lang, index) => (
+                <Tag key={index} label={lang}></Tag>
+              ))}
             </div>
 
             {/* Course Title */}
             <div className="pb-3">
-              <h2 className="text-2xl font-semibold text-white mb-1">{title}</h2>
+              <h2 className="text-2xl font-semibold text-white mb-1">{course.name}</h2>
               {/* Course Info */}
               <div className="flex items-center justify-between w-full text-white text-sm font-light mb-4">
                 <span className="inline-flex items-start justify-center gap-1">
@@ -91,7 +90,7 @@ export const HorizontalCourseCard = ({
                 </span>
                 <span className="inline-flex items-start gap-1">
                   <UsersIcon className="size-5 text-default-200"/>
-                  {students_number} Estudiants
+                  {course.students_count} Estudiants
                 </span>
               </div>
             </div>
@@ -111,7 +110,7 @@ export const HorizontalCourseCard = ({
             {/* Course Description */}
             <div>
               <h3 className="text-lg font-medium text-white mb-2">Descripció</h3>
-              <p className="text-default-200 text-sm text-pretty line-clamp-4 mb-4">{description}</p>
+              <p className="text-default-200 text-sm text-pretty line-clamp-4 mb-4">{course.description}</p>
             </div>
             
             {/* Practices Progress */}
@@ -119,18 +118,18 @@ export const HorizontalCourseCard = ({
               <Progress
                 aria-label="Pràctiques fetes"
                 size="sm"
-                color={completedPractices === totalPractices ? "success" : "primary"}
-                value={completedPractices}
-                maxValue={totalPractices}
+                color={course.corrected_practices === course.total_practices ? "success" : "primary"}
+                value={course.corrected_practices}
+                maxValue={course.total_practices}
               />
               <div className="flex items-start justify-start gap-2 mt-1.5 mb-2 text-default-300">
                 <span className="text-xs pr-1 inline-flex items-center">
-                  {completedPractices === totalPractices ? (
+                  {course.corrected_practices === course.total_practices ? (
                     <DocumentCheckIcon className="size-4 inline-block mr-1" />
                   ) : (
                     <DocumentArrowUpIcon className="size-4 inline-block mr-1" />
                   )}
-                  {completedPractices}/{totalPractices} Pràctiques
+                  {course.corrected_practices}/{course.total_practices} Pràctiques
                 </span>
               </div>
             </div>

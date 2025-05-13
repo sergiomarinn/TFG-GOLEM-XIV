@@ -157,7 +157,7 @@ export async function updatePractice(practiceId: string, data: string): Promise<
 }
 
 export async function uploadPractice(practiceId: string, file: File): Promise<void> {
-  const formData = new FormData();
+	const formData = new FormData();
   formData.append("file", file);
 
   const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/upload`, {

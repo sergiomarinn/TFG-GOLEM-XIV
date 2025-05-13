@@ -20,3 +20,7 @@ class PracticesUsersLink(SQLModel, table=True):
     status: StatusEnum = Field(default=StatusEnum.NOT_SUBMITTED, sa_column=Column(Enum(StatusEnum), nullable=False, server_default='NOT_SUBMITTED'))
     submission_file_name: str | None = Field(default=None)
     correction: dict | None = Field(default=None, sa_type=JSONB)
+
+class PracticeFileInfo(SQLModel):
+    name: str
+    size: int

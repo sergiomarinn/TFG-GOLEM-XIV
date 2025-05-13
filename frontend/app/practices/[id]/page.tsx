@@ -64,6 +64,12 @@ const PracticeStatus = ({ status }: {status: string}) => {
 
 // Componente para el listado de archivos
 const FileList = ({ files, onDelete }) => {
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else return (bytes / 1048576).toFixed(1) + ' MB';
+  };
+
   if (!files || files.length === 0) {
     return (
       <div className="text-center px-2 py-2 text-default-500">
@@ -81,7 +87,7 @@ const FileList = ({ files, onDelete }) => {
             <DocumentIcon className="size-[1.9rem] text-default-500 shrink-0" />
 						<div className="flex flex-col min-w-0">
 							<span className="font-medium truncate">{file.name}</span>
-							<span className="text-xs text-default-400">{file.size}</span>
+							<span className="text-xs text-default-400">{formatFileSize(file.size)}</span>
 						</div>
           </div>
           {onDelete && (
@@ -104,18 +110,18 @@ const FileList = ({ files, onDelete }) => {
 
 // Componente para manejar la subida de archivos
 const FileUploader = ({ files, setFiles, disabled = false }) => {
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 	const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (e) => {
-    const newFiles = Array.from(e.target.files);
+    const newFiles: File[] = Array.from(e.target.files);
     if (newFiles.length > 0) {
       processFiles(newFiles);
     }
   };
 
-	const processFiles = (newFiles) => {
-    const validFiles = [];
+	const processFiles = (newFiles: File[]) => {
+    const validFiles: File[] = [];
 		let rejected = false;
 
 		newFiles.forEach(file => {
@@ -127,13 +133,7 @@ const FileUploader = ({ files, setFiles, disabled = false }) => {
 			if (!isZip) {
 				rejected = true;
 			} else {
-				validFiles.push({
-					file,
-					id: Math.random().toString(36).substring(7),
-					name: file.name,
-					size: formatFileSize(file.size),
-					type: file.type
-				});
+				validFiles.push(file);
 			}
 		});
 
@@ -149,16 +149,10 @@ const FileUploader = ({ files, setFiles, disabled = false }) => {
 		}
 	}
 
-  const deleteFile = (index) => {
+  const deleteFile = (index: number) => {
     const newFiles = [...files];
     newFiles.splice(index, 1);
     setFiles(newFiles);
-  };
-
-	const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + ' B';
-    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-    else return (bytes / 1048576).toFixed(1) + ' MB';
   };
 
 	// Handlers for drag and drop
@@ -187,7 +181,7 @@ const FileUploader = ({ files, setFiles, disabled = false }) => {
     
     if (disabled) return;
     
-    const droppedFiles = Array.from(e.dataTransfer.files);
+    const droppedFiles: File[] = Array.from(e.dataTransfer.files);
     if (droppedFiles.length > 0) {
       processFiles(droppedFiles);
     }
@@ -373,9 +367,6 @@ export default function PracticeDetailPage() {
     try {
       setIsSubmitting(true);
       await uploadPractice(practice.id, files[0])
-      
-      setIsSubmitting(false);
-      setShowResubmit(false);
 
       setPractice({
         ...practice,
@@ -396,6 +387,9 @@ export default function PracticeDetailPage() {
         description: "Torna-ho a intentar més tard",
         color: "danger"
       });
+    } finally {
+      setIsSubmitting(false);
+      setShowResubmit(false);
     }
   };
 
@@ -445,11 +439,11 @@ export default function PracticeDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna principal */}
-        <div className="md:col-span-2">
+        <div className="lg:col-span-2">
           {/* Descripción de la práctica */}
-          <Card className="mb-6">
+          <Card>
             <CardHeader>
               <h2 className="text-xl font-semibold px-2 pt-1">Descripció de la pràctica</h2>
             </CardHeader>

@@ -32,6 +32,7 @@ from app.models import (
     PracticesPublicWithCourse,
     PracticesPublicWithCorrection,
     PracticesUsersLink,
+    PracticeFileInfo,
     StatusEnum
 )
 import pandas as pd
@@ -182,6 +183,96 @@ def read_practice_course(practice_id: uuid.UUID, session: SessionDep) -> Any:
     
     return practice
 
+@router.get("/{practice_id}/submission-file-info", response_model=PracticeFileInfo)
+def read_practice_file_info(practice_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Retrieve uploaded file info for a given practice.
+    """
+
+    practice, practice_user = session.exec(select(Practice, PracticesUsersLink)
+        .where(
+            PracticesUsersLink.user_niub == current_user.niub,
+            PracticesUsersLink.practice_id == practice_id
+        )
+    ).first()
+
+    if not practice:
+        raise HTTPException(status_code=404, detail="Practice not found")
+    
+    if not practice_user:
+        raise HTTPException(status_code=403, detail="Access denied to this practice")
+    
+    if not practice_user.submission_file_name:
+        raise HTTPException(status_code=404, detail="No file submitted for this practice")
+    
+    base_path = ""
+    if current_user.is_student:
+        base_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+    elif current_user.is_teacher:
+        base_path = os.path.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+    
+    file_path = os.path.join(base_path, practice_user.submission_file_name)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=204, detail="Submitted file not found on server")
+
+    return PracticeFileInfo(
+        name=practice_user.submission_file_name,
+        size=os.path.getsize(file_path),
+    )
+
+@router.get("/{practice_id}/users/{niub}/submission-file-info", response_model=PracticeFileInfo)
+def read_user_submission_file_info(practice_id: uuid.UUID, niub: int, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Retrieve uploaded file info for a specific user's submission to a given practice.
+    """
+    if current_user.is_student and current_user.niub != niub:
+        raise HTTPException(status_code=403, detail="Students can only access their own submissions")
+
+    result = session.exec(
+        select(Practice, PracticesUsersLink)
+        .where(
+            PracticesUsersLink.user_niub == niub,
+            PracticesUsersLink.practice_id == practice_id
+        )
+    ).first()
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Practice or submission not found")
+
+    practice, practice_user = result
+
+    if not practice:
+        raise HTTPException(status_code=404, detail="Practice not found")
+
+    if not practice_user:
+        raise HTTPException(status_code=403, detail="Access to this submission is not allowed")
+
+    if not practice_user.submission_file_name:
+        raise HTTPException(status_code=204, detail="No file submitted for this practice")
+    
+    if current_user not in practice.users:
+        raise HTTPException(status_code=403, detail="Teacher can only access to their own practices")
+
+    base_path = os.path.join(
+        settings.STUDENT_FILES_PATH,
+        practice.course.academic_year,
+        practice.course.name,
+        practice.name
+    )
+
+    file_path = os.path.join(base_path, practice_user.submission_file_name)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=410, detail="Submitted file not found on server")
+
+    file_size = os.path.getsize(file_path)
+
+    return PracticeFileInfo(
+        name=practice_user.submission_file_name,
+        size=file_size
+    )
+
 @router.post("/", dependencies=[Depends(get_current_teacher)], response_model=PracticePublic)
 async def create_practice(*, session: SessionDep, practice_in: PracticeCreate, files: list[UploadFile] = File(None)) -> Any:
     """
@@ -269,11 +360,14 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
     if current_user not in practice.users:
         raise HTTPException(status_code=400, detail="User not in course")
     
-    if not file.filename.lower().endswith(".zip"):
-        raise HTTPException(status_code=400, detail="Only ZIP files are allowed")
-    
+    if not file:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+
     body = None
     if current_user.is_student:
+        if not file.filename.lower().endswith(".zip"):
+            raise HTTPException(status_code=400, detail="Only ZIP files are allowed")
+        
         file_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name, current_user.niub)
 
         practice_user = session.exec(select(PracticesUsersLink)
@@ -306,18 +400,31 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
     os.makedirs(file_path, exist_ok=True)
 
     try:
-        async with aiofiles.open(file_path, 'wb') as out_file:
+        complete_file_path = os.path.join(file_path, file.filename)
+        async with aiofiles.open(complete_file_path, 'wb') as out_file:
             chunk_size = 1024 * 1024  # 1MB
             while content := await file.read(chunk_size):
                 await out_file.write(content)
-
+            
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error saving file {file.filename}: {str(e)}")
     
     if body:
-        practice_service.send_practice_data(body)
+        try:
+            practice_service.send_practice_data(body)
+        except Exception as e:
+            print(f"Error sending practice data to external service: {str(e)}")
+            pass
     
-    return {"status": "success", "file": file.filename}
+    return {
+        "status": "success",
+        "file": {
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "path": complete_file_path,
+            "submitted_at": datetime.now().isoformat()
+        }
+    }
 
 def add_files_to_zip(zip_file: zipfile.ZipFile, user_path: str, base_dir: str = "") -> None:
     """

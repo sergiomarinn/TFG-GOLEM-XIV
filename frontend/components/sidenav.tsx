@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import LogoUB from "@/public/logo-ub.svg";
 import LogoUBExtended from "@/public/logo-ub-extended.svg";
+import LogoUBExtendedWhite from "@/public/logo-ub-extended-white.svg";
 import { Button } from "@heroui/button";
 import { redirect, usePathname } from 'next/navigation';
 import clsx from 'clsx';
@@ -11,11 +12,14 @@ import { siteConfig } from "@/config/site";
 import { ArrowLeftStartOnRectangleIcon, Cog6ToothIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
 import { logout } from '@/app/actions/auth';
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from 'next-themes';
 
 export const SideNav = () => {
 	const pathname = usePathname()
 	const [isCollapsed, setIsCollapsed] = useState(false);
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
+  const { theme } = useTheme();
 
 	useEffect(() => {
     const saved = localStorage.getItem("sidenav-collapsed");
@@ -27,12 +31,12 @@ export const SideNav = () => {
   }, [isCollapsed]);
 
 	return (
-  	<aside
-			className={clsx(
-				"flex flex-col justify-between px-4 py-5 transition-all duration-300 ease-in-out",
-				isCollapsed ? "w-[80px]" : "w-[220px]"
-			)}
-		>
+    <motion.aside
+      initial={false}
+      animate={{ width: isCollapsed ? 80 : 220 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="hidden sm:flex flex-col justify-between px-4 py-5 transition-colors duration-300 ease-in-out"
+    >
 			{/* Toggle button */}
       <button
         aria-label="Toggle sidebar"
@@ -62,7 +66,7 @@ export const SideNav = () => {
 						)}
 					>
 						<Image
-							src={LogoUBExtended}
+							src={theme === "dark" ? LogoUBExtendedWhite : LogoUBExtended}
 							alt="Logo UB Extended"
 							width={160}
 							height={32}
@@ -117,12 +121,20 @@ export const SideNav = () => {
                       isActive ? "text-primary" : "")} />
                   )}
                 </div>
-                <span className={clsx(
-                  "origin-left whitespace-nowrap pl-7",
-                  isCollapsed ? "opacity-0 w-0 scale-0 transition-all duration-150 ease-in-out" : "opacity-100 w-auto scale-100 transition-all duration-300 ease-in-out"
-                )}>
-                  {label}
-                </span>
+                <AnimatePresence mode="wait">
+                  {!isCollapsed && (
+                    <motion.span
+                      key={`label-${label}`}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="origin-left whitespace-nowrap pl-7"
+                    >
+                      {label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </Button>
             );
           })}
@@ -170,6 +182,6 @@ export const SideNav = () => {
           </Button>
 				</div>
 			</div>
-		</aside>
+		</motion.aside>
 	);
 };

@@ -140,7 +140,7 @@ export function ParticipantsSection({courseUsers}: {courseUsers: User[]}) {
         {filteredUsers.map((user) => (
           <Card key={user.niub} className="w-full">
             <CardBody className="flex flex-row items-center py-3">
-              <Avatar name={user.name} className="mr-4" />
+              <Avatar showFallback className="mr-4" />
               <div className="flex-grow">
                 <div className="flex items-center">
                   <h3 className="font-semibold text-lg mr-2">{user.name}</h3>

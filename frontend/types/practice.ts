@@ -14,6 +14,7 @@ export interface Practice {
 	correction?: any
 	course?: Course
 	users?: User[]
+	teacher?: User
 }
 
 export interface Practices {

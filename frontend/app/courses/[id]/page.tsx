@@ -59,7 +59,7 @@ export default function CourseDetailPage() {
   const courseTeacher = React.useMemo(() => {
     if (courseInfo?.users) {
       const teacher = courseInfo.users.find((user) => user.is_teacher);
-      return teacher ? teacher.name : "";
+      return teacher ? teacher.name + " " + teacher.surnames : "";
     }
     return "";
   }, [courseInfo]);
@@ -231,9 +231,7 @@ export default function CourseDetailPage() {
                 {sortedPractices.map((practice) => (
                   <PracticeCourseCard 
                     key={practice.id}
-                    name={practice.name}
-                    due_date={practice.due_date}
-                    status={practice.status}>
+                    practice={practice}>
                   </PracticeCourseCard>
                 ))}
               </div>) 

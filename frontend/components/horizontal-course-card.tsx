@@ -1,7 +1,9 @@
-import Image from "next/image"
+'use client';
+
 import { Button } from "@heroui/button";
 import { Progress } from "@heroui/progress";
 import { Avatar, AvatarGroup } from "@heroui/avatar";
+import { Tooltip } from "@heroui/tooltip";
 import { DocumentArrowUpIcon, DocumentCheckIcon, ArrowRightIcon, CalendarIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { Course } from "@/types/course";
 import { User } from "@/app/lib/definitions";
@@ -22,7 +24,7 @@ interface TagProps {
 export const Tag = ({ label }: TagProps) => {
   return (
     <div className="flex items-center justify-center rounded-md backdrop-blur-md bg-white/60">
-      <span className="text-xs text-white font-light px-2 py-1">{label}</span>
+      <span className="text-xs text-white font-light px-2 py-1 capitalize">{label}</span>
     </div>
   );
 }
@@ -105,7 +107,9 @@ export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps
             <div className={clsx(expand ? "mb-4" : "")}>
               <AvatarGroup max={7} isBordered>
                 {teachers.map((teacher) => (
-                  <Avatar showFallback name={teacher.name} />
+                  <Tooltip showArrow crossOffset={-12} closeDelay={50} content={teacher.name + " " + teacher.surnames}>
+                    <Avatar showFallback />
+                  </Tooltip>
                 ))}
               </AvatarGroup>
             </div>

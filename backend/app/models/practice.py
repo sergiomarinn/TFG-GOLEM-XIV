@@ -1,6 +1,8 @@
 import enum
 from sqlmodel import Field, Relationship, Enum, Column
 from pydantic import model_validator
+from sqlalchemy.ext.hybrid import hybrid_property
+from typing import ClassVar
 
 from datetime import datetime
 from .base import SQLModel
@@ -57,6 +59,7 @@ class PracticePublic(PracticeBase):
     submission_date: datetime | None = None
     status: StatusEnum | None = None
     submission_file_name: str | None = None
+    teacher: UserPublic | None = None
 
 class PracticePublicWithUsers(PracticeBase):
     id: uuid.UUID

@@ -1,11 +1,11 @@
 'use client';
 
-import Image from "next/image"
 import { Button } from "@heroui/button";
 import { Progress } from "@heroui/progress";
-import { Avatar, AvatarGroup, AvatarIcon } from "@heroui/avatar";
+import { Avatar, AvatarGroup } from "@heroui/avatar";
 import { DocumentArrowUpIcon, DocumentCheckIcon, ArrowRightIcon, CalendarIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { Link } from "@heroui/link";
+import { Tooltip } from "@heroui/tooltip";
 import { Course } from "@/types/course";
 import { useEffect, useState } from "react";
 import { getCourseTeachers } from "@/app/actions/course";
@@ -133,7 +133,9 @@ export const CourseCard = ({course}: CourseCardProps) => {
           <div className="absolute right-5 -top-[1.55rem]">
 						<AvatarGroup max={3} isBordered>
               {teachers.map((teacher) => (
-                <Avatar showFallback name={teacher.name} />
+                <Tooltip showArrow crossOffset={-12} closeDelay={50} content={teacher.name + " " + teacher.surnames}>
+                  <Avatar showFallback />
+                </Tooltip>
               ))}
 						</AvatarGroup>
           </div>

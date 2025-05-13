@@ -8,6 +8,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlmodel import col, delete, func, select
+import logging
+logger = logging.getLogger("uvicorn")
 
 from app import crud
 from app.api.deps import (
@@ -68,13 +70,19 @@ def read_my_practices(session: SessionDep, current_user: CurrentUser, skip: int 
 
     practices_with_course = []
     for practice, link in practices:
-        practice_data = PracticePublicWithUsersAndCourse(
+        teacher = None
+        for user in practice.users:
+            if user.is_teacher:
+                teacher = user
+                break
+        
+        practice_data = PracticePublicWithCourse(
             **practice.model_dump(),
             submission_date=link.submission_date,
             status=link.status,
             submission_file_name=link.submission_file_name,
-            correction=link.correction,
-            course=practice.course
+            course=practice.course,
+            teacher=teacher
         )
         practices_with_course.append(practice_data)
 
@@ -134,6 +142,12 @@ def read_practice(practice_id: uuid.UUID, session: SessionDep, current_user: Cur
     
     if current_user not in practice.course.users:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the practice.")
+    
+    teacher = None
+    for user in practice.users:
+        if user.is_teacher:
+            teacher = user
+            break
 
     return PracticePublicWithUsersAndCourse(
         **practice.model_dump(),
@@ -142,7 +156,8 @@ def read_practice(practice_id: uuid.UUID, session: SessionDep, current_user: Cur
         submission_file_name=link.submission_file_name,
         correction=link.correction,
         users=practice.users,
-        course=practice.course
+        course=practice.course,
+        teacher=teacher
     )
 
 @router.get("/{practice_id}/users", response_model=PracticePublicWithUsers)

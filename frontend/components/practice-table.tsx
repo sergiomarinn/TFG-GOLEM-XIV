@@ -26,7 +26,9 @@ import {
 } from "@heroui/dropdown";
 
 import { SearchIcon, ChevronDownIcon, EyeIcon } from '@/components/icons'
-import { practiceStatusOptions as statusOptions, practiceStatusColorMap as statusColorMap, practices } from "@/types";
+import { practiceStatusOptions as statusOptions, practiceStatusColorMap as statusColorMap } from "@/types";
+import { Practice } from "@/types/practice";
+import { redirect } from "next/navigation";
 
 export const columns = [
   {name: "PRÀCTICA", uid: "name", sortable: true},
@@ -44,9 +46,7 @@ export const dueDateRangesOptions = [
   { name: "Propers 6 mesos", uid: "next_6_months" },
 ];
 
-type Practice = (typeof practices)[0];
-
-export const PracticeTable = () => {
+export const PracticeTable = ({ practices }: { practices: Practice[] }) => {
   const [filterValue, setFilterValue] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
   const [selectedDueRangeFilter, setSelectedDueRangeFilter] = React.useState<Selection>(new Set(["next_7_days"]));
@@ -57,6 +57,17 @@ export const PracticeTable = () => {
 
   const getStatusName = (uid: string) =>
     statusOptions.find((option) => option.uid === uid)?.name || uid; 
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ca-ES', { 
+      day: '2-digit', 
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({
@@ -114,17 +125,8 @@ export const PracticeTable = () => {
     return filteredPractices;
   }, [practices, filterValue, statusFilter, selectedDueRangeFilter]);
 
-  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
-
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    return filteredItems.slice(start, end);
-  }, [page, filteredItems, rowsPerPage]);
-
   const sortedItems = React.useMemo(() => {
-    return [...items].sort((a: Practice, b: Practice) => {
+    return [...filteredItems].sort((a: Practice, b: Practice) => {
       const column = sortDescriptor.column as keyof Practice;
 
       let first = a[column];
@@ -139,7 +141,16 @@ export const PracticeTable = () => {
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
-  }, [sortDescriptor, items]); 
+  }, [sortDescriptor, filteredItems]);
+
+  const pages = Math.ceil(filteredItems.length / rowsPerPage) || 1;
+
+  const items = React.useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+
+    return sortedItems.slice(start, end);
+  }, [page, sortedItems, rowsPerPage]);
 
   const renderCell = React.useCallback((practice: Practice, columnKey: React.Key) => {
     const cellValue = practice[columnKey as keyof Practice];
@@ -154,23 +165,23 @@ export const PracticeTable = () => {
       case "course":
         return (
           <div className="flex flex-col">
-            <p className="text-bold text-small capitalize">{cellValue}</p>
+            <p className="text-bold text-small capitalize">{practice.course?.name}</p>
           </div>
         );
       case "teacher":
         return (
           <User
-            avatarProps={{radius: "lg", src: practice.avatar}}
-            description={practice.teacherEmail}
-            name={cellValue}
+            avatarProps={{radius: "lg", showFallback: true}}
+            description={practice.teacher?.email}
+            name={practice.teacher?.name}
           >
-            {practice.teacherEmail}
+            {practice.teacher?.email}
           </User>
         );
       case "due_date":
         return (
           <div className="flex flex-col">
-            <p className="text-bold text-small capitalize">{cellValue}</p>
+            <p className="text-bold text-small capitalize">{formatDate(cellValue)}</p>
           </div>
         );
       case "status":
@@ -183,9 +194,14 @@ export const PracticeTable = () => {
         return (
           <div className="relative flex justify-center items-center gap-2">
             <Tooltip content="Anar a la pràctica">
-              <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
+              <button
+                type="button"
+                onClick={() => redirect(`/practices/${practice.id}`)}
+                className="text-lg text-default-400 hover:text-primary transition-transform duration-150 active:scale-95 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                aria-label="Anar a la pràctica"
+              >
                 <EyeIcon />
-              </span>
+              </button>
             </Tooltip>
           </div>
         );
@@ -324,7 +340,7 @@ export const PracticeTable = () => {
           </TableColumn>
         )}
       </TableHeader>
-      <TableBody emptyContent={"No hi ha cap pràctica que requereixi una acció"} items={sortedItems}>
+      <TableBody emptyContent={"No hi ha cap pràctica que requereixi una acció"} items={items}>
         {(item) => (
           <TableRow key={item.id}>
             {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}

@@ -7,9 +7,12 @@ import { Course } from "@/types/course";
 import { User } from "@/app/lib/definitions";
 import { useState, useEffect } from "react";
 import { getCourseTeachers } from "@/app/actions/course";
+import { clsx } from "clsx";
+import { Link } from "@heroui/link";
 
 interface HorizontalCourseCardProps {
   course: Course;
+  expand: boolean;
 }
 
 interface TagProps {
@@ -24,7 +27,7 @@ export const Tag = ({ label }: TagProps) => {
   );
 }
 
-export const HorizontalCourseCard = ({course}: HorizontalCourseCardProps) => {
+export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps) => {
   const [teachers, setTeachers] = useState<User[]>([]);
   useEffect(() => {
     const fetchTeachers = async () => {
@@ -56,7 +59,10 @@ export const HorizontalCourseCard = ({course}: HorizontalCourseCardProps) => {
   return (
     <div className="relative mx-auto w-full overflow-hidden rounded-3xl shadow-lg">
       {/* Background with gradient or image */}
-      <div className="relative h-[265px] md:h-[280px] w-full transition-all duration-400 transform">
+      <div className={clsx(
+        "relative w-full transition-all duration-400 transform",
+        expand ? "h-[280px]" : teachers.length == 0 ? "h-[244px]" : "h-[285px]"
+      )}>
         {/* Gradient or Image Background */}
         <div className={`absolute inset-0 ${backgroundGradient}`} />
 
@@ -68,9 +74,9 @@ export const HorizontalCourseCard = ({course}: HorizontalCourseCardProps) => {
         />
 
         {/* Content Container */}
-        <div className="absolute bottom-0 left-0 w-full h-full flex flex-col md:flex-row">
+        <div className={clsx(expand ? "flex flex-row" : "flex flex-col", "absolute bottom-0 left-0 w-full h-full")}>
           {/* Left Side Content (1/3) */}
-          <div className="w-full md:w-[36.5%] px-6 py-6 backdrop-blur-lg bg-zinc-800/30 flex flex-col justify-between">
+          <div className={clsx(expand ? "w-[36.5%]" : "w-full", "px-6 py-6 backdrop-blur-lg bg-zinc-800/30 flex flex-col justify-between")}>
             {/* Category Tags */}
             <div className="flex items-center gap-2 mb-2">
               <Tag label={course.academic_year}></Tag>
@@ -96,17 +102,17 @@ export const HorizontalCourseCard = ({course}: HorizontalCourseCardProps) => {
             </div>
 
             {/* Teachers Avatars */}
-            <div className="md:mb-4">
+            <div className={clsx(expand ? "mb-4" : "")}>
               <AvatarGroup max={7} isBordered>
-                <Avatar showFallback src="https://i.pravatar.cc/150?u=a042581f4e29026024d" />
-                <Avatar showFallback src="https://images.unsplash.com/broken" />
-                <Avatar showFallback src="https://i.pravatar.cc/150?u=a042581f4e29026704d" />
+                {teachers.map((teacher) => (
+                  <Avatar showFallback name={teacher.name} />
+                ))}
               </AvatarGroup>
             </div>
           </div>
           
           {/* Center Content (1/3) */}
-          <div className="hidden md:flex flex-col justify-between w-full md:w-[36.5%] px-6 py-6 backdrop-blur-lg bg-zinc-800/20 ">
+          <div className={clsx(expand ? "w-[36.5%] flex flex-col justify-between" : "w-full hidden", "px-6 py-6 backdrop-blur-lg bg-zinc-800/20")}>
             {/* Course Description */}
             <div>
               <h3 className="text-lg font-medium text-white mb-2">Descripció</h3>
@@ -136,7 +142,7 @@ export const HorizontalCourseCard = ({course}: HorizontalCourseCardProps) => {
           </div>
           
           {/* Right Side Content (1/3) */}
-          <div className="w-full md:w-[27%] px-6 py-3 md:py-6 bg-zinc-800/10 flex flex-col justify-end">
+          <div className={clsx(expand ? "w-[27%] py-6" : "w-full py-4", "px-6 bg-zinc-800/10 flex flex-col justify-end")}>
             {/* Decorative elements */}
             <div className="flex-grow relative">
               <div className="absolute top-4 right-4 w-16 h-16 rounded-full bg-white opacity-10"></div>
@@ -147,9 +153,11 @@ export const HorizontalCourseCard = ({course}: HorizontalCourseCardProps) => {
             <div className="mt-auto">
               <Button
                 color="primary"
+                as={Link}
                 fullWidth
                 size="lg"
                 endContent={<ArrowRightIcon className="size-5"/>}
+                href={`/courses/${course.id}`}
               >
                 Ves al curs
               </Button>

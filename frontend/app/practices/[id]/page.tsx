@@ -393,7 +393,7 @@ export default function PracticeDetailPage() {
       console.error("Error submitting practice:", error);
       addToast({
         title: "Error en enviar la pràctica",
-        description: "Torna-ho a intentar més tard"
+        description: "Torna-ho a intentar més tard",
         color: "danger"
       });
     }
@@ -434,7 +434,7 @@ export default function PracticeDetailPage() {
           </div>
           <div className="flex items-center gap-1">
             <CodeBracketIcon className="size-4" />
-            <span>Llenguatge: {practice?.programming_language}</span>
+            <span className="capitalize">Llenguatge: {practice?.programming_language}</span>
           </div>
           {practice?.submission_date && (
             <div className="flex items-center gap-1">
@@ -511,9 +511,9 @@ export default function PracticeDetailPage() {
                 </div>
               ) : isPastDue && !practice?.submission_date ? (
                 <div className="text-center py-4">
-                  <ExclamationTriangleIcon className="size-12 mx-auto mb-3 text-danger-500" />
+                  <ExclamationTriangleIcon className="size-14 mx-auto mb-2 text-danger-500" />
                   <p className="text-danger-500 font-medium mb-2">La data límit ha passat</p>
-                  <p className="mb-4">Contacta amb el professor si necessites una extensió.</p>
+                  <p className="px-1.5 text-default-800 text-sm">Contacta amb el professor si necessites una extensió.</p>
                 </div>
               ) : (
                 <FileUploader 

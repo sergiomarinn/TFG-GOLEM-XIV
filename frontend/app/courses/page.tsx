@@ -36,7 +36,7 @@ export default function CoursesPage() {
   React.useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const { courses } = await getMyCourses();
+        const { data: courses } = await getMyCourses();
         setCourses(courses);
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -209,7 +209,7 @@ export default function CoursesPage() {
               onSelectionChange={setLanguageFilter}
             >
               {programmingLanguageOptions.map((option) => (
-                <DropdownItem key={option.uid}>
+                <DropdownItem key={option.uid} className="capitalize">
                   {option.name}
                 </DropdownItem>
               ))}
@@ -227,13 +227,12 @@ export default function CoursesPage() {
     courses.length
   ]);
 
-  // Estado para contar los cursos por semestre
   const [fallCount, springCount] = React.useMemo(() => {
-    // En un caso real, deberías tener un campo 'semester' en cada curso
-    // Aquí simplemente divido los cursos a la mitad para el ejemplo
-    const totalCount = filteredCourses.length;
-    return [Math.ceil(totalCount / 2), Math.floor(totalCount / 2)];
-  }, [filteredCourses]);
+    const primaveraCount = filteredCourses.filter(course => course.semester === 'primavera').length;
+    const tardorCount = filteredCourses.filter(course => course.semester === 'tardor').length;
+
+    return [tardorCount, primaveraCount];
+  }, [courses]);
 
   return (
     <div className="px-8 pb-8 min-h-screen bg-slate-100 dark:bg-neutral-900">
@@ -280,7 +279,7 @@ export default function CoursesPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-default-50 border border-default-200 rounded-lg p-8 text-center">
+          <div className="bg-content1 border border-default-200 rounded-lg p-8 text-center">
             <AcademicCapIcon className="size-16 mx-auto text-default-400 mb-4" />
             <h3 className="text-xl font-semibold text-default-700 mb-2">Cap curs trobat</h3>
             <p className="text-default-500">

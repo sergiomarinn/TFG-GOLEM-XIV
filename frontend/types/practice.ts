@@ -17,6 +17,6 @@ export interface Practice {
 }
 
 export interface Practices {
-	practices: Practice[]
+	data: Practice[]
 	count: number
 }

@@ -6,7 +6,7 @@ export interface Course {
   name: string
   description: string
   academic_year: string
-  semester: string
+  semester: 'primavera' | 'tardor'
   corrected_practices?: number
   total_practices?: number
   students_count?: number
@@ -17,6 +17,6 @@ export interface Course {
 }
 
 export interface Courses {
-	courses: Course[]
+	data: Course[]
 	count: number
 }

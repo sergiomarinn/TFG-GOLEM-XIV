@@ -42,7 +42,7 @@ export default function CourseDetailPage() {
     const fetchCourse = async () => {
       try {
         const course = await getCourseById(courseId);
-        setCourseInfo(courseInfo);
+        setCourseInfo(course);
         setCoursePractices(course.practices || []);
         setCourseUsers(course.users || []);
       } catch (error) {
@@ -202,7 +202,7 @@ export default function CourseDetailPage() {
           <Chip color="primary" size="sm" variant="flat" className="mr-2">
             {courseInfo?.academic_year}
           </Chip>
-          <Chip color="primary" size="sm" variant="flat" className="mr-2">
+          <Chip color="primary" size="sm" variant="flat" className="mr-2 capitalize">
             {courseInfo?.semester}
           </Chip>
         </div>

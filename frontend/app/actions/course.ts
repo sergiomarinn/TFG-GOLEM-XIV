@@ -1,14 +1,16 @@
+'use client';
+
 import { Course, Courses } from "@/types/course"
-import { getTokenFromSession } from "@/app/lib/session";
+import { getTokenFromClient } from "@/app/lib/client-session";
 import { User } from "@/app/lib/definitions";
 
-const API_URL = process.env.BACKEND_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getAllCourses(): Promise<Courses> {
   const res = await fetch(`${API_URL}/api/v1/courses`, {
     method: "GET",
     headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
   })
 
@@ -24,7 +26,7 @@ export async function getCourseById(id: string): Promise<Course> {
   const res = await fetch(`${API_URL}/api/v1/courses/${id}`, {
     method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
   })
 
@@ -40,7 +42,7 @@ export async function getMyCourses(): Promise<Courses> {
 	const res = await fetch(`${API_URL}/api/v1/courses/me`, {
 		method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -56,7 +58,7 @@ export async function getMyRecentCourses(limit = 5): Promise<Courses> {
 	const res = await fetch(`${API_URL}/api/v1/courses/me/recent?limit=${limit}`, {
 		method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -72,7 +74,7 @@ export async function getCourseWithUsers(id: string): Promise<Course> {
 	const res = await fetch(`${API_URL}/api/v1/courses/${id}/users`, {
 		method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -88,7 +90,7 @@ export async function getCourseTeachers(id: string): Promise<User[]> {
 	const res = await fetch(`${API_URL}/api/v1/courses/${id}/teachers`, {
 		method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -104,7 +106,7 @@ export async function getCourseWithPractices(id: string): Promise<Course> {
 	const res = await fetch(`${API_URL}/api/v1/courses/${id}/practices`, {
 		method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -121,7 +123,7 @@ export async function createCourse(data: Partial<Course>): Promise<Course> {
     method: "POST",
     headers: { 
 			"Content-Type": "application/json",
-			'Authorization': `Bearer ${await getTokenFromSession()}`
+			'Authorization': `Bearer ${await getTokenFromClient()}`
 		},
     body: JSON.stringify(data)
   })
@@ -138,7 +140,7 @@ export async function updateCourseLastAccess(id: string): Promise<void> {
 	const res = await fetch(`${API_URL}/api/v1/courses/me/${id}/access`, {
 		method: "PATCH",
 		headers: {
-			'Authorization': `Bearer ${await getTokenFromSession()}`
+			'Authorization': `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -153,7 +155,7 @@ export async function updateCourse(id: string, data: Partial<Course>): Promise<C
 		method: "PUT",
 		headers: { 
 			"Content-Type": "application/json",
-			'Authorization': `Bearer ${await getTokenFromSession()}`
+			'Authorization': `Bearer ${await getTokenFromClient()}`
 		},
 		body: JSON.stringify(data)
 	})
@@ -170,7 +172,7 @@ export async function deleteCourse(id: string): Promise<void> {
 	const res = await fetch(`${API_URL}/api/v1/courses/${id}`, {
 		method: "DELETE",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -186,7 +188,7 @@ export async function downloadStudentsTemplateCSV(): Promise<void> {
   const res = await fetch(`${API_URL}/api/v1/courses/students-template/csv`, {
     method: "GET",
     headers: {
-      "Authorization": `Bearer ${await getTokenFromSession()}`
+      "Authorization": `Bearer ${await getTokenFromClient()}`
     }
   });
 
@@ -210,7 +212,7 @@ export async function downloadStudentsTemplateXLSX(): Promise<void> {
   const res = await fetch(`${API_URL}/api/v1/courses/students-template/xlsx`, {
     method: "GET",
     headers: {
-      "Authorization": `Bearer ${await getTokenFromSession()}`
+      "Authorization": `Bearer ${await getTokenFromClient()}`
     }
   });
 

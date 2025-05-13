@@ -44,7 +44,7 @@ export default function PracticesGeneralPage() {
   React.useEffect(() => {
     const fetchPracticesData = async () => {
       try {
-        const { practices } = await getMyPracitces();
+        const { data: practices } = await getMyPracitces();
         setAllPractices(practices);
       } catch (error) {
         console.error("Error fetching course data:", error);

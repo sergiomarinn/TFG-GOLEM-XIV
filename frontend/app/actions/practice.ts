@@ -1,13 +1,15 @@
-import { Practice, Practices } from "@/types/practice";
-import { getTokenFromSession } from "@/app/lib/session";
+'use client';
 
-const API_URL = process.env.BACKEND_URL;
+import { Practice, Practices } from "@/types/practice";
+import { getTokenFromClient } from "@/app/lib/client-session";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getAllPractices(): Promise<Practices> {
   const res = await fetch(`${API_URL}/api/v1/practices`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${await getTokenFromSession()}`,
+      Authorization: `Bearer ${await getTokenFromClient()}`,
     },
   });
 
@@ -23,7 +25,7 @@ export async function getPracticeById(id: string): Promise<Practice> {
   const res = await fetch(`${API_URL}/api/v1/practices/${id}`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${await getTokenFromSession()}`,
+      Authorization: `Bearer ${await getTokenFromClient()}`,
     },
   });
 
@@ -39,7 +41,7 @@ export async function getMyPracitces(): Promise<Practices> {
 	const res = await fetch(`${API_URL}/api/v1/practices/me`, {
 		method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -55,7 +57,7 @@ export async function getMyPracticesCorrected(): Promise<Practices> {
 	const res = await fetch(`${API_URL}/api/v1/practices/me/corrected`, {
 		method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -71,7 +73,7 @@ export async function getMyPracticesUncorrected(): Promise<Practices> {
 	const res = await fetch(`${API_URL}/api/v1/practices/me/uncorrected`, {
 		method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -87,7 +89,7 @@ export async function getPracticeWithUsers(id: string): Promise<Practice> {
 	const res = await fetch(`${API_URL}/api/v1/practices/${id}/users`, {
 		method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`,
+			"Authorization": `Bearer ${await getTokenFromClient()}`,
 		},
 	});
 
@@ -103,7 +105,7 @@ export async function getPracticeWithCourse(id: string): Promise<Practice> {
 	const res = await fetch(`${API_URL}/api/v1/practices/${id}/course`, {
 		method: "GET",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		},
 	});
 
@@ -123,7 +125,7 @@ export async function createPractice(data: string, file: File): Promise<Practice
   const res = await fetch(`${API_URL}/api/v1/practices`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${await getTokenFromSession()}`,
+      Authorization: `Bearer ${await getTokenFromClient()}`,
     },
     body: formData,
   });
@@ -141,7 +143,7 @@ export async function updatePractice(practiceId: string, data: string): Promise<
 		method: "PUT",
 		headers: {
 			"Content-Type": "application/json",
-			"Authorization": `Bearer ${await getTokenFromSession()}`,
+			"Authorization": `Bearer ${await getTokenFromClient()}`,
 		},
 		body: JSON.stringify(data),
 	});
@@ -161,7 +163,7 @@ export async function uploadPractice(practiceId: string, file: File): Promise<vo
   const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/upload`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${await getTokenFromSession()}`,
+      Authorization: `Bearer ${await getTokenFromClient()}`,
     },
     body: formData,
   });
@@ -176,7 +178,7 @@ export async function deletePractice(practiceId: string): Promise<void> {
 	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}`, {
 		method: "DELETE",
 		headers: {
-			Authorization: `Bearer ${await getTokenFromSession()}`,
+			Authorization: `Bearer ${await getTokenFromClient()}`,
 		},
 	});
 
@@ -202,7 +204,7 @@ async function downloadFile(url: string, filename: string): Promise<void> {
   const res = await fetch(url, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${await getTokenFromSession()}`,
+      Authorization: `Bearer ${await getTokenFromClient()}`,
     },
   });
 

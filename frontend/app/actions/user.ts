@@ -1,7 +1,7 @@
 import { UpdatePassword, User, Users } from "@/app/lib/definitions"
-import { getTokenFromSession } from "@/app/lib/session";
+import { getTokenFromClient } from "@/app/lib/client-session";
 
-const API_URL = process.env.BACKEND_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getAllUsers(): Promise<Users> {
   const res = await fetch(`${API_URL}/api/v1/users`, {
@@ -20,7 +20,7 @@ export async function getCourseByNIUB(niub: string): Promise<User> {
   const res = await fetch(`${API_URL}/api/v1/users/${niub}`, {
     method: "GET",
 		headers: {
-				"Authorization": `Bearer ${await getTokenFromSession()}`
+				"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
   })
 
@@ -36,7 +36,7 @@ export async function getMyUser(): Promise<User> {
     const res = await fetch(`${API_URL}/api/v1/users/me`, {
 			method: "GET",
 			headers: {
-					"Authorization": `Bearer ${await getTokenFromSession()}`
+					"Authorization": `Bearer ${await getTokenFromClient()}`
 			}
     })
 
@@ -53,7 +53,7 @@ export async function createUser(data: Partial<User>): Promise<User> {
     method: "POST",
     headers: { 
             "Content-Type": "application/json",
-            'Authorization': `Bearer ${await getTokenFromSession()}`
+            'Authorization': `Bearer ${await getTokenFromClient()}`
         },
     body: JSON.stringify(data)
   })
@@ -71,7 +71,7 @@ export async function updateUser(niub: string, data: Partial<User>): Promise<Use
 			method: "PATCH",
 			headers: { 
 					"Content-Type": "application/json",
-					'Authorization': `Bearer ${await getTokenFromSession()}`
+					'Authorization': `Bearer ${await getTokenFromClient()}`
 			},
 			body: JSON.stringify(data)
 	})
@@ -89,7 +89,7 @@ export async function updateMyUser(data: Partial<User>): Promise<User> {
 			method: "PATCH",
 			headers: { 
 					"Content-Type": "application/json",
-					'Authorization': `Bearer ${await getTokenFromSession()}`
+					'Authorization': `Bearer ${await getTokenFromClient()}`
 			},
 			body: JSON.stringify(data)
 	})
@@ -107,7 +107,7 @@ export async function updateMyUserPassword(data: Partial<UpdatePassword>): Promi
 			method: "PATCH",
 			headers: { 
 					"Content-Type": "application/json",
-					'Authorization': `Bearer ${await getTokenFromSession()}`
+					'Authorization': `Bearer ${await getTokenFromClient()}`
 			},
 			body: JSON.stringify(data)
 	})
@@ -124,7 +124,7 @@ export async function deleteUser(niub: string): Promise<void> {
 	const res = await fetch(`${API_URL}/api/v1/users/${niub}`, {
 		method: "DELETE",
 		headers: {
-			"Authorization": `Bearer ${await getTokenFromSession()}`
+			"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 
@@ -140,7 +140,7 @@ export async function deleteMyUser(): Promise<void> {
 	const res = await fetch(`${API_URL}/api/v1/users/me`, {
 		method: "DELETE",
 		headers: {
-				"Authorization": `Bearer ${await getTokenFromSession()}`
+				"Authorization": `Bearer ${await getTokenFromClient()}`
 		}
 	})
 

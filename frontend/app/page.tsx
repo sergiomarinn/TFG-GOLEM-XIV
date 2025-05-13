@@ -1,61 +1,135 @@
+'use client';
+
 import { title, subtitle } from "@/components/primitives";
 import { CourseCard } from "@/components/course-card";
 import { HorizontalCourseCard } from "@/components/horizontal-course-card";
 import { PracticeTable } from "@/components/practice-table";
 import { WeekCalendarDemo } from "@/components/week-calendar";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Course } from "@/types/course";
+import { Practice } from "@/types/practice";
+import { getMyRecentCourses } from "@/app/actions/course";
+import { getMyPracitces } from "@/app/actions/practice";
+import { Button } from "@heroui/button";
+import { Link } from "@heroui/link";
+import { AcademicCapIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {
-  return (
-    <section className="px-8 flex items-start min-h-screen gap-16 bg-slate-100 dark:bg-neutral-900">
-      <div className="w-4/6 flex flex-col">
-        <h2 className={title({ size: "sm" })}>Cursos recents</h2>
-        
-        {/* Regular Course Cards in a grid */}
-        <div className="mt-4 mb-10 grid grid-cols-1 md:grid-cols-3 place-content-stretch gap-6">
-          <div className="col-span-full">
-            <HorizontalCourseCard
-              title="Sistemes Operatius I"
-              students_number={120}
-              academic_year="2023-2024"
-              programmingLanguage="C & Bash"
-              color="purple"
-              completedPractices={4}
-              totalPractices={4}
-              description="Curs introductori als fonaments de la ciència de dades. S'estudien els conceptes bàsics d'anàlisi, visualització i modelització de dades amb R i Python."
-            />
-          </div>
-          <CourseCard 
-            title="Algorísmica Avançada"
-            students_number={40}
-            academic_year="2023-2024"
-            programmingLanguage="Python"
-            color="blue"
-            completedPractices={2}
-            totalPractices={3}
-          />
-          
-          <CourseCard 
-            title="Intel·ligència Artificial"
-            students_number={85}
-            academic_year="2023-2024"
-            programmingLanguage="Python"
-            color="green"
-            completedPractices={3}
-            totalPractices={3}
-          />
+  const [recentCourses, setRecentCourses] = useState<Course[]>([]);
+  const [practices, setPractices] = useState<Practice[]>([]);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [cardsPerRow, setCardsPerRow] = useState(3);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-          <CourseCard 
-            title="Algorísmica Avançada"
-            students_number={40}
-            academic_year="2023-2024"
-            programmingLanguage="Python"
-            color="pink"
-            completedPractices={2}
-            totalPractices={3}
-          />
-        </div>
+  useLayoutEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const width = containerRef.current.offsetWidth;
+        setContainerWidth(width);
+        
+        // Determine how many cards per row based on container width
+        if (width < 640) {
+          setCardsPerRow(1); // Mobile: 1 card
+        } else if (width < 1024) {
+          setCardsPerRow(2); // Tablet: 2 cards
+        } else {
+          setCardsPerRow(3); // Desktop: 3 cards
+        }
+        console.log("Width:", width)
+
+      }
+    };
+    
+    updateSize();
+    
+    // Set up resize listener for responsive behavior
+    window.addEventListener('resize', updateSize);
+    
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('resize', updateSize);
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data: courses } = await getMyRecentCourses();
+        setRecentCourses(courses);
+
+        const { data: practices } = await getMyPracitces();
+        setPractices(practices);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const featuredCourse = recentCourses.length > 0 ? recentCourses[0] : null;
+  const remainingCourses = recentCourses.length > 1 
+    ? recentCourses.slice(1)
+    : [];
+
+  return (
+    <section className="px-8 flex flex-col lg:flex-row items-start min-h-screen gap-16 bg-slate-100 dark:bg-neutral-900">
+      <div ref={containerRef} className="w-4/6 flex flex-col">
+        <h2 className={title({ size: "sm" })}>Cursos recents</h2>
+
+        {recentCourses.length === 0 ? (
+          <div className="mt-4 mb-10 p-6 bg-content1 rounded-3xl border border-default-200 text-center">
+            <AcademicCapIcon className="size-16 mx-auto text-default-400 mb-4" />
+            <h3 className="text-xl font-semibold text-default-700 mb-2">Cap curs recent trobat</h3>
+            <p className="text-default-500 mb-4">
+              Encara no has accedit a cap curs. Comença explorant els cursos disponibles.
+            </p>
+            <Button
+              color="primary"
+              as={Link}
+              href={`/courses`}
+            >
+              Descobreix cursos
+            </Button>
+          </div>
+        ) : (
+          <>
+            {/* Featured Course (Horizontal Card) */}
+            {featuredCourse && (
+              <div className="mt-4 mb-6">
+                <HorizontalCourseCard
+                  course={featuredCourse} 
+                  expand={false}
+                />
+              </div>
+            )}
+            
+            {/* Regular Course Cards in a grid */}
+            {remainingCourses.length > 0 && (
+              <div className={`mb-10 grid grid-cols-1 ${
+                cardsPerRow >= 2 ? 'sm:grid-cols-2' : ''
+              } ${
+                cardsPerRow >= 3 ? 'lg:grid-cols-3' : ''
+              } gap-6`}>
+                {remainingCourses.map((course, index) => (
+                  <CourseCard 
+                    key={course.id || index} 
+                    course={course} 
+                  />
+                ))}
+                {/* Add empty placeholder divs to maintain grid layout if fewer items than columns */}
+                {remainingCourses.length % cardsPerRow !== 0 && 
+                  remainingCourses.length < cardsPerRow && 
+                  Array.from({ length: cardsPerRow - (remainingCourses.length % cardsPerRow) }).map((_, i) => (
+                    <div key={`placeholder-${i}`} className="hidden sm:block"></div>
+                  ))
+                }
+              </div>
+            )}
+          </>
+        )}
         <h2 className={title({ size: "sm" })}>Properes entregues</h2>
-        <div className="mt-4 p-4 rounded-3xl border-1.5">
+        <div className="mt-4 p-4 rounded-3xl border-1.5 bg-content1">
           <PracticeTable />
         </div>
       </div>

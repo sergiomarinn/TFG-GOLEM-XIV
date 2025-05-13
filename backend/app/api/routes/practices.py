@@ -56,13 +56,29 @@ def read_my_practices(session: SessionDep, current_user: CurrentUser, skip: int 
     """
     Retrieve practices of the current user.
     """
-    count_statement = select(func.count()).select_from(Practice).where(Practice.users.contains(current_user))
+    count_statement = select(func.count()).select_from(Practice).join(PracticesUsersLink).where(
+        PracticesUsersLink.user_niub == current_user.niub
+    )
     count = session.exec(count_statement).one()
 
-    statement = select(Practice).where(Practice.users.contains(current_user)).offset(skip).limit(limit)
+    statement = select(Practice, PracticesUsersLink).join(PracticesUsersLink).where(
+        PracticesUsersLink.user_niub == current_user.niub
+    ).offset(skip).limit(limit)
     practices = session.exec(statement).all()
 
-    return PracticesPublic(data=practices, count=count)
+    practices_with_course = []
+    for practice, link in practices:
+        practice_data = PracticePublicWithUsersAndCourse(
+            **practice.model_dump(),
+            submission_date=link.submission_date,
+            status=link.status,
+            submission_file_name=link.submission_file_name,
+            correction=link.correction,
+            course=practice.course
+        )
+        practices_with_course.append(practice_data)
+
+    return PracticesPublicWithCourse(data=practices_with_course, count=count)
 
 @router.get("/me/corrected", response_model=PracticesPublicWithCorrection)
 def read_my_corrected_practices(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
@@ -71,17 +87,17 @@ def read_my_corrected_practices(session: SessionDep, current_user: CurrentUser, 
     """
     count_statement = select(func.count()).select_from(Practice).join(PracticesUsersLink).where(
         PracticesUsersLink.user_niub == current_user.niub, 
-        PracticesUsersLink.corrected == True
+        PracticesUsersLink.status == StatusEnum.CORRECTED
     )
     count = session.exec(count_statement).one()
 
     statement = select(Practice, PracticesUsersLink.correction).join(PracticesUsersLink).where(
         PracticesUsersLink.user_niub == current_user.niub,
-        PracticesUsersLink.corrected == True
+        PracticesUsersLink.status == StatusEnum.CORRECTED
     ).offset(skip).limit(limit)
     practices = session.exec(statement).all()
 
-    return PracticesPublic(data=practices, count=count)
+    return PracticesPublicWithCorrection(data=practices, count=count)
 
 @router.get("/me/uncorrected", response_model=PracticesPublic)
 def read_my_uncorrected_practices(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
@@ -90,13 +106,13 @@ def read_my_uncorrected_practices(session: SessionDep, current_user: CurrentUser
     """
     count_statement = select(func.count()).select_from(Practice).join(PracticesUsersLink).where(
         PracticesUsersLink.user_niub == current_user.niub, 
-        PracticesUsersLink.corrected == False
+        PracticesUsersLink.status == StatusEnum.NOT_SUBMITTED
     )
     count = session.exec(count_statement).one()
 
     statement = select(Practice).join(PracticesUsersLink).where(
         PracticesUsersLink.user_niub == current_user.niub,
-        PracticesUsersLink.corrected == False
+        PracticesUsersLink.status == StatusEnum.NOT_SUBMITTED
     ).offset(skip).limit(limit)
     practices = session.exec(statement).all()
 
@@ -107,13 +123,27 @@ def read_practice(practice_id: uuid.UUID, session: SessionDep, current_user: Cur
     """
     Retrieve practice by ID.
     """
-    practice = crud.practice.get_practice(session=session, id=practice_id)
-    if current_user not in practice.course.users:
-        raise HTTPException(status_code=403, detail="The user is not enrolled in the practice.")
-    
+    statement = select(Practice, PracticesUsersLink).join(PracticesUsersLink).where(
+        PracticesUsersLink.user_niub == current_user.niub,
+        PracticesUsersLink.practice_id == practice_id
+    )
+    practice, link = session.exec(statement).first()
+
     if not practice:
         raise HTTPException(status_code=404, detail="Practice not found")
-    return practice
+    
+    if current_user not in practice.course.users:
+        raise HTTPException(status_code=403, detail="The user is not enrolled in the practice.")
+
+    return PracticePublicWithUsersAndCourse(
+        **practice.model_dump(),
+        submission_date=link.submission_date,
+        status=link.status,
+        submission_file_name=link.submission_file_name,
+        correction=link.correction,
+        users=practice.users,
+        course=practice.course
+    )
 
 @router.get("/{practice_id}/users", response_model=PracticePublicWithUsers)
 def read_practice_users(practice_id: uuid.UUID, session: SessionDep) -> Any:

@@ -68,7 +68,7 @@ class PracticePublicWithCourse(PracticePublic):
 class PracticePublicWithUsersAndCourse(PracticePublic):
     users: list[UserPublic] = []
     course: CoursePublic | None
-    correction: dict | None
+    correction: dict | None = None
 
 class PracticePublicWithCorrection(PracticePublic):
     correction: dict | None

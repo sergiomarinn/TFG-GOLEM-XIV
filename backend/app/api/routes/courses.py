@@ -29,6 +29,7 @@ from app.models import (
     CoursesUsersLink,
     Practice,
     PracticesUsersLink,
+    PracticePublic,
     StatusEnum,
     UserPublic
 )
@@ -124,7 +125,29 @@ def read_course(course_id: uuid.UUID, session: SessionDep, current_user: Current
     
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    return course
+    
+    statement = select(Practice, PracticesUsersLink).join(PracticesUsersLink).where(
+        PracticesUsersLink.user_niub == current_user.niub,
+        PracticesUsersLink.practice_id == Practice.id,
+        Practice.course_id == course_id
+    )
+    practices = session.exec(statement).all()
+
+    practices_public = []
+    for practice, link in practices:
+        practice_data = PracticePublic(
+            **practice.model_dump(),
+            submission_date=link.submission_date,
+            status=link.status,
+            submission_file_name=link.submission_file_name
+        )
+        practices_public.append(practice_data)
+
+    return CoursePublicWithUsersAndPractices(
+        **course.model_dump(),
+        users=course.users,
+        practices=practices_public,
+    )
 
 @router.get("/{course_id}/users", response_model=CoursePublicWithUsers)
 def read_course_users(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
@@ -152,9 +175,9 @@ def read_course_teachers(course_id: uuid.UUID, session: SessionDep, current_user
     if current_user not in course.users:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
     
-    course.users = [user for user in course.users if user.is_teacher]
+    teachers = [user for user in course.users if user.is_teacher]
 
-    return course
+    return teachers
 
 @router.get("/{course_id}/practices", response_model=CoursePublicWithPractices)
 def read_course_practices(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:

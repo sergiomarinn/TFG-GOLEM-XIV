@@ -9,7 +9,7 @@ import {
 } from "@heroui/navbar";
 import { Link } from "@heroui/link";
 import { Input } from "@heroui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
@@ -19,9 +19,25 @@ import {
 import { User } from "@heroui/user";
 import { Button } from "@heroui/button";
 import { BellIcon } from "@heroicons/react/24/outline";
+import { getUserFromClient } from "@/app/lib/client-session";
+import { User as UserType } from '@/app/lib/definitions';
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<UserType>();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const user = await getUserFromClient();
+        if (user) setUser(user)
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    fetchUserData();
+  }, [])
 
   const searchInput = (
     // <div className="relative w-full">
@@ -106,11 +122,11 @@ export const Navbar = () => {
         <div className="mx-1 w-[1.5px] h-[50px] bg-default-400/80 rounded-full" />
         <User
           avatarProps={{
-            showFallback: true,
+            showFallback: true
           }}
           isFocusable={true}
-          description="Product Designer"
-          name="Jane Doe"
+          description={user?.email}
+          name={user?.name + " " + user?.surnames}
         />
       </NavbarContent>
       <NavbarMenu>

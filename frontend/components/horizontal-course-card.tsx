@@ -93,11 +93,11 @@ export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps
               {/* Course Info */}
               <div className="flex items-center justify-between w-full text-white text-sm font-light mb-4">
                 <span className="inline-flex items-start justify-center gap-1">
-                  <CalendarIcon className="size-5 text-default-200"/>
+                  <CalendarIcon className="size-5 text-gray-200"/>
                   Tardor
                 </span>
                 <span className="inline-flex items-start gap-1">
-                  <UsersIcon className="size-5 text-default-200"/>
+                  <UsersIcon className="size-5 text-gray-200"/>
                   {course.students_count} Estudiants
                 </span>
               </div>
@@ -120,7 +120,7 @@ export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps
             {/* Course Description */}
             <div>
               <h3 className="text-lg font-medium text-white mb-2">Descripció</h3>
-              <p className="text-default-200 text-sm text-pretty line-clamp-4 mb-4">{course.description}</p>
+              <p className="text-gray-200 text-sm text-pretty line-clamp-4 mb-4">{course.description}</p>
             </div>
             
             {/* Practices Progress */}
@@ -132,7 +132,7 @@ export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps
                 value={course.corrected_practices}
                 maxValue={course.total_practices}
               />
-              <div className="flex items-start justify-start gap-2 mt-1.5 mb-2 text-default-300">
+              <div className="flex items-start justify-start gap-2 mt-1.5 mb-2 text-gray-300">
                 <span className="text-xs pr-1 inline-flex items-center">
                   {course.corrected_practices === course.total_practices ? (
                     <DocumentCheckIcon className="size-4 inline-block mr-1" />

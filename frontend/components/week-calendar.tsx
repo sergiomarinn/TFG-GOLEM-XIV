@@ -245,7 +245,7 @@ export const WeekCalendarDemo = () => {
 						if (eventsAtTime.length === 0) {
 							return (
 								<div key={time} className="flex relative py-4">
-									<div className={`w-20 ${isCurrentTimeSlot ? 'text-black font-bold' : 'text-default-300'}`}>
+									<div className={`w-20 ${isCurrentTimeSlot ? 'text-black dark:text-white font-bold' : 'text-default-300'}`}>
 										{formattedTime}
 									</div>
 									<div className="flex-1"></div>

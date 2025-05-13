@@ -89,11 +89,11 @@ export const CourseCard = ({course}: CourseCardProps) => {
           {/* Course Info */}
 					<div className="flex items-center justify-between w-full text-white text-[0.82rem] font-light mb-4">
 						<span className="inline-flex items-start gap-1">
-							<CalendarIcon className="size-[1.1rem] text-default-200"/>
+							<CalendarIcon className="size-[1.1rem] text-gray-200"/>
 							Primavera
 						</span>
 						<span className="inline-flex items-start gap-1">
-							<UsersIcon className="size-[1.1rem] text-default-200"/>
+							<UsersIcon className="size-[1.1rem] text-gray-200"/>
 							{course.students_count} Estudiants
 						</span>
 						
@@ -108,7 +108,7 @@ export const CourseCard = ({course}: CourseCardProps) => {
 						value={course.corrected_practices}
 						maxValue={course.total_practices}
 					/>
-					<div className="flex items-start justify-start gap-2 mt-1.5 mb-5 text-default-300">
+					<div className="flex items-start justify-start gap-2 mt-1.5 mb-5 text-gray-300">
 						<span className="text-[0.75rem] pr-1 inline-flex items-center">
 						{course.corrected_practices === course.total_practices ? (
 							<DocumentCheckIcon className="size-[1.1rem] inline-block mr-1" />

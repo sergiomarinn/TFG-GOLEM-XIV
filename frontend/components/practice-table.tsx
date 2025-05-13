@@ -14,7 +14,7 @@ import {
 } from "@heroui/table";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
-import { Chip, ChipProps } from "@heroui/chip";
+import { Chip } from "@heroui/chip";
 import { User } from "@heroui/user";
 import { Pagination } from "@heroui/pagination";
 import { Tooltip } from "@heroui/tooltip"

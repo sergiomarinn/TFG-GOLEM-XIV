@@ -148,7 +148,7 @@ export default function Home() {
       </div>
       <div className="hidden lg:block">
         <h2 className={title({ size: "sm" })}>Properes entregues</h2>
-        <div className="mt-4 p-4 rounded-3xl border-1.5 bg-content1">
+        <div className="mt-4 p-4 rounded-3xl border-1.5 border-default-200 bg-content1">
           <PracticeTable practices={practices} />
         </div>
       </div>

@@ -377,6 +377,16 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
             )
         ).first()
         
+        # Si existe un archivo previo, eliminarlo antes de guardar el nuevos
+        if practice_user and practice_user.submission_file_name:
+            previous_file_path = os.path.join(file_path, practice_user.submission_file_name)
+            if os.path.exists(previous_file_path):
+                try:
+                    os.remove(previous_file_path)
+                    logger.info(f"Previous file removed: {previous_file_path}")
+                except Exception as e:
+                    logger.error(f"Error removing previous file {previous_file_path}: {str(e)}")
+
         if practice_user:
             practice_user.status = StatusEnum.SUBMITTED
             practice_user.submission_date = datetime.now()

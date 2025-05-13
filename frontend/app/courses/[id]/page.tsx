@@ -20,7 +20,7 @@ import { SearchIcon, ChevronDownIcon } from '@/components/icons'
 import { practiceStatusOptions } from "@/types";
 import { AcademicCapIcon, DocumentArrowUpIcon, FunnelIcon, ArrowLongUpIcon, ArrowLongDownIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { ParticipantsSection } from '@/components/participants-section';
-import { getCourseById } from '@/app/actions/course';
+import { getCourseById, updateCourseLastAccess } from '@/app/actions/course';
 import { Course } from '@/types/course';
 import { Practice } from '@/types/practice';
 import { User } from '@/app/lib/definitions';
@@ -45,6 +45,7 @@ export default function CourseDetailPage() {
         setCourseInfo(course);
         setCoursePractices(course.practices || []);
         setCourseUsers(course.users || []);
+        await updateCourseLastAccess(courseId);
       } catch (error) {
         console.error(error);
       }

@@ -17,9 +17,9 @@ export function RootLayoutClient({
   ) : (
     <div className="relative flex h-screen">
       <SideNav />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <Navbar />
-        <main className="overflow-y-auto flex-1">{children}</main>
+        <main className="overflow-y-auto flex-1 min-w-0">{children}</main>
       </div>
     </div>
   );

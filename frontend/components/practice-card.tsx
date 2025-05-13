@@ -6,9 +6,10 @@ import { ArrowRightIcon, CalendarIcon, ChevronRightIcon } from '@heroicons/react
 import { Button } from '@heroui/button';
 import { Progress } from '@heroui/progress';
 import { practiceStatusOptions as statusOptions, practiceStatusColorMap as statusColorMap } from "@/types";
+import { Practice } from '@/types/practice';
 
 // Componente de tarjeta de práctica
-export const PracticeCard = ({ practice }) => {
+export const PracticeCard = ({ practice }: { practice: Practice }) => {
   const getStatusName = (uid: string) =>
 		statusOptions.find((option) => option.uid === uid)?.name || uid;
 	
@@ -29,14 +30,14 @@ export const PracticeCard = ({ practice }) => {
   return (
     <div className="flex rounded-3xl overflow-hidden shadow-lg bg-white dark:bg-neutral-800">
       {/* Panel lateral izquierdo */}
-      <div className="w-1/3 bg-indigo-900 dark:bg-indigo-950 p-7 flex flex-col justify-between">
+      <div className="w-1/3 bg-primary-700 dark:bg-primary-100 p-7 flex flex-col justify-between">
         <div>
-          <div className="text-gray-400 text-sm font-light tracking-wider mb-1">CURS</div>
-          <h2 className="text-white text-2xl font-semibold">{practice.course.name}</h2>
+          <div className="text-default-400 text-sm font-light tracking-wider mb-1">CURS</div>
+          <h2 className="text-white text-2xl font-semibold">{practice.course?.name}</h2>
         </div>
         <Link
-          href={`/courses/${practice.course.id}`} 
-          className="flex items-center text-gray-400 hover:text-white transition-colors"
+          href={`/courses/${practice.course?.id}`} 
+          className="flex items-center text-gray-300 dark:text-gray-400 hover:text-white dark:hover:text-white transition-colors"
         >
           <span>Veure el curs</span>
           <ChevronRightIcon className="size-4 ml-1" />

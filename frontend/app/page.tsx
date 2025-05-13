@@ -19,6 +19,7 @@ export default function Home() {
   const [practices, setPractices] = useState<Practice[]>([]);
   const [containerWidth, setContainerWidth] = useState(0);
   const [cardsPerRow, setCardsPerRow] = useState(3);
+  const [expandFeaturedCourse, setExpandFeaturedCourse] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -27,13 +28,15 @@ export default function Home() {
         const width = containerRef.current.offsetWidth;
         setContainerWidth(width);
         
-        // Determine how many cards per row based on container width
-        if (width < 640) {
-          setCardsPerRow(1); // Mobile: 1 card
+        if (width < 470) {
+          setCardsPerRow(1);
+          setExpandFeaturedCourse(false);
         } else if (width < 1024) {
-          setCardsPerRow(2); // Tablet: 2 cards
+          setCardsPerRow(2);
+          setExpandFeaturedCourse(false);
         } else {
-          setCardsPerRow(3); // Desktop: 3 cards
+          setCardsPerRow(3);
+          setExpandFeaturedCourse(true)
         }
         console.log("Width:", width)
 
@@ -74,11 +77,11 @@ export default function Home() {
 
   return (
     <section className="px-8 flex flex-col lg:flex-row items-start min-h-screen gap-16 bg-slate-100 dark:bg-neutral-900">
-      <div ref={containerRef} className="w-4/6 flex flex-col">
+      <div ref={containerRef} className="w-full lg:flex-1 min-w-0 flex flex-col">
         <h2 className={title({ size: "sm" })}>Cursos recents</h2>
 
         {recentCourses.length === 0 ? (
-          <div className="mt-4 mb-10 p-6 bg-content1 rounded-3xl border border-default-200 text-center">
+          <div className="mt-4 lg:mb-10 p-6 bg-content1 rounded-3xl border border-default-200 text-center">
             <AcademicCapIcon className="size-16 mx-auto text-default-400 mb-4" />
             <h3 className="text-xl font-semibold text-default-700 mb-2">Cap curs recent trobat</h3>
             <p className="text-default-500 mb-4">
@@ -99,14 +102,14 @@ export default function Home() {
               <div className="mt-4 mb-6">
                 <HorizontalCourseCard
                   course={featuredCourse} 
-                  expand={false}
+                  expand={expandFeaturedCourse}
                 />
               </div>
             )}
             
             {/* Regular Course Cards in a grid */}
             {remainingCourses.length > 0 && (
-              <div className={`mb-10 grid grid-cols-1 ${
+              <div className={`lg:mb-10 grid grid-cols-1 ${
                 cardsPerRow >= 2 ? 'sm:grid-cols-2' : ''
               } ${
                 cardsPerRow >= 3 ? 'lg:grid-cols-3' : ''
@@ -128,12 +131,14 @@ export default function Home() {
             )}
           </>
         )}
-        <h2 className={title({ size: "sm" })}>Properes entregues</h2>
-        <div className="mt-4 p-4 rounded-3xl border-1.5 bg-content1">
-          <PracticeTable />
+        <div className="hidden lg:block">
+          <h2 className={title({ size: "sm" })}>Properes entregues</h2>
+          <div className="mt-4 p-4 rounded-3xl border-1.5 bg-content1">
+            <PracticeTable />
+          </div>
         </div>
       </div>
-      <div className="w-2/6 flex flex-col gap-4">
+      <div className="w-full lg:w-auto shrink-0 flex flex-col gap-4">
         <h2 className={title({ size: "sm" })}>Calendari</h2>
         <WeekCalendarDemo />
       </div>

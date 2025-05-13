@@ -18,12 +18,14 @@ import { Divider } from "@heroui/divider";
 import { Selection } from '@react-types/shared';
 import { SearchIcon, ChevronDownIcon } from '@/components/icons'
 import { practiceStatusOptions } from "@/types";
-import { AcademicCapIcon, DocumentArrowUpIcon, FunnelIcon, ArrowLongUpIcon, ArrowLongDownIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, DocumentArrowUpIcon, FunnelIcon, ArrowLongUpIcon, ArrowLongDownIcon, UsersIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { ParticipantsSection } from '@/components/participants-section';
 import { getCourseById, updateCourseLastAccess } from '@/app/actions/course';
 import { Course } from '@/types/course';
 import { Practice } from '@/types/practice';
 import { User } from '@/app/lib/definitions';
+import { getUserFromClient } from '@/app/lib/client-session';
+import { motion, AnimatePresence } from "framer-motion";
 
 const sortOptions = [
   { name: "Més properes", uid: "asc" },
@@ -37,6 +39,7 @@ export default function CourseDetailPage() {
   const [courseInfo, setCourseInfo] = React.useState<Course>();
   const [coursePractices, setCoursePractices] = React.useState<Practice[]>([]);
   const [courseUsers, setCourseUsers] = React.useState<User[]>([]);
+  const [canEditCourse, setCanEditCourse] = React.useState(false);
 
   React.useEffect(() => {
     const fetchCourse = async () => {
@@ -45,7 +48,13 @@ export default function CourseDetailPage() {
         setCourseInfo(course);
         setCoursePractices(course.practices || []);
         setCourseUsers(course.users || []);
+        
         await updateCourseLastAccess(courseId);
+        
+        const user = await getUserFromClient();
+        const isInCourse = course.users?.some(u => u.niub === user?.niub);
+        const isTeacherInCourse = isInCourse && user?.is_teacher;
+        setCanEditCourse(isTeacherInCourse || user?.is_admin || false);
       } catch (error) {
         console.error(error);
       }
@@ -198,7 +207,7 @@ export default function CourseDetailPage() {
       </Breadcrumbs>
       
       {/* Header section */}
-      <div className="container px-2 pt-8 pb-5">
+      <div className="relative container px-2 pt-8 pb-5">
         <div className="flex items-center mb-2">
           <Chip color="primary" size="sm" variant="flat" className="mr-2">
             {courseInfo?.academic_year}
@@ -213,6 +222,15 @@ export default function CourseDetailPage() {
           <span>{courseTeacher}</span>
         </div>
         <p className="text-default-600 pl-0.5">{courseInfo?.description}</p>
+        <Button
+          className="absolute top-10 right-2"
+          color="secondary"
+          variant="flat"
+          radius="lg"
+          startContent={<PencilIcon className="size-4" />}
+        >
+          Editar curs
+        </Button>
       </div>
       <Divider className="mb-8" />
 
@@ -261,7 +279,7 @@ export default function CourseDetailPage() {
             <UsersIcon className="size-9 text-primary-600 mr-2" />
             <h2 className="text-3xl font-semibold text-default-900">Participants</h2>
           </div>
-          <ParticipantsSection courseUsers={courseUsers} />
+          <ParticipantsSection courseUsers={courseUsers} canEditCourse={canEditCourse} />
         </div>
       </div>
     </div>

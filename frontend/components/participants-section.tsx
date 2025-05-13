@@ -8,10 +8,11 @@ import { Avatar } from "@heroui/avatar";
 import { Card, CardBody } from "@heroui/card";
 import { Tab, Tabs } from "@heroui/tabs";
 import { SearchIcon } from '@/components/icons';
-import { UserIcon, UsersIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { UserIcon, UsersIcon, PaperAirplaneIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Alert } from '@heroui/alert';
 import { Tooltip } from "@heroui/tooltip";
 import { User } from '@/app/lib/definitions';
+import { motion, AnimatePresence } from "framer-motion";
 
 const getRelativeTime = (dateString: string) => {
   const date = new Date(dateString);
@@ -44,7 +45,7 @@ const getRoleColor = (isStudent: boolean, isTeacher: boolean) => {
   if (isTeacher) return 'primary';
 };
 
-export function ParticipantsSection({courseUsers}: {courseUsers: User[]}) {
+export function ParticipantsSection({courseUsers, canEditCourse}: {courseUsers: User[], canEditCourse: boolean}) {
   const [filterValue, setFilterValue] = React.useState("");
   const [tabSelection, setTabSelection] = React.useState("all");
   
@@ -89,9 +90,28 @@ export function ParticipantsSection({courseUsers}: {courseUsers: User[]}) {
           onClear={() => setFilterValue("")}
           onValueChange={setFilterValue}
         />
+        <AnimatePresence>
+          {canEditCourse && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Button
+                aria-label="Afegir estudiant"
+                color="success"
+                variant="flat"
+                startContent={<PlusIcon className="size-5" />}
+              >
+                Afegir estudiant
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
-  }, [courseUsers, filterValue, tabSelection]);
+  }, [courseUsers, canEditCourse, filterValue, tabSelection]);
 
   return (
     <div className="flex flex-col gap-3 p-4 rounded-3xl border-1.5 border-default-200 bg-content1">
@@ -154,15 +174,37 @@ export function ParticipantsSection({courseUsers}: {courseUsers: User[]}) {
                 </div>
                 <p className="text-default-500">{user.email}</p>
               </div>
-              <Tooltip content="Enviar missatge">
-                <Button
-                  aria-label="Enviar missatge"
-                  color="primary"
-                  isIconOnly
-                >
-                <PaperAirplaneIcon className="size-5"/>
-                </Button>
-              </Tooltip>
+              <div className="flex items-center gap-2">
+                <Tooltip content="Enviar missatge">
+                  <Button
+                    aria-label="Enviar missatge"
+                    color="primary"
+                    isIconOnly
+                  >
+                  <PaperAirplaneIcon className="size-5"/>
+                  </Button>
+                </Tooltip>
+                <AnimatePresence>
+                  {canEditCourse && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Tooltip content="Esborrar estudiant">
+                        <Button
+                          aria-label="Esborrar estudiant"
+                          color="danger"
+                          isIconOnly
+                        >
+                          <TrashIcon className="size-5" />
+                        </Button>
+                      </Tooltip>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </CardBody>
           </Card>
         ))}

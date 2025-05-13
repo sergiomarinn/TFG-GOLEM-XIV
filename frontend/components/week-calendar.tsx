@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Practice } from '@/types/practice';
+import { useState, useEffect, useMemo } from 'react';
 
 // Mock data for events
 const mockEvents = [
@@ -11,7 +12,25 @@ const mockEvents = [
   { id: '5', title: 'Entrega Práctica 5', time: '18:20', day: 10, type: 'delivery' },
 ];
 
-export const WeekCalendarDemo = () => {
+export const WeekCalendarDemo = ( { practices }: { practices: Practice[] } ) => {
+  const events = useMemo(() => {
+    return practices.map(practice => {
+      const dueDate = new Date(practice.due_date);
+      
+      return {
+        id: practice.id || `practice-${practice.name}`,
+        title: practice.name,
+        time: `${dueDate.getHours()}:${dueDate.getMinutes() < 10 ? '0' + dueDate.getMinutes() : dueDate.getMinutes()}`,
+        day: dueDate.getDate(),
+        month: dueDate.getMonth(),
+        year: dueDate.getFullYear(),
+        type: 'delivery',
+        description: practice.description,
+        status: practice.status || 'pending'
+      };
+    });
+  }, [practices]);
+
   // Get current date information
   const now = new Date();
   const currentHour = now.getHours();
@@ -92,7 +111,24 @@ export const WeekCalendarDemo = () => {
   };
 
   // Get event type color class
-  const getEventColorClass = (type: string) => {
+  const getEventColorClass = (type: string, status?: string) => {
+    // Si hay un status, usar eso para determinar el color
+    if (status) {
+      switch (status) {
+        case 'approved':
+          return 'bg-green-100 border-green-500 border-[1.5px] text-green-800';
+        case 'delivered':
+          return 'bg-yellow-100 border-yellow-500 border-[1.5px] text-yellow-800';
+        case 'rejected':
+          return 'bg-red-100 border-red-500 border-[1.5px] text-red-800';
+        case 'pending':
+          return 'bg-blue-100 border-blue-500 border-[1.5px] text-blue-800';
+        default:
+          return 'bg-blue-100 border-blue-500 border-[1.5px] text-blue-800';
+      }
+    }
+    
+    // Si no hay status, usar el tipo
     switch (type) {
       case 'seminar':
         return 'bg-purple-100 border-purple-300 border-[1.5px] text-purple-800';
@@ -111,8 +147,28 @@ export const WeekCalendarDemo = () => {
     }
   };
 
-  // Filter events for selected day
-  const dayEvents = mockEvents.filter(event => event.day === selectedDay);
+  // Filter events for selected day and current week
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      // Primero verificamos que el evento esté en la semana actual según el offset
+      const isInCurrentWeek = daysOfWeek.some(day => 
+        day.day === event.day && 
+        day.month === event.month && 
+        day.year === event.year
+      );
+      
+      // Luego verificamos si el día seleccionado coincide con el día del evento
+      const isSelectedDayMatch = event.day === selectedDay;
+      
+      // También verificamos si el mes y año coinciden para el día seleccionado
+      const selectedDayInfo = daysOfWeek.find(day => day.day === selectedDay);
+      const isInSelectedMonthYear = selectedDayInfo && 
+                                   event.month === selectedDayInfo.month && 
+                                   event.year === selectedDayInfo.year;
+      
+      return isInCurrentWeek && isSelectedDayMatch && isInSelectedMonthYear;
+    });
+  }, [events, selectedDay, daysOfWeek]);
 
   // Function to navigate to previous/next week
 	const navigateWeek = (direction: number) => {
@@ -203,10 +259,16 @@ export const WeekCalendarDemo = () => {
                                  dayInfo.month === now.getMonth() && 
                                  dayInfo.year === now.getFullYear();
             const isSelectedDay = dayInfo.day === selectedDay;
+
+            const hasDeliveries = events.some(event => 
+              event.day === dayInfo.day && 
+              event.month === dayInfo.month && 
+              event.year === dayInfo.year
+            );
 						
 						return (
 							<div 
-								key={day} 
+								key={`${day}-${index}`}
 								className={`p-4 mx-0.5 rounded-2xl flex flex-col items-center text-center cursor-pointer transition-colors ${
 									isSelectedDay ? 'bg-default-900 text-default' : 
 									isCurrentDay ? 'bg-default-100' : 'hover:bg-default-50'
@@ -219,9 +281,14 @@ export const WeekCalendarDemo = () => {
 								<div className={`text-2xl font-semibold ${isSelectedDay ? 'text-white dark:text-black' : 'text-black dark:text-white'}`}>
 									{dayInfo.day}
 								</div>
-								{isCurrentDay && (
-									<div className="mt-1 h-1 w-6 bg-blue-500 rounded-full"></div>
-								)}
+                <div className="mt-1 flex gap-1">
+                  {isCurrentDay && (
+                    <div className="h-1 w-1.5 bg-blue-500 rounded-full"></div>
+                  )}
+                  {hasDeliveries && (
+                    <div className="h-1 w-1.5 bg-red-500 rounded-full"></div>
+                  )}
+                </div>
 							</div>
 						);
 					})}
@@ -234,7 +301,7 @@ export const WeekCalendarDemo = () => {
 						const hourValue = parseInt(time.split(':')[0]);
             
             // Find events that fall within this hour's time slot (HH:00 to HH:59)
-            const eventsAtTime = dayEvents.filter(event => {
+            const eventsAtTime = filteredEvents.filter(event => {
               const eventHour = getHourFromTimeString(event.time);
               return eventHour === hourValue;
             });
@@ -261,25 +328,35 @@ export const WeekCalendarDemo = () => {
 						if (isCurrentTimeSlot && eventsAtTime.length > 0) {
 							const eventType = eventsAtTime[0].type;
 							switch(eventType) {
-								case 'seminar':
-									timeLineColor = 'bg-purple-500';
-									break;
-								case 'workshop':
-									timeLineColor = 'bg-yellow-500';
-									break;
-								case 'delivery':
-									timeLineColor = 'bg-blue-500';
-									break;
-								case 'lab':
-									timeLineColor = 'bg-yellow-500';
-									break;
-								case 'intensive':
-									timeLineColor = 'bg-purple-500';
-									break;
-								case 'break':
-									timeLineColor = 'bg-orange-500';
-									break;
-							}
+                case 'approved':
+                  timeLineColor = 'bg-green-500';
+                  break;
+                case 'delivered':
+                  timeLineColor = 'bg-yellow-500';
+                  break;
+                case 'rejected':
+                  timeLineColor = 'bg-red-500';
+                  break;
+                case 'seminar':
+                  timeLineColor = 'bg-purple-500';
+                  break;
+                case 'workshop':
+                  timeLineColor = 'bg-yellow-500';
+                  break;
+                case 'delivery':
+                case 'pending':
+                  timeLineColor = 'bg-blue-500';
+                  break;
+                case 'lab':
+                  timeLineColor = 'bg-yellow-500';
+                  break;
+                case 'intensive':
+                  timeLineColor = 'bg-purple-500';
+                  break;
+                case 'break':
+                  timeLineColor = 'bg-orange-500';
+                  break;
+              }
 						}
 						
 						return (

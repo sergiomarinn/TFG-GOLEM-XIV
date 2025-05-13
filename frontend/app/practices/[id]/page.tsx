@@ -28,8 +28,8 @@ import {
 } from "@/types";
 import { addToast } from '@heroui/toast';
 import { useParams } from 'next/navigation';
-import { getPracticeById, uploadPractice } from '@/app/actions/practice';
-import { Practice } from '@/types/practice';
+import { getPracticeById, getPracticeFileInfo, uploadPractice } from '@/app/actions/practice';
+import { Practice, PracticeFileInfo } from '@/types/practice';
 
 const PracticeStatus = ({ status }: {status: string}) => {
   const getStatusName = (uid: string) =>
@@ -322,12 +322,16 @@ export default function PracticeDetailPage() {
   const practiceId = params.id as string;
 
   const [practice, setPractice] = useState<Practice>();
+  const [submissionFilesInfo, setSubmissionFilesInfo] = useState<PracticeFileInfo[]>([]);
 
   useEffect(() => {
     const fetchPractice = async () => {
       try {
         const practice = await getPracticeById(practiceId);
         setPractice(practice);
+
+        const submissionFileInfo = await getPracticeFileInfo(practiceId);
+        setSubmissionFilesInfo([submissionFileInfo]);
       } catch (error) {
         console.error("Error fetching practice:", error);
       }
@@ -464,13 +468,13 @@ export default function PracticeDetailPage() {
 
           {/* Archivos actuales, si hay una entrega */}
           {practice?.submission_file_name && practice?.submission_file_name.length > 0 && (
-            <Card className="mb-6">
+            <Card className="mt-6">
               <CardHeader>
                 <h2 className="text-xl font-semibold px-2 pt-1">Arxius enviats</h2>
               </CardHeader>
               <Divider />
               <CardBody>
-                <FileList files={practice?.submission_file_name ? [practice.submission_file_name] : []} onDelete={null} />
+                <FileList files={submissionFilesInfo} onDelete={null} />
               </CardBody>
             </Card>
           )}

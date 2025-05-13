@@ -1,6 +1,6 @@
 'use client';
 
-import { Practice, Practices } from "@/types/practice";
+import { Practice, PracticeFileInfo, Practices } from "@/types/practice";
 import { getTokenFromClient } from "@/app/lib/client-session";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -116,6 +116,38 @@ export async function getPracticeWithCourse(id: string): Promise<Practice> {
 
 	return res.json()
 }		
+
+export async function getPracticeFileInfo(practiceId: string): Promise<PracticeFileInfo> {
+	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/submission-file-info`, {
+		method: "GET",
+		headers: {
+			Authorization: `Bearer ${await getTokenFromClient()}`,
+		},
+	});
+
+	if (!res.ok) {
+		const errorData = await res.json();
+		throw new Error(errorData.detail || "Failed to get practice file info");
+	}
+
+	return await res.json();
+}
+
+export async function getPracticeFileInfoForUser(practiceId: string, niub: string): Promise<PracticeFileInfo> {
+	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/submission-file-info/${niub}`, {
+		method: "GET",
+		headers: {
+			Authorization: `Bearer ${await getTokenFromClient()}`,
+		},
+	});
+
+	if (!res.ok) {
+		const errorData = await res.json();
+		throw new Error(errorData.detail || "Failed to get practice file info for user");
+	}
+
+	return await res.json();
+}
 
 export async function createPractice(data: string, file: File): Promise<Practice> {
   const formData = new FormData();

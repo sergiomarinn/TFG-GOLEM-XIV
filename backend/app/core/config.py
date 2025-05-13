@@ -68,6 +68,8 @@ class Settings(BaseSettings):
     PROFESSOR_FILES_PATH: str = os.path.join('.', 'corrections_files', 'teachers')
     STUDENT_FILES_PATH: str = os.path.join('.', 'corrections_files', 'students')
 
+    ENABLE_EXTERNAL_SERVICE: bool = False
+
     @computed_field  # type: ignore[misc]
     @property
     def server_host(self) -> str:

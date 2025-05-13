@@ -21,3 +21,8 @@ export interface Practices {
 	data: Practice[]
 	count: number
 }
+
+export interface PracticeFileInfo {
+	name: string
+	size: number
+}

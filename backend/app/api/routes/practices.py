@@ -188,31 +188,30 @@ def read_practice_file_info(practice_id: uuid.UUID, session: SessionDep, current
     """
     Retrieve uploaded file info for a given practice.
     """
-
-    practice, practice_user = session.exec(select(Practice, PracticesUsersLink)
-        .where(
-            PracticesUsersLink.user_niub == current_user.niub,
-            PracticesUsersLink.practice_id == practice_id
-        )
-    ).first()
-
-    if not practice:
-        raise HTTPException(status_code=404, detail="Practice not found")
+    query = select(Practice, PracticesUsersLink).join(
+        PracticesUsersLink, 
+        (PracticesUsersLink.practice_id == Practice.id) & 
+        (PracticesUsersLink.user_niub == current_user.niub)
+    ).where(Practice.id == practice_id)
     
-    if not practice_user:
-        raise HTTPException(status_code=403, detail="Access denied to this practice")
+    result = session.exec(query).first()
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Practice or user-practice link not found")
+    
+    practice, practice_user = result
     
     if not practice_user.submission_file_name:
         raise HTTPException(status_code=404, detail="No file submitted for this practice")
     
     base_path = ""
     if current_user.is_student:
-        base_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+        base_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name, current_user.niub)
     elif current_user.is_teacher:
         base_path = os.path.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
     
     file_path = os.path.join(base_path, practice_user.submission_file_name)
-
+    
     if not os.path.exists(file_path):
         raise HTTPException(status_code=204, detail="Submitted file not found on server")
 
@@ -222,20 +221,20 @@ def read_practice_file_info(practice_id: uuid.UUID, session: SessionDep, current
     )
 
 @router.get("/{practice_id}/users/{niub}/submission-file-info", response_model=PracticeFileInfo)
-def read_user_submission_file_info(practice_id: uuid.UUID, niub: int, session: SessionDep, current_user: CurrentUser) -> Any:
+def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Retrieve uploaded file info for a specific user's submission to a given practice.
     """
     if current_user.is_student and current_user.niub != niub:
         raise HTTPException(status_code=403, detail="Students can only access their own submissions")
 
-    result = session.exec(
-        select(Practice, PracticesUsersLink)
-        .where(
-            PracticesUsersLink.user_niub == niub,
-            PracticesUsersLink.practice_id == practice_id
-        )
-    ).first()
+    query = select(Practice, PracticesUsersLink).join(
+        PracticesUsersLink,
+        (PracticesUsersLink.practice_id == Practice.id) &
+        (PracticesUsersLink.user_niub == niub)
+    ).where(Practice.id == practice_id)
+    
+    result = session.exec(query).first()
 
     if not result:
         raise HTTPException(status_code=404, detail="Practice or submission not found")
@@ -248,17 +247,18 @@ def read_user_submission_file_info(practice_id: uuid.UUID, niub: int, session: S
     if not practice_user:
         raise HTTPException(status_code=403, detail="Access to this submission is not allowed")
 
-    if not practice_user.submission_file_name:
-        raise HTTPException(status_code=204, detail="No file submitted for this practice")
-    
     if current_user not in practice.users:
         raise HTTPException(status_code=403, detail="Teacher can only access to their own practices")
+
+    if not practice_user.submission_file_name:
+        raise HTTPException(status_code=204, detail="No file submitted for this practice")
 
     base_path = os.path.join(
         settings.STUDENT_FILES_PATH,
         practice.course.academic_year,
         practice.course.name,
-        practice.name
+        practice.name,
+        niub
     )
 
     file_path = os.path.join(base_path, practice_user.submission_file_name)

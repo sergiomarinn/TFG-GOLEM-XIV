@@ -174,7 +174,7 @@ export default function PracticesGeneralPage() {
               aria-label="Filtrar por curso"
               closeOnSelect={true}
               selectedKeys={courseFilter}
-              selectionMode="single"
+              selectionMode="multiple"
               onSelectionChange={setCourseFilter}
             >
               {courseOptions.map((course) => (

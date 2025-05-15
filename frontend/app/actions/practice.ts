@@ -149,10 +149,12 @@ export async function getPracticeFileInfoForUser(practiceId: string, niub: strin
 	return await res.json();
 }
 
-export async function createPractice(data: string, file: File): Promise<Practice> {
+export async function createPractice(data: Partial<Practice>, files: File[]): Promise<Practice> {
   const formData = new FormData();
-  formData.append("practice", data);
-  formData.append("file", file);
+  formData.append("practice_in", JSON.stringify(data));
+  for (const file of files) {
+    formData.append("files", file);
+  }
 
   const res = await fetch(`${API_URL}/api/v1/practices`, {
     method: "POST",
@@ -170,7 +172,7 @@ export async function createPractice(data: string, file: File): Promise<Practice
   return await res.json();
 }
 
-export async function updatePractice(practiceId: string, data: string): Promise<Practice> {
+export async function updatePractice(practiceId: string, data: Partial<Practice>): Promise<Practice> {
 	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}`, {
 		method: "PUT",
 		headers: {

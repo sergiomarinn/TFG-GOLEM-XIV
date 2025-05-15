@@ -168,11 +168,19 @@ export const CourseDrawer = ({
           color: editFormData.color.trim(),
         };
         const updatedCourse = await updateCourse(course.id, updatedCourseData);
+        addToast({
+          title: `Curs ${updatedCourse.name} actualizat correctament`,
+          color: "success"
+        })
         setCourse(updatedCourse);
         onSave?.(updatedCourse);
         onOpenChange?.(false);
       } catch (error) {
         console.error("Error updating course:", error);
+        addToast({
+          title: `Error en actualizar el curs ${editFormData.name.trim()}`,
+          color: "danger"
+        })
       } finally {
         setIsCreatingOrUpdatingCourse(false);
       }
@@ -182,11 +190,19 @@ export const CourseDrawer = ({
       try {
         setIsCreatingOrUpdatingCourse(true);
         const createdCourse = await createCourse(updatedData, files[0]);
+        addToast({
+          title: `Curs ${createdCourse.name} creat correctament`,
+          color: "success"
+        })
         setCourse(createdCourse);
         onSave?.(createdCourse);
         onOpenChange?.(false);
       } catch (error) {
         console.error("Error creating course:", error);
+        addToast({
+          title: `Error en crear el curs ${editFormData.name.trim()}`,
+          color: "danger"
+        })
       } finally {
         setIsCreatingOrUpdatingCourse(false);
       }
@@ -352,9 +368,9 @@ export const CourseDrawer = ({
                 />
                 <div className="flex items-center gap-2">
                   <Input
+                    isReadOnly
                     label="Curs acadèmic"
                     radius="lg"
-                    disabled={true}
                     value={editFormData.academic_year}
                     onValueChange={(value) => handleEditFormChange("name", value)}
                   />

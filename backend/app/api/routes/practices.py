@@ -274,7 +274,7 @@ def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: S
     )
 
 @router.post("/", dependencies=[Depends(get_current_teacher)], response_model=PracticePublic)
-async def create_practice(*, session: SessionDep, practice_in: PracticeCreate, files: list[UploadFile] = File(None)) -> Any:
+async def create_practice(*, session: SessionDep, practice_in: PracticeCreate, files: list[UploadFile]) -> Any:
     """
     Create new practice.
     """
@@ -331,7 +331,7 @@ def update_practice(session: SessionDep, practice_id: uuid.UUID, practice_in: Pr
     if not practice:
         raise HTTPException(status_code=404, detail="Practice not found")
     
-    practice = crud.practice.update_practice(session=session, db_practice=practice, practice_update=practice_in, course=course)
+    practice = crud.practice.update_practice(session=session, db_practice=practice, practice_in=practice_in, course=course)
 
     return practice
 

@@ -137,7 +137,7 @@ export default function CoursesPage() {
     // Filtro de lenguaje de programación
     if (languageFilter !== "all" && Array.from(languageFilter).length !== programmingLanguageOptions.length) {
       filtered = filtered.filter((course) =>
-        course.programming_languages.some(lang => languageFilter.has(lang))
+        course.programming_languages?.some(lang => languageFilter.has(lang))
       );
     }
 

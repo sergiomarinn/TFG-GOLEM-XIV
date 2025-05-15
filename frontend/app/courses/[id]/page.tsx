@@ -27,6 +27,7 @@ import { User } from '@/app/lib/definitions';
 import { getUserFromClient } from '@/app/lib/client-session';
 import { CourseDrawer } from '@/components/drawer-course';
 import { motion, AnimatePresence } from "framer-motion";
+import { PracticeDrawer } from '@/components/drawer-practice';
 
 const sortOptions = [
   { name: "Més properes", uid: "asc" },
@@ -42,7 +43,9 @@ export default function CourseDetailPage() {
   const [coursePractices, setCoursePractices] = React.useState<Practice[]>([]);
   const [courseUsers, setCourseUsers] = React.useState<User[]>([]);
   const [canEditCourse, setCanEditCourse] = React.useState(false);
-  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+  const [isCourseDrawerOpen, setIsCourseDrawerOpen] = React.useState(false);
+  const [isPracticeDrawerOpen, setIsPracticeDrawerOpen] = React.useState(false);
+  const [currentPractice, setCurrentPractice] = React.useState<Practice | null>(null);
 
   React.useEffect(() => {
     const fetchCourse = async () => {
@@ -77,12 +80,56 @@ export default function CourseDetailPage() {
   }, [courseInfo]);
 
   const handleUpdateCourse = (updatedCourse: Course) => {
-    
+    setCourseInfo(updatedCourse);
   };
 
   const handleDeleteCourse = (courseId: string) => {
     router.push("/courses");
-  }
+  };
+
+  const handleEditPractice = (practice: Practice) => {
+    practice.course = courseInfo;
+    setCurrentPractice(practice);
+    setIsPracticeDrawerOpen(true);
+  };
+
+  const handleNewPractice = () => {
+    setCurrentPractice(null);
+    setIsPracticeDrawerOpen(true);
+  };
+
+  const handleSavePractice = (updatedPractice: Practice) => {
+    const existingPracticeIndex = courseInfo?.practices?.findIndex(
+      practice => practice.id === updatedPractice.id
+    );
+
+    if (existingPracticeIndex !== undefined && existingPracticeIndex !== -1 && courseInfo) {
+      // Actualizar práctica existente
+      const updatedPractices = [...courseInfo.practices];
+      updatedPractices[existingPracticeIndex] = updatedPractice;
+
+      setCourseInfo({ ...courseInfo, practices: updatedPractices });
+    } else if (courseInfo) {
+      // Añadir nueva práctica
+      setCourseInfo({
+        ...courseInfo,
+        practices: [...courseInfo.practices, updatedPractice],
+      });
+    }
+  };
+
+  const handleDeletePractice = (practiceId: string) => {
+    if (!courseInfo) return;
+
+    const filteredPractices = courseInfo?.practices?.filter(
+      practice => practice.id !== practiceId
+    );
+
+    setCourseInfo({
+      ...courseInfo,
+      practices: filteredPractices,
+    });
+  };
 
   const [filterValue, setFilterValue] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
@@ -211,6 +258,7 @@ export default function CourseDetailPage() {
                   color="success"
                   variant="flat"
                   startContent={<PlusIcon className="size-5" />}
+                  onPress={() => handleNewPractice()}
                 >
                   Afegir pràctica
                 </Button>
@@ -259,7 +307,7 @@ export default function CourseDetailPage() {
           variant="flat"
           radius="lg"
           startContent={<PencilIcon className="size-4" />}
-          onPress={() => setIsDrawerOpen(true)}
+          onPress={() => setIsCourseDrawerOpen(true)}
         >
           Editar curs
         </Button>
@@ -279,10 +327,23 @@ export default function CourseDetailPage() {
             {sortedPractices.length !== 0 ? (
               <div className="flex flex-col gap-3">
                 {sortedPractices.map((practice) => (
-                  <PracticeCourseCard 
-                    key={practice.id}
-                    practice={practice}>
-                  </PracticeCourseCard>
+                  <div className="relative">
+                    <PracticeCourseCard 
+                      key={practice.id}
+                      practice={practice}
+                      isTeacher={canEditCourse}  
+                    />
+                    {canEditCourse && <Button
+                      className="absolute top-8 right-8 z-20"
+                      variant="shadow"
+                      radius="full"
+                      size="sm"
+                      startContent={<PencilIcon className="size-4" />}
+                      onPress={() => handleEditPractice(practice)}
+                    >
+                      Editar
+                    </Button>}
+                  </div>
                 ))}
               </div>) 
               : coursePractices.length > 0 ? (
@@ -315,11 +376,18 @@ export default function CourseDetailPage() {
         </div>
       </div>
       <CourseDrawer 
-        isOpen={isDrawerOpen}
-        onOpenChange={setIsDrawerOpen}
+        isOpen={isCourseDrawerOpen}
+        onOpenChange={setIsCourseDrawerOpen}
         initialCourse={courseInfo || null}
         onSave={handleUpdateCourse}
         onDelete={handleDeleteCourse}
+      />
+      <PracticeDrawer 
+        isOpen={isPracticeDrawerOpen}
+        onOpenChange={setIsPracticeDrawerOpen}
+        initialPractice={currentPractice}
+        onSave={handleSavePractice}
+        onDelete={handleDeletePractice}
       />
     </div>
   );

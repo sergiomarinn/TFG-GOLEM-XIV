@@ -4,12 +4,21 @@ import { Chip } from "@heroui/chip";
 import { practiceStatusOptions as statusOptions, practiceStatusColorMap as statusColorMap } from "@/types";
 import { Link } from "@heroui/link";
 import { Practice } from "@/types/practice";
+import { boolean } from "zod";
+import { useEffect, useState } from "react";
+import clsx from "clsx";
 
 interface PracticeCardProps {
   practice: Practice;
+  isTeacher: boolean;
 }
 
-export const PracticeCourseCard = ({ practice }: PracticeCardProps) => {
+export const PracticeCourseCard = ({ practice, isTeacher }: PracticeCardProps) => {
+  const [teacher, setTeacher] = useState(false)
+
+  useEffect(() => {
+    setTeacher(isTeacher);
+  }, [isTeacher])
 
 	const getStatusName = (uid: string) =>
 			statusOptions.find((option) => option.uid === uid)?.name || uid; 
@@ -59,10 +68,10 @@ export const PracticeCourseCard = ({ practice }: PracticeCardProps) => {
 							{"Data límit: " + formatDate(practice.due_date)}
 						</span>
 					</div>
-					<div className="flex flex-col items-end justify-between">
-						<Chip color={statusColorMap[practice.status || "not_submitted"]} size="sm" variant="shadow" className="text-gray-100">
+					<div className={clsx("flex flex-col items-end", teacher ? "justify-end" : "justify-between")}>
+						{!teacher && <Chip color={statusColorMap[practice.status || "not_submitted"]} size="sm" variant="shadow" className="text-gray-100">
 							{getStatusName(practice.status || "not_submitted")}
-						</Chip>
+						</Chip>}
 						<Button
 							color="primary"
               as={Link}

@@ -111,15 +111,17 @@ export const Navbar = () => {
         {searchInput}
       </NavbarContent>
       <NavbarContent justify="end">
-        <ThemeSwitch />
-        <Button
-          isIconOnly
-          radius="full"
-          variant="bordered"
-          className="border-small"
-        >
-          <BellIcon className="size-5"/>
-        </Button>
+        <div className="flex items-center gap-2">
+          <ThemeSwitch />
+          <Button
+            isIconOnly
+            radius="full"
+            variant="bordered"
+            className="border-small"
+          >
+            <BellIcon className="size-5"/>
+          </Button>
+        </div>
         <div className="mx-1 w-[1.5px] h-[50px] bg-default-400/80 rounded-full" />
         <User
           avatarProps={{

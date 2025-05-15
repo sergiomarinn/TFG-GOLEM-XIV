@@ -429,7 +429,7 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse}: {cou
                         )}
                       </div>
                       
-                      <div className="flex flex-col gap-2 overflow-y-auto border rounded-lg p-2">
+                      <div className="flex flex-col gap-2 overflow-y-auto border border-default-200 rounded-lg p-2">
                         {searchResults.map((student) => (
                           <Card key={student.niub} className="w-full">
                             <CardBody className="py-2 px-3">

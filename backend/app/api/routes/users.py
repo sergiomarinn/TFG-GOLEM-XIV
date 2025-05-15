@@ -9,6 +9,7 @@ from app.api.deps import (
     CurrentUser,
     SessionDep,
     get_current_active_superuser,
+    get_current_teacher
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
@@ -48,6 +49,40 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
     return UsersPublic(data=users, count=count)
 
+@router.get(
+    "/students",
+    dependencies=[Depends(get_current_teacher)],
+    response_model=UsersPublic,
+)
+def read_students_users(
+    session: SessionDep, 
+    skip: int = 0, 
+    limit: int = 100,
+    search: str = None
+) -> Any:
+    """
+    Retrieve only student users with optional search functionality.
+    """
+    base_query = select(User).where(User.is_student == True)
+    
+    if search:
+        search_term = f"%{search}%"
+        base_query = base_query.where(
+            (User.email.ilike(search_term)) |
+            (User.name.ilike(search_term)) |
+            (User.surnames.ilike(search_term)) |
+            (User.niub.ilike(search_term))
+        )
+    
+    count_query = select(func.count()).select_from(
+        base_query.subquery()
+    )
+    count = session.exec(count_query).one()
+    
+    students_query = base_query.offset(skip).limit(limit)
+    students = session.exec(students_query).all()
+    
+    return UsersPublic(data=students, count=count)
 
 @router.post(
     "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic

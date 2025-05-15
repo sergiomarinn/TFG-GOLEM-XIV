@@ -244,6 +244,48 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
     
     return course
 
+from fastapi import HTTPException, Depends
+from pydantic import BaseModel
+from typing import Any
+import uuid
+
+class UserNIUBRequest(BaseModel):
+    niub: str
+    
+@router.post("/{course_id}/students/{niub}", dependencies=[Depends(get_current_teacher)], response_model=Message)
+def add_student_by_niub(course_id: uuid.UUID, niub: str, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Add a student to a course using their NIUB.
+    """
+    course = crud.course.get_course(session=session, id=course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    if current_user not in course.users:
+        raise HTTPException(status_code=403, detail="You are not authorized to modify this course")
+    
+    user = crud.user.get_user_by_niub(session=session, niub=niub)
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User with NIUB {niub} not found")
+    
+    if user in course.users:
+        raise HTTPException(status_code=400, detail=f"User with NIUB {niub} is already enrolled in this course")
+    
+    if not user.is_student:
+        raise HTTPException(status_code=400, detail=f"User with NIUB {niub} is not a student")
+    
+    course.users.append(user)
+
+    for practice in course.practices:
+        if user not in practice.users:
+            practice.users.append(user)
+            session.add(practice)
+    
+    session.add(course)
+    session.commit()
+    
+    return Message(message=f"Student with NIUB {niub} successfully added to the course")
+
 @router.put("/{course_id}", dependencies=[Depends(get_current_teacher)], response_model=CoursePublic)
 def update_course(
     course_id: uuid.UUID, course_in: CourseUpdate, session: SessionDep, current_user: CurrentUser
@@ -293,6 +335,39 @@ def delete_course(course_id: uuid.UUID, session: SessionDep, current_user: Curre
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
     crud.course.delete_course(session=session, course=course)
     return Message(message="Course deleted successfully")
+
+@router.delete("/{course_id}/students/{niub}", dependencies=[Depends(get_current_teacher)], response_model=Message)
+def delete_student_from_course(course_id: uuid.UUID, niub: str, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Remove a student from a course.
+    """
+    course = crud.course.get_course(session=session, id=course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    if current_user not in course.users:
+        raise HTTPException(status_code=403, detail="You are not authorized to modify this course")
+    
+    student = crud.user.get_user_by_niub(session=session, niub=niub)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    if student not in course.users:
+        raise HTTPException(status_code=404, detail="Student is not enrolled in this course")
+    
+    if not student.is_student:
+        raise HTTPException(status_code=400, detail="Only students can be removed from a course using this endpoint")
+    
+    for practice in course.practices:
+        if student in practice.users:
+            practice.users.remove(student)
+    
+    course.users.remove(student)
+
+    session.add(student)
+    session.commit()
+    
+    return Message(message=f"Student successfully removed from the course")
 
 @router.get("/students-template/csv", dependencies=[Depends(get_current_teacher)])
 def get_students_template_csv() -> Any:

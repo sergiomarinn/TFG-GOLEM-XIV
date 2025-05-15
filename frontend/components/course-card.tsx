@@ -78,7 +78,7 @@ export const CourseCard = ({course}: CourseCardProps) => {
           {/* Category Tag */}
 					<div className="flex items-center gap-2 mb-2">
 						<Tag label={course.academic_year}></Tag>
-            {course.programming_languages.map((lang, index) => (
+            {course.programming_languages?.map((lang, index) => (
               <Tag key={index} label={lang}></Tag>
             ))}
 					</div>
@@ -88,9 +88,9 @@ export const CourseCard = ({course}: CourseCardProps) => {
 
           {/* Course Info */}
 					<div className="flex items-center justify-between w-full text-white text-[0.82rem] font-light mb-4">
-						<span className="inline-flex items-start gap-1">
+						<span className="inline-flex items-start gap-1 capitalize">
 							<CalendarIcon className="size-[1.1rem] text-gray-200"/>
-							Primavera
+							{course.semester}
 						</span>
 						<span className="inline-flex items-start gap-1">
 							<UsersIcon className="size-[1.1rem] text-gray-200"/>
@@ -131,10 +131,15 @@ export const CourseCard = ({course}: CourseCardProps) => {
 
           {/* Teachers Avatars */}
           <div className="absolute right-5 -top-[1.55rem]">
-						<AvatarGroup max={3} isBordered>
+						<AvatarGroup max={3}>
               {teachers.map((teacher) => (
                 <Tooltip showArrow crossOffset={-12} closeDelay={50} content={teacher.name + " " + teacher.surnames}>
-                  <Avatar showFallback />
+                  <Avatar 
+                    showFallback
+                    name={teacher.name[0]}
+                    classNames={{
+                      base: "ring-white ring-[1.5px] text-large"
+                    }}/>
                 </Tooltip>
               ))}
 						</AvatarGroup>

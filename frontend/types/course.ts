@@ -10,7 +10,7 @@ export interface Course {
   corrected_practices?: number
   total_practices?: number
   students_count?: number
-  programming_languages: string[]
+  programming_languages?: string[]
   color: "blue" | "purple" | "green" | "orange" | "pink" | "cyan" | "red" | "indigo" | "lime" | "default";
 	users?: User[]
 	practices?: Practice[]

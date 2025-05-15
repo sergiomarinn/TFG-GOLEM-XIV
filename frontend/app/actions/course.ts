@@ -118,14 +118,17 @@ export async function getCourseWithPractices(id: string): Promise<Course> {
 	return await res.json();
 }
 
-export async function createCourse(data: Partial<Course>): Promise<Course> {
+export async function createCourse(data: Partial<Course>, file: File): Promise<Course> {
+	const formData = new FormData();
+	formData.append("course_in", JSON.stringify(data));
+  formData.append("file", file);
+
   const res = await fetch(`${API_URL}/api/v1/courses`, {
     method: "POST",
-    headers: { 
-			"Content-Type": "application/json",
+    headers: {
 			'Authorization': `Bearer ${await getTokenFromClient()}`
 		},
-    body: JSON.stringify(data)
+    body: formData
   })
 
   if (!res.ok) {

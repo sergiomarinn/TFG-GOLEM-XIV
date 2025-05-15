@@ -6,21 +6,15 @@ import {
   ArrowLeftIcon,
   CalendarIcon,
   CodeBracketIcon,
-  DocumentIcon,
-  DocumentTextIcon,
   PaperClipIcon,
-  ArrowUpTrayIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-	TrashIcon,
 } from '@heroicons/react/24/outline';
-import { DocumentArrowUpIcon } from '@heroicons/react/24/solid';
 import { Button } from '@heroui/button';
 import { Card, CardHeader, CardBody, CardFooter } from '@heroui/card';
 import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
 import { Progress } from '@heroui/progress';
-
 import { 
   practiceStatusOptions as statusOptions, 
   practiceStatusColorMap as statusColorMap,
@@ -30,6 +24,8 @@ import { addToast } from '@heroui/toast';
 import { useParams } from 'next/navigation';
 import { getPracticeById, getPracticeFileInfo, uploadPractice } from '@/app/actions/practice';
 import { Practice, PracticeFileInfo } from '@/types/practice';
+import { FileUploader } from '@/components/file-uploader';
+import { FileList } from '@/components/file-list';
 
 const PracticeStatus = ({ status }: {status: string}) => {
   const getStatusName = (uid: string) =>
@@ -62,203 +58,6 @@ const PracticeStatus = ({ status }: {status: string}) => {
   );
 };
 
-// Componente para el listado de archivos
-const FileList = ({ files, onDelete }) => {
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-    else return (bytes / 1048576).toFixed(1) + ' MB';
-  };
-
-  if (!files || files.length === 0) {
-    return (
-      <div className="text-center px-2 py-2 text-default-500">
-        <DocumentTextIcon className="size-12 mx-auto mb-3 opacity-60" />
-        <p>No s'ha afegit cap arxiu.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-2 px-2">
-      {files.map((file, index) => (
-        <div key={index} className="flex items-center justify-between p-3.5 gap-5 bg-default-100/90 rounded-lg">
-          <div className="flex items-center gap-2 min-w-0">
-            <DocumentIcon className="size-[1.9rem] text-default-500 shrink-0" />
-						<div className="flex flex-col min-w-0">
-							<span className="font-medium truncate">{file.name}</span>
-							<span className="text-xs text-default-400">{formatFileSize(file.size)}</span>
-						</div>
-          </div>
-          {onDelete && (
-            <Button 
-              isIconOnly 
-              size="sm"
-              variant="flat" 
-              color="danger" 
-              aria-label="Eliminar" 
-              onPress={() => onDelete(index)}
-            >
-              <TrashIcon className="size-4" />
-            </Button>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// Componente para manejar la subida de archivos
-const FileUploader = ({ files, setFiles, disabled = false }) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-	const [isDragging, setIsDragging] = useState(false);
-
-  const handleFileChange = (e) => {
-    const newFiles: File[] = Array.from(e.target.files);
-    if (newFiles.length > 0) {
-      processFiles(newFiles);
-    }
-  };
-
-	const processFiles = (newFiles: File[]) => {
-    const validFiles: File[] = [];
-		let rejected = false;
-
-		newFiles.forEach(file => {
-			const isZip =
-				file.name.toLowerCase().endsWith('.zip') ||
-				file.type === 'application/zip' ||
-				file.type === 'application/x-zip-compressed';
-
-			if (!isZip) {
-				rejected = true;
-			} else {
-				validFiles.push(file);
-			}
-		});
-
-		if (rejected) {
-			addToast({
-				title: "Només es permeten arxius ZIP",
-				color: "danger",
-			})
-		}
-
-		if (validFiles.length > 0) {
-			setFiles([...files, ...validFiles]);
-		}
-	}
-
-  const deleteFile = (index: number) => {
-    const newFiles = [...files];
-    newFiles.splice(index, 1);
-    setFiles(newFiles);
-  };
-
-	// Handlers for drag and drop
-  const handleDragEnter = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!disabled) setIsDragging(true);
-  }, [disabled]);
-
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
-
-	const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!disabled && !isDragging) setIsDragging(true);
-  }, [isDragging, disabled]);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    
-    if (disabled) return;
-    
-    const droppedFiles: File[] = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 0) {
-      processFiles(droppedFiles);
-    }
-  }, [disabled, processFiles]);
-
-	const openFileDialog = () => {
-    if (!disabled) {
-      fileInputRef.current.click();
-    }
-  };
-
-  return (
-    <div className="pt-1 px-1">
-			{/* Área de drag and drop */}
-      <div 
-        className={`group border-1.5 border-dashed rounded-lg p-4 mb-1 text-center flex flex-col items-center justify-center transition-all ${
-          isDragging 
-            ? 'border-primary-500 bg-primary-50' 
-            : disabled 
-              ? 'border-default-200 bg-default-50 opacity-60' 
-              : 'border-default-300 bg-default-50 hover:border-primary-300 hover:bg-primary-50/50'
-        }`}
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={openFileDialog}
-        style={{ minHeight: '140px', cursor: disabled ? 'not-allowed' : 'pointer' }}
-      >
-        <DocumentArrowUpIcon className={
-					`transition-colors size-12 text-default-400 mb-2 ${
-					disabled ? '' : 'group-hover:text-primary-500'}` } />
-        
-        <p className="text-sm text-default-600 mb-3">
-          {disabled 
-            ? "No es poden pujar arxius" 
-            : "Arrossega i deixa els teus arxius aquí o"}
-        </p>
-        
-        <Button
-          variant="flat"
-          color="primary"
-          startContent={<ArrowUpTrayIcon className="size-4" />}
-          disabled={disabled}
-          onPress={(e) => {
-            e.stopPropagation();
-            openFileDialog();
-          }}
-        >
-          Selecciona arxius
-        </Button>
-        
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          multiple
-					accept=".zip"
-          className="hidden"
-          disabled={disabled}
-        />
-      </div>
-      
-      <span className="text-xs text-default-500 mb-4 px-1">
-        Arxius soportats: ZIP
-      </span>
-			<div className="mt-4">
-				<h4 className="text-default-900 text-lg font-medium mb-3 px-1">
-					Arxius pujats
-				</h4>
-	      <FileList files={files} onDelete={!disabled ? deleteFile : null} />
-			</div>
-    </div>
-  );
-};
-
-// Componente de Feedback
 const FeedbackSection = ({ feedback, grade }) => {
   return (
     <Card>
@@ -290,30 +89,6 @@ const FeedbackSection = ({ feedback, grade }) => {
       </CardBody>
     </Card>
   );
-};
-
-// Datos de ejemplo para la práctica
-const practiceSample = {
-  id: 1,
-  name: "Implementació d'algorismes de cerca avançats",
-  description: "En aquesta pràctica, hauràs d'implementar diversos algorismes de cerca estudiats durant el curs, incloent cerca binària, interpolació i Jump Search. Hauràs de comparar l'eficiència d'aquests algorismes amb diferents conjunts de dades i realitzar una anàlisi de la seva complexitat temporal i espacial.",
-  language: "Python",
-  due_date: "2025-05-20T23:59:59",
-  submission_date: "2025-05-18T14:32:10",
-  status: "corrected",
-  grade: 8.5,
-  feedback: "Molt bona implementació dels algorismes de cerca. L'anàlisi és detallada i ben estructurada. Els experiments realitzats demostren un bon enteniment dels conceptes. Per millorar: podries haver optimitzat l'algorisme d'interpolació per als casos límit.\n\nT'animo a revisar la secció 3.2 on hi ha una petita ineficiència en la implementació del Jump Search.",
-  course: {
-    id: "EDA",
-    name: "Algorísmica Avançada",
-    color: "indigo"
-  },
-  resubmit_available: true,
-  submitted_files: [
-    { name: "search_algorithms.py", size: "4.2 KB" },
-    { name: "benchmark_results.csv", size: "1.8 KB" },
-    { name: "report.pdf", size: "523.1 KB" }
-  ]
 };
 
 // Página principal
@@ -474,7 +249,7 @@ export default function PracticeDetailPage() {
               </CardHeader>
               <Divider />
               <CardBody>
-                <FileList files={submissionFilesInfo} onDelete={null} />
+                <FileList files={submissionFilesInfo} />
               </CardBody>
             </Card>
           )}
@@ -518,6 +293,8 @@ export default function PracticeDetailPage() {
                   files={files} 
                   setFiles={setFiles} 
                   disabled={!canSubmit || ['correcting', 'submitted'].includes(practice?.status)}
+                  acceptedExtensions={['zip']}
+                  multiple={false}
                 />
               )}
             </CardBody>

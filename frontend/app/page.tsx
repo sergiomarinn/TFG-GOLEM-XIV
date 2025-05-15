@@ -141,7 +141,7 @@ export default function Home() {
             </>
           )}
         </div>
-        <div className="w-full lg:w-auto shrink-0 flex flex-col gap-4">
+        <div className="min-w-[485px] w-full lg:w-auto shrink-0 flex flex-col gap-4">
           <h2 className={title({ size: "sm" })}>Calendari</h2>
           <WeekCalendarDemo practices={practices} />
         </div>

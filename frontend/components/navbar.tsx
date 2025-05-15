@@ -26,6 +26,7 @@ export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<UserType>();
 
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -122,7 +123,9 @@ export const Navbar = () => {
         <div className="mx-1 w-[1.5px] h-[50px] bg-default-400/80 rounded-full" />
         <User
           avatarProps={{
-            showFallback: true
+            showFallback: true,
+            name: user?.name[0],
+            className: "text-lg"
           }}
           isFocusable={true}
           description={user?.email}

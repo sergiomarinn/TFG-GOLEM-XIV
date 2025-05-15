@@ -5,9 +5,7 @@ import { CourseCard } from '@/components/course-card';
 import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs";
 import { Input } from "@heroui/input";
 import { Button } from '@heroui/button';
-import { Chip } from "@heroui/chip";
 import { Divider } from "@heroui/divider";
-import { Badge } from "@heroui/badge";
 import {
   DropdownTrigger,
   Dropdown,
@@ -20,10 +18,13 @@ import {
   AcademicCapIcon,
 	CodeBracketIcon,
 	CalendarIcon,
-	ClockIcon
+	ClockIcon,
+  PlusIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
 import { Course } from '@/types/course';
 import { getMyCourses } from '../actions/course';
+import { CourseDrawer } from '@/components/drawer-course';
 
 const sortOptions = [
 	{ name: "Per Nom", uid: "name", icon: <AlphabeticalSortIcon className="size-4" /> },
@@ -32,6 +33,37 @@ const sortOptions = [
 
 export default function CoursesPage() {
   const [courses, setCourses] = React.useState<Course[]>([]);
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+  const [currentCourse, setCurrentCourse] = React.useState<Course | null>(null);
+
+  const handleEditCourse = (course: Course) => {
+    setCurrentCourse(course);
+    setIsDrawerOpen(true);
+  };
+  
+  const handleNewCourse = () => {
+    setCurrentCourse(null);
+    setIsDrawerOpen(true);
+  };
+
+  const handleSaveCourse = (updatedCourse: Course) => {
+    const courseExists = courses.some(course => course.id === updatedCourse.id);
+
+    if (courseExists) {
+      // Actualizar curso existente
+      setCourses(courses.map(course => 
+        course.id === updatedCourse.id ? updatedCourse : course
+      ));
+    } else {
+      // Crear nuevo curso
+      setCourses([...courses, updatedCourse]);
+    }
+  };
+
+  const handleDeleteCourse = (courseId: string) => {
+    setCourses(prevCourses => prevCourses.filter(course => course.id !== courseId));
+  }
+  
   
   React.useEffect(() => {
     const fetchCourses = async () => {
@@ -48,7 +80,7 @@ export default function CoursesPage() {
   const programmingLanguageOptions = React.useMemo(() => {
     const languages = new Set<string>();
     courses.forEach((course) => {
-      course.programming_languages.forEach((language) => {
+      course.programming_languages?.forEach((language) => {
         languages.add(language);
       });
     });
@@ -130,8 +162,8 @@ export default function CoursesPage() {
       <div className="flex justify-between gap-3 items-end mb-6">
         <Input
           isClearable
-					variant="faded"
-          className="w-full max-w-md"
+          variant="faded"
+          className="w-full"
           placeholder="Cerca per nom de curs..."
           startContent={<SearchIcon />}
           value={filterValue}
@@ -242,25 +274,25 @@ export default function CoursesPage() {
       </Breadcrumbs>
 
       {/* Header section */}
-      <div className="container px-2 pt-8 pb-5">
-        <div className="flex items-center justify-between mb-2">
+      <div className="relative container px-2 pt-8 pb-5">
+        <div className="flex items-start justify-between mb-2">
           <div>
             <h1 className="text-4xl font-bold">Els meus cursos</h1>
             <p className="text-default-600 mt-2">
               Explora els teus cursos i accedeix a les seves pràctiques
             </p>
           </div>
-          <div className="flex gap-3">
-            <Badge content={fallCount} color="primary" placement="top-right">
-              <Chip color="primary" variant="flat" size="lg">
-                Tardor
-              </Chip>
-            </Badge>
-            <Badge content={springCount} color="warning" placement="top-right">
-              <Chip color="warning" variant="flat" size="lg">
-                Primavera
-              </Chip>
-            </Badge>
+          <div className="flex gap-3 pt-2">
+            <Button
+              className=""
+              color="secondary"
+              variant="flat"
+              radius="lg"
+              startContent={<PlusIcon className="size-5" />}
+              onPress={() => handleNewCourse()}
+            >
+              Afegir nou curs
+            </Button>
           </div>
         </div>
       </div>
@@ -272,10 +304,22 @@ export default function CoursesPage() {
         {filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedData.map((course) => (
-              <CourseCard
-                key={course.id}
-                course={course}
-              />
+              <div className="relative">
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                />
+                <Button
+                  className="absolute top-4 left-4"
+                  variant="shadow"
+                  radius="full"
+                  size="sm"
+                  startContent={<PencilIcon className="size-4" />}
+                  onPress={() => handleEditCourse(course)}
+                >
+                  Editar
+                </Button>
+              </div>
             ))}
           </div>
         ) : (
@@ -288,6 +332,13 @@ export default function CoursesPage() {
           </div>
         )}
       </div>
+      <CourseDrawer 
+        isOpen={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        initialCourse={currentCourse}
+        onSave={handleSaveCourse}
+        onDelete={handleDeleteCourse}
+      />
     </div>
   );
 }

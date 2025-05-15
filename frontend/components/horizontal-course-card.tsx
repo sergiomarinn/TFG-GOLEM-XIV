@@ -92,9 +92,9 @@ export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps
               <h2 className="text-2xl font-semibold text-white mb-1">{course.name}</h2>
               {/* Course Info */}
               <div className="flex items-center justify-between w-full text-white text-sm font-light mb-4">
-                <span className="inline-flex items-start justify-center gap-1">
+                <span className="inline-flex items-start justify-center gap-1 capitalize">
                   <CalendarIcon className="size-5 text-gray-200"/>
-                  Tardor
+                  {course.semester}
                 </span>
                 <span className="inline-flex items-start gap-1">
                   <UsersIcon className="size-5 text-gray-200"/>
@@ -104,11 +104,17 @@ export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps
             </div>
 
             {/* Teachers Avatars */}
-            <div className={clsx(expand ? "mb-4" : "")}>
-              <AvatarGroup max={7} isBordered>
+            <div className={clsx(expand ? "mb-4" : "ml-3")}>
+              <AvatarGroup max={7}>
                 {teachers.map((teacher) => (
                   <Tooltip showArrow crossOffset={-12} closeDelay={50} content={teacher.name + " " + teacher.surnames}>
-                    <Avatar showFallback />
+                    <Avatar 
+                      showFallback
+                      name={teacher.name[0]}
+                      classNames={{
+                        base: "ring-white ring-[1.5px] text-large"
+                      }} 
+                    />
                   </Tooltip>
                 ))}
               </AvatarGroup>

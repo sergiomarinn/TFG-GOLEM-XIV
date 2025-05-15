@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react'
-import { useParams } from 'next/navigation';
+import { redirect, useParams } from 'next/navigation';
 import { PracticeCourseCard } from '@/components/practice-course-card';
 import { Input } from "@heroui/input";
 import { Button } from '@heroui/button';
@@ -26,6 +26,7 @@ import { Practice } from '@/types/practice';
 import { User } from '@/app/lib/definitions';
 import { getUserFromClient } from '@/app/lib/client-session';
 import { motion, AnimatePresence } from "framer-motion";
+import { CourseDrawer } from '@/components/drawer-course';
 
 const sortOptions = [
   { name: "Més properes", uid: "asc" },
@@ -40,6 +41,7 @@ export default function CourseDetailPage() {
   const [coursePractices, setCoursePractices] = React.useState<Practice[]>([]);
   const [courseUsers, setCourseUsers] = React.useState<User[]>([]);
   const [canEditCourse, setCanEditCourse] = React.useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
   React.useEffect(() => {
     const fetchCourse = async () => {
@@ -72,6 +74,14 @@ export default function CourseDetailPage() {
     }
     return "";
   }, [courseInfo]);
+
+  const handleUpdateCourse = (updatedCourse: Course) => {
+    
+  };
+
+  const handleDeleteCourse = (courseId: string) => {
+    redirect("/courses")
+  }
 
   const [filterValue, setFilterValue] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
@@ -228,6 +238,7 @@ export default function CourseDetailPage() {
           variant="flat"
           radius="lg"
           startContent={<PencilIcon className="size-4" />}
+          onPress={() => setIsDrawerOpen(true)}
         >
           Editar curs
         </Button>
@@ -282,6 +293,13 @@ export default function CourseDetailPage() {
           <ParticipantsSection courseUsers={courseUsers} canEditCourse={canEditCourse} />
         </div>
       </div>
+      <CourseDrawer 
+        isOpen={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        initialCourse={courseInfo || null}
+        onSave={handleUpdateCourse}
+        onDelete={handleDeleteCourse}
+      />
     </div>
   );
 }

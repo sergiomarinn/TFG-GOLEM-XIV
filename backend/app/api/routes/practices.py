@@ -273,6 +273,32 @@ def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: S
         size=file_size
     )
 
+@router.get("/{practice_id}/{user_niub}", dependencies=[Depends(get_current_teacher)], response_model=PracticePublicWithCourse)
+def read_practice_student(practice_id: uuid.UUID, user_niub: str, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Retrieve student practice by ID and NIUB.
+    """
+    statement = select(Practice, PracticesUsersLink).join(PracticesUsersLink).where(
+        PracticesUsersLink.user_niub == user_niub,
+        PracticesUsersLink.practice_id == practice_id
+    )
+    practice, link = session.exec(statement).first()
+
+    if not practice:
+        raise HTTPException(status_code=404, detail="Practice not found")
+    
+    if current_user not in practice.course.users:
+        raise HTTPException(status_code=403, detail="The user is not enrolled in the practice.")
+
+    return PracticePublicWithCourse(
+        **practice.model_dump(),
+        submission_date=link.submission_date,
+        status=link.status,
+        submission_file_name=link.submission_file_name,
+        correction=link.correction,
+        course=practice.course
+    )
+
 @router.post("/", dependencies=[Depends(get_current_teacher)], response_model=PracticePublic)
 async def create_practice(*, session: SessionDep, practice_in: PracticeCreate, files: list[UploadFile]) -> Any:
     """

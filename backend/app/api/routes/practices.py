@@ -331,7 +331,7 @@ def update_practice(session: SessionDep, practice_id: uuid.UUID, practice_in: Pr
     if not practice:
         raise HTTPException(status_code=404, detail="Practice not found")
     
-    practice = crud.practice.update_practice(session=session, practice=practice, practice_update=practice_in, course=course)
+    practice = crud.practice.update_practice(session=session, db_practice=practice, practice_update=practice_in, course=course)
 
     return practice
 

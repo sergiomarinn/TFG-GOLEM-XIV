@@ -35,7 +35,8 @@ from app.models import (
 )
 import pandas as pd
 import os
-
+import logging
+logger = logging.getLogger("uvicorn")
 router = APIRouter()
 
 @router.get("/", dependencies=[Depends(get_current_active_superuser)], response_model=CoursesPublic)
@@ -229,6 +230,7 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
     not_found_users = []
     for user_niub in data["niub"]:
         user = crud.user.get_user_by_niub(session=session, niub=user_niub)
+        logger.info(user.niub)
         if user:
             course.users.append(user)
         else:
@@ -254,7 +256,7 @@ def update_course(
         raise HTTPException(status_code=404, detail="Course not found")
     if current_user not in course.users:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
-    course = crud.course.update_course(session=session, course=course, course_in=course_in)
+    course = crud.course.update_course(session=session, db_course=course, course_in=course_in)
     return course
 
 @router.patch("/me/{course_id}/access", response_model=Message)

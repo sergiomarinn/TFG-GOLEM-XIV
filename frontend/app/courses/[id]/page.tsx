@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react'
-import { redirect, useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { PracticeCourseCard } from '@/components/practice-course-card';
 import { Input } from "@heroui/input";
 import { Button } from '@heroui/button';
@@ -18,15 +18,15 @@ import { Divider } from "@heroui/divider";
 import { Selection } from '@react-types/shared';
 import { SearchIcon, ChevronDownIcon } from '@/components/icons'
 import { practiceStatusOptions } from "@/types";
-import { AcademicCapIcon, DocumentArrowUpIcon, FunnelIcon, ArrowLongUpIcon, ArrowLongDownIcon, UsersIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, DocumentArrowUpIcon, FunnelIcon, ArrowLongUpIcon, ArrowLongDownIcon, UsersIcon, PencilIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { ParticipantsSection } from '@/components/participants-section';
 import { getCourseById, updateCourseLastAccess } from '@/app/actions/course';
 import { Course } from '@/types/course';
 import { Practice } from '@/types/practice';
 import { User } from '@/app/lib/definitions';
 import { getUserFromClient } from '@/app/lib/client-session';
-import { motion, AnimatePresence } from "framer-motion";
 import { CourseDrawer } from '@/components/drawer-course';
+import { motion, AnimatePresence } from "framer-motion";
 
 const sortOptions = [
   { name: "Més properes", uid: "asc" },
@@ -35,6 +35,7 @@ const sortOptions = [
 
 export default function CourseDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const courseId = params.id as string;
 
   const [courseInfo, setCourseInfo] = React.useState<Course>();
@@ -80,7 +81,7 @@ export default function CourseDetailPage() {
   };
 
   const handleDeleteCourse = (courseId: string) => {
-    redirect("/courses")
+    router.push("/courses");
   }
 
   const [filterValue, setFilterValue] = React.useState("");
@@ -131,7 +132,7 @@ export default function CourseDetailPage() {
 
   const practicesTopContent = React.useMemo(() => {
     return (
-      <div className="flex justify-between gap-3 items-end w-full">
+      <div className="flex justify-between gap-3 items-center w-full">
         <Input
           isClearable
           className="w-full"
@@ -197,6 +198,25 @@ export default function CourseDetailPage() {
               ))}
             </DropdownMenu>
           </Dropdown>
+          <AnimatePresence>
+            {canEditCourse && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Button
+                  aria-label="Afegir pràctica"
+                  color="success"
+                  variant="flat"
+                  startContent={<PlusIcon className="size-5" />}
+                >
+                  Afegir pràctica
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     );
@@ -206,6 +226,7 @@ export default function CourseDetailPage() {
     dateSort,
     coursePractices.length,
     hasSearchFilter,
+    canEditCourse
   ]);
 
   return (
@@ -290,7 +311,7 @@ export default function CourseDetailPage() {
             <UsersIcon className="size-9 text-primary-600 mr-2" />
             <h2 className="text-3xl font-semibold text-default-900">Participants</h2>
           </div>
-          <ParticipantsSection courseUsers={courseUsers} canEditCourse={canEditCourse} />
+          <ParticipantsSection courseId={courseInfo?.id || ""} courseUsers={courseUsers} canEditCourse={canEditCourse} />
         </div>
       </div>
       <CourseDrawer 

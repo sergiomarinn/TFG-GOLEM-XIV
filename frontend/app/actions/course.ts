@@ -139,6 +139,22 @@ export async function createCourse(data: Partial<Course>, file: File): Promise<C
   return await res.json();
 }
 
+export async function addStudentByNiub(id: string, niub: string): Promise<void> {
+	const res = await fetch(`${API_URL}/api/v1/courses/${id}/students/${niub}`, {
+		method: "POST",
+		headers: {
+			"Authorization": `Bearer ${await getTokenFromClient()}`
+		}
+	})
+
+	if (!res.ok) {
+		const errorData = await res.json()
+		throw new Error(errorData.detail || "Failed to add student to course")
+	}
+
+	return await res.json();
+}
+
 export async function updateCourseLastAccess(id: string): Promise<void> {
 	const res = await fetch(`${API_URL}/api/v1/courses/me/${id}/access`, {
 		method: "PATCH",
@@ -182,6 +198,22 @@ export async function deleteCourse(id: string): Promise<void> {
 	if (!res.ok) {
 		const errorData = await res.json()
 		throw new Error(errorData.detail || "Failed to delete course")
+	}
+
+	return await res.json();
+}
+
+export async function deleteStudentFromCourse(id: string, niub: string): Promise<void> {
+	const res = await fetch(`${API_URL}/api/v1/courses/${id}/students/${niub}`, {
+		method: "DELETE",
+		headers: {
+			"Authorization": `Bearer ${await getTokenFromClient()}`
+		}
+	})
+
+	if (!res.ok) {
+		const errorData = await res.json()
+		throw new Error(errorData.detail || "Failed to delete student from the course")
 	}
 
 	return await res.json();

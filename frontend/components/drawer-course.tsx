@@ -43,7 +43,11 @@ const ColorSelector = ({ selectedColor, onColorSelect }) => {
 
   return (
     <div>
-      <Popover crossOffset={-60} isOpen={isOpen} onOpenChange={(open) => setIsOpen(open)}>
+      <Popover 
+        isOpen={isOpen} 
+        onOpenChange={(open) => setIsOpen(open)}
+        placement="top-end"
+      >
         <PopoverTrigger>
           <Button
             className="absolute bottom-3 right-3"
@@ -195,14 +199,14 @@ export const CourseDrawer = ({
       setIsDeletingCourse(true);
       await deleteCourse(course.id);
       addToast({
-        title: "Curs eliminat correctament",
+        title: `Curs ${course.name} eliminat correctament`,
         color: "success"
       })
       onDelete?.(course.id)
       onOpenChange?.(false);
     } catch (error) {
       addToast({
-        title: "Error en eliminar el curs",
+        title: `Error en eliminar el curs ${course.name}`,
         color: "danger"
       })
       console.error(error);
@@ -372,7 +376,7 @@ export const CourseDrawer = ({
               </div>
               {!course && <div className="flex flex-col gap-3 pt-3 pb-4">
                 <h2 className="text-xl font-bold leading-5">
-                  Pujar llistat d’estudiants
+                  Pujar llistat d'estudiants
                 </h2>
                 <div className="w-full flex flex-col gap-3 rounded-lg bg-default-200/60 p-5">
                   <div className="flex items-center gap-3 font-medium text-sm">
@@ -385,7 +389,7 @@ export const CourseDrawer = ({
                     Exemple de taula
                   </div>
                   <p className="text-default-500/80 text-sm font-light">
-                    Pots descarregar el fitxer d’exemple adjunt i utilitzar-lo com a punt de partida per afegir els estudiants al curs.
+                    Pots descarregar el fitxer d'exemple adjunt i utilitzar-lo com a punt de partida per afegir els estudiants al curs.
                   </p>
                   {/* <Button
                       className="bg-default-50 border-small"

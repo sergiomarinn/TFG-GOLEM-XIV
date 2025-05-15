@@ -57,7 +57,7 @@ export type User = {
 }
 
 export type Users = {
-  users: User[]
+  data: User[]
   count: number
 }
 

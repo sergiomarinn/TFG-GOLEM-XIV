@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -26,6 +26,7 @@ import { getPracticeById, getPracticeFileInfo, uploadPractice } from '@/app/acti
 import { Practice, PracticeFileInfo } from '@/types/practice';
 import { FileUploader } from '@/components/file-uploader';
 import { FileList } from '@/components/file-list';
+import { useRouter } from "next/navigation";
 
 const PracticeStatus = ({ status }: {status: string}) => {
   const getStatusName = (uid: string) =>
@@ -95,6 +96,7 @@ const FeedbackSection = ({ feedback, grade }) => {
 export default function PracticeDetailPage() {
   const params = useParams();
   const practiceId = params.id as string;
+  const router = useRouter();
 
   const [practice, setPractice] = useState<Practice>();
   const [submissionFilesInfo, setSubmissionFilesInfo] = useState<PracticeFileInfo[]>([]);
@@ -183,13 +185,13 @@ export default function PracticeDetailPage() {
   return (
     <div className="px-8 pb-12 min-h-screen bg-slate-100 dark:bg-neutral-900">
       {/* Header con navegación */}
-      <Link
-				href="/practices"
-				className="inline-flex items-center gap-2 text-[0.85rem] text-default-600 hover:text-primary-500 transition-colors"
-			>
-				<ArrowLeftIcon className="size-5" />
-				<span>Tornar enrere</span>
-			</Link>
+      <button
+        onClick={() => router.back()}
+        className="inline-flex items-center gap-2 text-[0.85rem] text-default-600 hover:text-primary-500 transition-colors"
+      >
+        <ArrowLeftIcon className="size-5" />
+        <span>Tornar enrere</span>
+      </button>
       
       {/* Header section */}
       <div className="mt-2 mb-8">

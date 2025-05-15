@@ -77,7 +77,7 @@ export default function Home() {
     : [];
 
   return (
-    <section className="px-8 flex flex-col min-h-screen gap-16 bg-slate-100 dark:bg-neutral-900">
+    <section className="px-8 flex flex-col min-h-screen gap-16">
       <div className="flex flex-col lg:flex-row items-start gap-16">
         <div ref={containerRef} className="w-full lg:flex-1 min-w-0 flex flex-col">
           <h2 className={title({ size: "sm" })}>Cursos recents</h2>

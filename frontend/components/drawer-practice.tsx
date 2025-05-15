@@ -250,7 +250,7 @@ export const PracticeDrawer = ({
                 </Popover>}
               </div>
             </DrawerHeader>
-            <DrawerBody className="pt-12">
+            <DrawerBody className="pt-14">
               <div className="flex flex-col gap-3 pt-4">
                 <h1 className="text-2xl font-bold leading-5">
                   {practice ? "Editar informació de la pràctica": "Afegir nova pràctica"}

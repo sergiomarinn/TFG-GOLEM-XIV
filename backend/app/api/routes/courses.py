@@ -36,7 +36,10 @@ from app.models import (
 import pandas as pd
 import os
 import logging
-logger = logging.getLogger("uvicorn")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 @router.get("/", dependencies=[Depends(get_current_active_superuser)], response_model=CoursesPublic)
@@ -230,12 +233,13 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
     not_found_users = []
     for user_niub in data["niub"]:
         user = crud.user.get_user_by_niub(session=session, niub=user_niub)
-        logger.info(user.niub)
         if user:
             course.users.append(user)
         else:
             not_found_users.append(user_niub)
         
+    logger.info("Students not found: ", not_found_users)
+    
     session.add(course)
     session.commit()
 

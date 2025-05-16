@@ -25,6 +25,7 @@ import {
 import { Course } from '@/types/course';
 import { getMyCourses } from '../actions/course';
 import { CourseDrawer } from '@/components/drawer-course';
+import { getUserFromClient } from '@/app/lib/client-session';
 
 const sortOptions = [
 	{ name: "Per Nom", uid: "name", icon: <AlphabeticalSortIcon className="size-4" /> },
@@ -35,6 +36,7 @@ export default function CoursesPage() {
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [currentCourse, setCurrentCourse] = React.useState<Course | null>(null);
+  const [isTeacher, setIsTeacher] = React.useState(false);
 
   const handleEditCourse = (course: Course) => {
     setCurrentCourse(course);
@@ -68,6 +70,8 @@ export default function CoursesPage() {
   React.useEffect(() => {
     const fetchCourses = async () => {
       try {
+        const user = await getUserFromClient();
+        setIsTeacher(user?.is_teacher || user?.is_admin || false);
         const { data: courses } = await getMyCourses();
         setCourses(courses);
       } catch (error) {
@@ -283,7 +287,7 @@ export default function CoursesPage() {
             </p>
           </div>
           <div className="flex gap-3 pt-2">
-            <Button
+            {isTeacher && <Button
               className=""
               color="secondary"
               variant="flat"
@@ -292,7 +296,7 @@ export default function CoursesPage() {
               onPress={() => handleNewCourse()}
             >
               Afegir nou curs
-            </Button>
+            </Button>}
           </div>
         </div>
       </div>
@@ -309,7 +313,7 @@ export default function CoursesPage() {
                   key={course.id}
                   course={course}
                 />
-                <Button
+                {isTeacher && <Button
                   className="absolute top-4 left-4"
                   variant="shadow"
                   radius="full"
@@ -318,7 +322,7 @@ export default function CoursesPage() {
                   onPress={() => handleEditCourse(course)}
                 >
                   Editar
-                </Button>
+                </Button>}
               </div>
             ))}
           </div>

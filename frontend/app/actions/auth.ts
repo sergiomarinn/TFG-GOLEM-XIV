@@ -25,7 +25,7 @@ export async function signup(state: FormState, formData: FormData) {
     const { niub, name, surnames, email, password } = validatedFields.data
     
     // 2. Signup user
-    const res = await fetch(`${API_URL}/api/v1/users/signup`, {
+    const res = await fetch(`${API_URL}/api/v1/users/signup/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ niub, name, surnames, email, password }),
@@ -112,7 +112,7 @@ export async function login(state: FormState, formData: FormData) {
     formBody.append('username', username)
     formBody.append('password', password)
 
-    const loginResponse = await fetch(`${API_URL}/api/v1/login/access-token`, {
+    const loginResponse = await fetch(`${API_URL}/api/v1/login/access-token/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

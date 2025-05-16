@@ -210,7 +210,7 @@ export async function uploadPractice(practiceId: string, file: File): Promise<vo
 	const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/upload`, {
+  const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/upload/`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${await getTokenFromClient()}`,

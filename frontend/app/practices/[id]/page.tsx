@@ -12,8 +12,6 @@ import {
   ArrowLeftCircleIcon,
   UserGroupIcon,
   MagnifyingGlassIcon,
-  XMarkIcon,
-  UserIcon,
   PencilIcon,
   ArrowDownTrayIcon,
   InformationCircleIcon,
@@ -112,7 +110,7 @@ const FeedbackSection = ({ feedback, grade }) => {
   );
 };
 
-const StudentSidebar = ({ practiceStudents, onSelectStudent }) => {
+const StudentSidebar = ({ practiceStudents, onSelectStudent, selectedStudent }) => {
   const [students, setStudents] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -128,9 +126,20 @@ const StudentSidebar = ({ practiceStudents, onSelectStudent }) => {
     return students.filter(student => 
       student.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
       student.surnames?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      student.niub?.toLowerCase().includes(searchTerm.toLowerCase())
+      student.niub?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [students, searchTerm]);
+
+  const handleStudentClick = (student: User) => {
+    if (selectedStudent && selectedStudent.niub === student.niub) {
+      // Si el estudiante ya está seleccionado, lo deseleccionamos
+      onSelectStudent(null);
+    } else {
+      // Si no, lo seleccionamos
+      onSelectStudent(student);
+    }
+  };
 
   return (
     <div className="h-full">
@@ -152,27 +161,36 @@ const StudentSidebar = ({ practiceStudents, onSelectStudent }) => {
           </div>
         ) : filteredStudents.length > 0 ? (
           <ul className="space-y-1">
-            {filteredStudents.map((student) => (
-              <li key={student.niub}>
-                <button
-                  onClick={() => onSelectStudent(student)}
-                  className="w-full text-left p-2 rounded-lg hover:bg-default-100 active:scale-95 transition-all flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar 
-                      name={student.name[0]}
-                      classNames={{
-                        base: "text-large"
-                      }}  
-                    />
-                    <div>
-                      <p className="text font-medium">{student.name + " " + student.surnames}</p>
-                      <p className="text-sm text-default-500">{student.niub}</p>
+            {filteredStudents.map((student) => {
+              const isSelected = selectedStudent && selectedStudent.niub === student.niub;
+              return (
+                <li key={student.niub}>
+                  <button
+                    onClick={() => handleStudentClick(student)}
+                    className={`w-full text-left p-2.5 rounded-lg ${
+                      isSelected 
+                        ? 'bg-primary-100 border-l-4 border-primary-500' 
+                        : 'hover:bg-default-100'
+                    } active:scale-95 transition-all flex items-center justify-between`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar 
+                        name={student.name[0]}
+                        classNames={{
+                          base: "text-large"
+                        }}  
+                      />
+                      <div>
+                        <p className={`text font-medium ${isSelected ? 'text-primary-700' : ''}`}>
+                          {student.name + " " + student.surnames}
+                        </p>
+                        <p className="text-sm text-default-500">{student.niub} • {student.email}</p>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              </li>
-            ))}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <div className="text-center py-8 text-default-500">
@@ -197,8 +215,10 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
         const studentPractice = await getPracticeStudent(practiceId, student.niub);
         setStudentPractice(studentPractice);
         
-        const fileInfo = await getPracticeFileInfoForUser(practiceId, student.niub);
-        setStudentFiles([fileInfo]);
+        if (studentPractice.status !== "not_submitted") {
+          const fileInfo = await getPracticeFileInfoForUser(practiceId, student.niub);
+          setStudentFiles([fileInfo]);
+        }
       } catch (error) {
         console.error("Error fetching student details:", error);
         addToast({
@@ -277,16 +297,6 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 text-default-600 hover:text-primary-500 transition-colors"
-        >
-          <ArrowLeftCircleIcon className="size-5" />
-          <span>Tornar a la llista d'estudiants</span>
-        </button>
-      </div>
-
       {/* Información del estudiante */}
       <Card>
         <CardHeader>
@@ -406,13 +416,15 @@ export default function PracticeDetailPage() {
     const fetchUserAndPractice = async () => {
       try {
         const user = await getUserFromClient();
-        setIsTeacher(user?.is_teacher || false);
+        setIsTeacher(user?.is_teacher || user?.is_admin || false);
 
         const practice = await getPracticeById(practiceId);
         setPractice(practice);
-
-        const submissionFileInfo = await getPracticeFileInfo(practiceId);
-        setSubmissionFilesInfo([submissionFileInfo]);
+        
+        if (practice.status !== "not_submitted") {
+          const submissionFileInfo = await getPracticeFileInfo(practiceId);
+          setSubmissionFilesInfo([submissionFileInfo]);
+        }
       } catch (error) {
         console.error("Error fetching practice:", error);
       }
@@ -509,7 +521,7 @@ export default function PracticeDetailPage() {
         shouldShowTimeoutProgress: true,
       })
     } catch (error) {
-      console.error("Error submitting practice:", error);
+      console.error("Error downloading practice:", error);
       addToast({
         title: "Error en descarrega la tramesa",
         description: "Torna-ho a intentar més tard",
@@ -647,14 +659,18 @@ export default function PracticeDetailPage() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <UserGroupIcon className="size-6 text-default-700" />
-                  <h2 className="text-xl font-semibold">Estudiants</h2>
+                  <div className="flex gap-1">
+                    <h2 className="text-xl font-semibold mr-2">Estudiants</h2>
+                    <Chip color="primary" variant="flat" className="px-0">{practice?.users?.length}</Chip>
+                  </div>
                 </div>
               </CardHeader>
               <Divider />
               <CardBody>
                 <StudentSidebar 
                   practiceStudents={practice?.users} 
-                  onSelectStudent={handleSelectStudent} 
+                  onSelectStudent={handleSelectStudent}
+                  selectedStudent={selectedStudent}
                 />
               </CardBody>
             </Card>

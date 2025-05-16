@@ -68,7 +68,7 @@ export async function getMyUser(): Promise<User> {
 }
 
 export async function createUser(data: Partial<User>): Promise<User> {
-  const res = await fetch(`${API_URL}/api/v1/users`, {
+  const res = await fetch(`${API_URL}/api/v1/users/`, {
     method: "POST",
     headers: { 
 			"Content-Type": "application/json",

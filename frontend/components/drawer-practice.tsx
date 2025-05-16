@@ -11,6 +11,7 @@ import { Tooltip } from '@heroui/tooltip';
 import { Input, Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
+import { DatePicker } from "@heroui/date-picker";
 import { useEffect, useState } from "react";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import { FileUploader } from "@/components/file-uploader";
@@ -18,6 +19,7 @@ import Image from 'next/image'
 import XLSXIcon from "@/public/xlsx_icon.svg";
 import { addToast } from "@heroui/toast";
 import { createPractice, deletePractice, updatePractice } from "@/app/actions/practice";
+import { DateValue, parseAbsoluteToLocal } from "@internationalized/date";
 
 interface PracticeDrawerProps {
   isOpen: boolean
@@ -45,7 +47,9 @@ export const PracticeDrawer = ({
     name: practice?.name || "",
     description: practice?.description || "",
     programming_language: practice?.programming_language || "",
-    due_date: practice?.due_date || "",
+    due_date: practice?.due_date
+      ? parseAbsoluteToLocal(practice.due_date)
+      : parseAbsoluteToLocal(new Date().toISOString()),
     course_id: practice?.course_id || ""
   });
 
@@ -55,7 +59,9 @@ export const PracticeDrawer = ({
         name: initialPractice?.name || "",
         description: initialPractice?.description || "",
         programming_language: initialPractice?.programming_language || "",
-        due_date: initialPractice?.due_date || "",
+        due_date: initialPractice?.due_date
+          ? parseAbsoluteToLocal(initialPractice.due_date)
+          : parseAbsoluteToLocal(new Date().toISOString()),
         course_id: initialPractice?.course_id || ""
       });
       setPractice(initialPractice);
@@ -66,7 +72,7 @@ export const PracticeDrawer = ({
         name: "",
         description: "",
         programming_language: "",
-        due_date: "",
+        due_date: parseAbsoluteToLocal(new Date().toISOString()),
         course_id: ""
       });
       setPractice(null);
@@ -82,20 +88,18 @@ export const PracticeDrawer = ({
   };
 
   const handlePractice = async () => {
-    const updatedData = { ...editFormData };
+    const practiceData = {
+      name: editFormData.name.trim(),
+      description: editFormData.description.trim(),
+      programming_language: editFormData.programming_language.trim(),
+      due_date: editFormData.due_date.toAbsoluteString(),
+      course_id: editFormData.course_id.trim(),
+    };
 
-    // Si ya existe un curso (modo edición)
     if (practice?.id) {
       try {
         setIsCreatingOrUpdatingPractice(true);
-        const updatedPracticeData = {
-          name: editFormData.name.trim(),
-          description: editFormData.description.trim(),
-          programming_language: editFormData.programming_language.trim(),
-          due_date: editFormData.due_date.trim(),
-          course_id: editFormData.course_id.trim(),
-        };
-        const updatedPractice = await updatePractice(practice.id, updatedPracticeData);
+        const updatedPractice = await updatePractice(practice.id, practiceData);
         addToast({
           title: `Pràctica ${updatedPractice.name} actualizada correctament`,
           color: "success"
@@ -117,7 +121,7 @@ export const PracticeDrawer = ({
     else {
       try {
         setIsCreatingOrUpdatingPractice(true);
-        const createdPractice = await createPractice(updatedData, files);
+        const createdPractice = await createPractice(practiceData, files);
         addToast({
           title: `Pràctica ${createdPractice.name} creada correctament`,
           color: "success"
@@ -290,8 +294,15 @@ export const PracticeDrawer = ({
                   isReadOnly
                   label="Curs"
                   radius="lg"
-                  defaultValue="junior@heroui.com"
                   value={practice?.course?.name}
+                />
+                <DatePicker
+                  hideTimeZone
+                  showMonthAndYearPickers
+                  visibleMonths={2}
+                  label="Data límit"
+                  value={editFormData.due_date}
+                  onChange={(value) => handleEditFormChange("due_date", value)}
                 />
               </div>
               {!practice && <div className="flex flex-col gap-3 pt-3 pb-4">

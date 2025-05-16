@@ -113,7 +113,7 @@ export const Navbar = () => {
   return (
     <>
       <header 
-        className={`absolute top-0 left-0 right-0 h-[105px] backdrop-blur-xl bg-slate-100/70 dark:bg-neutral-900/70 z-40 transition-transform duration-300 ${
+        className={`absolute top-0 left-0 right-0 h-[90px] backdrop-blur-md bg-slate-100/70 dark:bg-neutral-900/70 z-40 transition-transform duration-300 ${
           show ? 'translate-y-0' : '-translate-y-full'
         }`}
       >

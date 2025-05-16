@@ -216,7 +216,7 @@ export default function PracticesGeneralPage() {
   }, [filterValue, courseFilter, sortOption, sortOptionName]);
 
   return (
-    <div className="px-8 pb-8 min-h-screen bg-slate-100 dark:bg-neutral-900">
+    <div className="px-8 pb-8 min-h-screen">
       <Breadcrumbs>
         <BreadcrumbItem href="/">Dashboard</BreadcrumbItem>
         <BreadcrumbItem href="/practices">Pràctiques</BreadcrumbItem>

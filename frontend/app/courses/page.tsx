@@ -267,7 +267,7 @@ export default function CoursesPage() {
   }, [courses]);
 
   return (
-    <div className="px-8 pb-8 min-h-screen bg-slate-100 dark:bg-neutral-900">
+    <div className="px-8 pb-8 min-h-screen">
       <Breadcrumbs>
         <BreadcrumbItem href="/">Dashboard</BreadcrumbItem>
         <BreadcrumbItem href="/courses">Cursos</BreadcrumbItem>

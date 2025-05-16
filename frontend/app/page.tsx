@@ -58,7 +58,7 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: courses } = await getMyRecentCourses();
+        const { data: courses } = await getMyRecentCourses(cardsPerRow+1);
         setRecentCourses(courses);
 
         const { data: practices } = await getMyPracitces();
@@ -69,7 +69,7 @@ export default function Home() {
     };
 
     fetchData();
-  }, []);
+  }, [cardsPerRow]);
 
   const featuredCourse = recentCourses.length > 0 ? recentCourses[0] : null;
   const remainingCourses = recentCourses.length > 1 

@@ -115,7 +115,23 @@ export async function getPracticeWithCourse(id: string): Promise<Practice> {
 	}
 
 	return res.json()
-}		
+}
+
+export async function getPracticeStudent(id: string, niub: string): Promise<Practice> {
+	const res = await fetch(`${API_URL}/api/v1/practices/${id}/${niub}`, {
+		method: "GET",
+		headers: {
+			"Authorization": `Bearer ${await getTokenFromClient()}`
+		},
+	});
+
+	if (!res.ok) {
+		const errorData = await res.json()
+		throw new Error(errorData.detail || "Failed to fetch student practice")
+	}
+
+	return res.json()
+}	
 
 export async function getPracticeFileInfo(practiceId: string): Promise<PracticeFileInfo> {
 	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/submission-file-info`, {

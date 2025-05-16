@@ -9,6 +9,11 @@ import {
   PaperClipIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
+  ArrowLeftCircleIcon,
+  UserGroupIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@heroui/button';
 import { Card, CardHeader, CardBody, CardFooter } from '@heroui/card';
@@ -22,11 +27,15 @@ import {
 } from "@/types";
 import { addToast } from '@heroui/toast';
 import { useParams } from 'next/navigation';
-import { getPracticeById, getPracticeFileInfo, uploadPractice } from '@/app/actions/practice';
+import { getPracticeById, getPracticeFileInfo, getPracticeFileInfoForUser, getPracticeStudent, uploadPractice } from '@/app/actions/practice';
 import { Practice, PracticeFileInfo } from '@/types/practice';
 import { FileUploader } from '@/components/file-uploader';
 import { FileList } from '@/components/file-list';
 import { useRouter } from "next/navigation";
+import { User } from '@/app/lib/definitions';
+import { Input } from '@heroui/input';
+import { getUserFromClient } from '@/app/lib/client-session';
+import { Spinner } from '@heroui/spinner';
 
 const PracticeStatus = ({ status }: {status: string}) => {
   const getStatusName = (uid: string) =>
@@ -92,6 +101,244 @@ const FeedbackSection = ({ feedback, grade }) => {
   );
 };
 
+const StudentSidebar = ({ practiceStudents, onSelectStudent }) => {
+  const [students, setStudents] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (practiceStudents) {
+      setStudents(practiceStudents.filter((student) => student.is_student));
+      setIsLoading(false)
+    }
+  }, [practiceStudents]);
+
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => 
+      student.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      student.surnames?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      student.niub?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [students, searchTerm]);
+
+  return (
+    <div className="h-full">
+      <div className="mb-2 relative">
+        <Input
+          placeholder="Cerca estudiants..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          startContent={<MagnifyingGlassIcon className="size-4 text-default-500" />}
+          endContent={
+            searchTerm ? (
+              <button 
+                className="text-default-400 hover:text-default-600" 
+                onClick={() => setSearchTerm('')}
+              >
+                <XMarkIcon className="size-4" />
+              </button>
+            ) : null
+          }
+        />
+      </div>
+      
+      <div className="overflow-y-auto max-h-auto">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-40">
+            <Spinner />
+          </div>
+        ) : filteredStudents.length > 0 ? (
+          <ul className="space-y-1">
+            {filteredStudents.map((student) => (
+              <li key={student.niub}>
+                <button
+                  onClick={() => onSelectStudent(student)}
+                  className="w-full text-left p-2 rounded-md hover:bg-default-100 active:scale-95 transition-all flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <UserIcon className="size-4 text-default-500" />
+                    <div>
+                      <p className="text-sm font-medium">{student.name + " " + student.surnames}</p>
+                      <p className="text-xs text-default-500">NIUB: {student.niub}</p>
+                    </div>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="text-center py-8 text-default-500">
+            {searchTerm ? 'No s\'han trobat estudiants' : 'No hi ha estudiants inscrits'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const StudentContentView = ({ practiceId, student, onBack }) => {
+  const [studentPractice, setStudentPractice] = useState<Practice | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [studentFiles, setStudentFiles] = useState<PracticeFileInfo[]>([]);
+
+  useEffect(() => {
+    const fetchStudentDetail = async () => {
+      try {
+        setIsLoading(true);
+        const studentPractice = await getPracticeStudent(practiceId, student.niub);
+        setStudentPractice(studentPractice);
+        
+        const fileInfo = await getPracticeFileInfoForUser(practiceId, student.niub);
+        setStudentFiles([fileInfo]);
+      } catch (error) {
+        console.error("Error fetching student details:", error);
+        addToast({
+          title: "Error en carregar els detalls de l'estudiant",
+          description: "No s'han pogut carregar els detalls de l'estudiant.",
+          color: "danger"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (practiceId && student) {
+      fetchStudentDetail();
+    }
+  }, [practiceId, student]);
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'No disponible';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ca-ES', { 
+      day: '2-digit', 
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-default-500">No s'ha trobat la informació de l'estudiant</p>
+        <Button 
+          color="primary" 
+          variant="light" 
+          className="mt-4"
+          onPress={onBack}
+        >
+          Tornar
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-2 text-default-600 hover:text-primary-500 transition-colors"
+        >
+          <ArrowLeftCircleIcon className="size-5" />
+          <span>Tornar a la llista d'estudiants</span>
+        </button>
+      </div>
+
+      {/* Información del estudiante */}
+      <Card>
+        <CardHeader>
+          <div className="w-full flex items-center justify-between gap-2 px-2 pt-1">
+            <h3 className="text-xl font-semibold">Informació de l'estudiant</h3>
+            {student.grade !== undefined && (
+              <Chip 
+                color={student.grade >= 5 ? "success" : "danger"} 
+                variant="flat" 
+                className="ml-auto"
+              >
+                Nota: {student.grade.toFixed(1)}
+              </Chip>
+            )}
+          </div>
+        </CardHeader>
+        <Divider />
+        <CardBody>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 px-2">
+            <div>
+              <p className="text-sm text-default-500">Nom complet</p>
+              <p className="font-medium">{student.name + " " + student.surnames}</p>
+            </div>
+            <div>
+              <p className="text-sm text-default-500">NIUB</p>
+              <p>{student.niub}</p>
+            </div>
+            <div>
+              <p className="text-sm text-default-500">Estat</p>
+              <Chip
+                color={statusColorMap[studentPractice.status] || "default"}
+                variant="flat"
+                className="mt-1"
+              >
+                {statusOptions.find(opt => opt.uid === studentPractice?.status)?.name || student.status || 'No entregada'}
+              </Chip>
+            </div>
+            {student.submission_date && (
+              <div>
+                <p className="text-sm text-default-500">Data d'enviament</p>
+                <p>{formatDate(studentPractice.submission_date)}</p>
+              </div>
+            )}
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Archivos enviados */}
+      {(studentPractice?.status !== 'not_submitted' ) && (
+        <Card>
+          <CardHeader>
+            <h3 className="text-xl font-semibold px-2 pt-1">Arxius enviats</h3>
+          </CardHeader>
+          <Divider />
+          <CardBody>
+            {studentFiles.length > 0 ? (
+              <FileList files={studentFiles} />
+            ) : (
+              <p className="text-center text-default-500 py-3">No hi ha arxius disponibles</p>
+            )}
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Sección de retroalimentación */}
+      {studentPractice?.status === 'corrected' && (
+        <FeedbackSection feedback={student.feedback} grade={student.grade} />
+      )}
+
+      {/* Botones de acción para corrección */}
+      {(student.status === 'submitted' || student.status === 'corrected' || student.status === 'rejected') && (
+        <div className="flex justify-end">
+          <Button
+            color="primary"
+            size="lg"
+          >
+            Corregir pràctica
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Página principal
 export default function PracticeDetailPage() {
   const params = useParams();
@@ -100,10 +347,15 @@ export default function PracticeDetailPage() {
 
   const [practice, setPractice] = useState<Practice>();
   const [submissionFilesInfo, setSubmissionFilesInfo] = useState<PracticeFileInfo[]>([]);
+  const [isTeacher, setIsTeacher] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
 
   useEffect(() => {
-    const fetchPractice = async () => {
+    const fetchUserAndPractice = async () => {
       try {
+        const user = await getUserFromClient();
+        setIsTeacher(user?.is_teacher || false);
+
         const practice = await getPracticeById(practiceId);
         setPractice(practice);
 
@@ -114,7 +366,7 @@ export default function PracticeDetailPage() {
       }
     };
     if (practiceId) {
-      fetchPractice();
+      fetchUserAndPractice();
     }
   }, [practiceId]);
   
@@ -174,6 +426,14 @@ export default function PracticeDetailPage() {
     }
   };
 
+  const handleSelectStudent = (student: User) => {
+    setSelectedStudent(student);
+  };
+
+  const handleBackToPractice = () => {
+    setSelectedStudent(null);
+  };
+
   const canSubmit = useMemo(() => {
     return ['not_submitted', 'rejected'].includes(practice?.status) || showResubmit;
   }, [practice?.status, showResubmit]);
@@ -183,7 +443,7 @@ export default function PracticeDetailPage() {
   }, [practice?.due_date]);
 
   return (
-    <div className="px-8 pb-12 min-h-screen bg-slate-100 dark:bg-neutral-900">
+    <div className="px-8 pb-12 min-h-screen">
       {/* Header con navegación */}
       <button
         onClick={() => router.back()}
@@ -223,109 +483,137 @@ export default function PracticeDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna principal */}
         <div className="lg:col-span-2">
-          {/* Descripción de la práctica */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-xl font-semibold px-2 pt-1">Descripció de la pràctica</h2>
-            </CardHeader>
-            <Divider />
-            <CardBody>
-              <div className="text-default-700 whitespace-pre-line px-2 pb-1">
-                {practice?.description}
-              </div>
-            </CardBody>
-          </Card>
-          
-          {/* Sección de retroalimentación, si existe */}
-          {(practice?.status === 'corrected') && (
-            <div className="mb-6">
-              <FeedbackSection feedback={practice.correction} grade={8} />
-            </div>
-          )}
+          {isTeacher && selectedStudent ? (
+            <StudentContentView 
+              practiceId={practiceId}
+              student={selectedStudent}
+              onBack={handleBackToPractice}
+            />
+          ) : (
+            <>
+              {/* Descripción de la práctica */}
+              <Card>
+                <CardHeader>
+                  <h2 className="text-xl font-semibold px-2 pt-1">Descripció de la pràctica</h2>
+                </CardHeader>
+                <Divider />
+                <CardBody>
+                  <div className="text-default-700 whitespace-pre-line px-2 pb-1">
+                    {practice?.description}
+                  </div>
+                </CardBody>
+              </Card>
+              
+              {/* Sección de retroalimentación, si existe */}
+              {(practice?.status === 'corrected' && !isTeacher) && (
+                <div className="mt-6">
+                  <FeedbackSection feedback={practice.correction} grade={practice.grade} />
+                </div>
+              )}
 
-          {/* Archivos actuales, si hay una entrega */}
-          {practice?.submission_file_name && practice?.submission_file_name.length > 0 && (
-            <Card className="mt-6">
-              <CardHeader>
-                <h2 className="text-xl font-semibold px-2 pt-1">Arxius enviats</h2>
-              </CardHeader>
-              <Divider />
-              <CardBody>
-                <FileList files={submissionFilesInfo} />
-              </CardBody>
-            </Card>
+              {/* Archivos actuales, si hay una entrega */}
+              {practice?.submission_file_name && practice?.submission_file_name.length > 0 && !isTeacher && (
+                <Card className="mt-6">
+                  <CardHeader>
+                    <h2 className="text-xl font-semibold px-2 pt-1">Arxius enviats</h2>
+                  </CardHeader>
+                  <Divider />
+                  <CardBody>
+                    <FileList files={submissionFilesInfo} />
+                  </CardBody>
+                </Card>
+              )}
+            </>
           )}
         </div>
 
-        {/* Columna lateral */}
+        {/* Columna lateral - Panel de subida de archivos o menú de estudiantes */}
         <div>
-          {/* Panel de subida de archivos */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-xl font-semibold px-2 pt-1">
-                {showResubmit ? "Tornar a enviar" : "Lliurar pràctica"}
-              </h2>
-            </CardHeader>
-            <Divider />
-            <CardBody>
-              {practice?.status === 'corrected' && !showResubmit ? (
-                <div className="text-center py-4">
-                  <CheckCircleIcon className="size-12 mx-auto mb-3 text-success-500" />
-                  <p className="mb-4 px-1.5">Aquesta pràctica ja ha estat corregida i avaluada.</p>
-                  
-                  {/* Prepare for resubmit_available boolean condition for future*/}
-                  {true && (
+          {isTeacher ? (
+            <Card className="h-full">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <UserGroupIcon className="size-5 text-default-600" />
+                  <h2 className="text-xl font-semibold">Estudiants</h2>
+                </div>
+              </CardHeader>
+              <Divider />
+              <CardBody>
+                <StudentSidebar 
+                  practiceStudents={practice?.users} 
+                  onSelectStudent={handleSelectStudent} 
+                />
+              </CardBody>
+            </Card>
+          ) : (
+            /* Panel de subida de archivos para estudiantes */
+            <Card>
+              <CardHeader>
+                <h2 className="text-xl font-semibold px-2 pt-1">
+                  {showResubmit ? "Tornar a enviar" : "Lliurar pràctica"}
+                </h2>
+              </CardHeader>
+              <Divider />
+              <CardBody>
+                {practice?.status === 'corrected' && !showResubmit ? (
+                  <div className="text-center py-4">
+                    <CheckCircleIcon className="size-12 mx-auto mb-3 text-success-500" />
+                    <p className="mb-4 px-1.5">Aquesta pràctica ja ha estat corregida i avaluada.</p>
+                    
+                    {/* Prepare for resubmit_available boolean condition for future*/}
+                    {true && (
+                      <Button 
+                        color="primary" 
+                        variant="flat" 
+                        onPress={() => setShowResubmit(true)}
+                      >
+                        Tornar a enviar
+                      </Button>
+                    )}
+                  </div>
+                ) : isPastDue && !practice?.submission_date ? (
+                  <div className="text-center py-4">
+                    <ExclamationTriangleIcon className="size-14 mx-auto mb-2 text-danger-500" />
+                    <p className="text-danger-500 font-medium mb-2">La data límit ha passat</p>
+                    <p className="px-1.5 text-default-800 text-sm">Contacta amb el professor si necessites una extensió.</p>
+                  </div>
+                ) : (
+                  <FileUploader 
+                    files={files} 
+                    setFiles={setFiles} 
+                    disabled={!canSubmit || ['correcting', 'submitted'].includes(practice?.status)}
+                    acceptedExtensions={['zip']}
+                    multiple={false}
+                  />
+                )}
+              </CardBody>
+              {canSubmit && !isPastDue && (
+                <CardFooter className="flex justify-end gap-2">
+                  {showResubmit && (
                     <Button 
-                      color="primary" 
-                      variant="flat" 
-                      onPress={() => setShowResubmit(true)}
+                      variant="light" 
+                      onPress={() => setShowResubmit(false)}
                     >
-                      Tornar a enviar
+                      Cancel·lar
                     </Button>
                   )}
-                </div>
-              ) : isPastDue && !practice?.submission_date ? (
-                <div className="text-center py-4">
-                  <ExclamationTriangleIcon className="size-14 mx-auto mb-2 text-danger-500" />
-                  <p className="text-danger-500 font-medium mb-2">La data límit ha passat</p>
-                  <p className="px-1.5 text-default-800 text-sm">Contacta amb el professor si necessites una extensió.</p>
-                </div>
-              ) : (
-                <FileUploader 
-                  files={files} 
-                  setFiles={setFiles} 
-                  disabled={!canSubmit || ['correcting', 'submitted'].includes(practice?.status)}
-                  acceptedExtensions={['zip']}
-                  multiple={false}
-                />
-              )}
-            </CardBody>
-            {canSubmit && !isPastDue && (
-              <CardFooter className="flex justify-end gap-2">
-                {showResubmit && (
                   <Button 
-                    variant="light" 
-                    onPress={() => setShowResubmit(false)}
+                    color="primary" 
+                    onPress={handleSubmit} 
+                    isLoading={isSubmitting}
+                    isDisabled={files.length === 0}
                   >
-                    Cancel·lar
+                    {isSubmitting 
+                      ? "Enviant..." 
+                      : showResubmit 
+                        ? "Tornar a enviar" 
+                        : "Enviar pràctica"
+                    }
                   </Button>
-                )}
-                <Button 
-                  color="primary" 
-                  onPress={handleSubmit} 
-                  isLoading={isSubmitting}
-                  isDisabled={files.length === 0}
-                >
-                  {isSubmitting 
-                    ? "Enviant..." 
-                    : showResubmit 
-                      ? "Tornar a enviar" 
-                      : "Enviar pràctica"
-                  }
-                </Button>
-              </CardFooter>
-            )}
-          </Card>
+                </CardFooter>
+              )}
+            </Card>
+          )}
         </div>
       </div>
     </div>

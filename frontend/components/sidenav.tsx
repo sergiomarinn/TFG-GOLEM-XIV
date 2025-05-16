@@ -42,16 +42,16 @@ export const SideNav = () => {
         aria-label="Toggle sidebar"
         onClick={toggleSidebar}
         className={clsx(
-          "absolute top-10 z-50 border rounded-full p-[0.16rem] active:scale-90 transform transition-all duration-300 ease-in-out",
+          "absolute top-8 z-50 border rounded-full p-[0.16rem] active:scale-90 transform transition-all duration-300 ease-in-out",
           "text-primary bg-white hover:bg-default-100",
           "dark:bg-black dark:text-white dark:hover:bg-default-200 dark:border-default-300",
           isCollapsed ? "left-[69px]" : "left-52"
         )}
       >
         {isCollapsed ? (
-          <ChevronRightIcon className="size-4" />
+          <ChevronRightIcon className="size-4 translate-x-[0.8px]" />
         ) : (
-          <ChevronLeftIcon className="size-4" />
+          <ChevronLeftIcon className="size-4 -translate-x-[0.8px]" />
         )}
       </button>
 			<div className="flex flex-col gap-2">

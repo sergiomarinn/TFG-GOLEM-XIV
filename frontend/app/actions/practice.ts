@@ -172,7 +172,7 @@ export async function createPractice(data: Partial<Practice>, files: File[]): Pr
     formData.append("files", file);
   }
 
-  const res = await fetch(`${API_URL}/api/v1/practices`, {
+  const res = await fetch(`${API_URL}/api/v1/practices/`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${await getTokenFromClient()}`,
@@ -247,10 +247,10 @@ export async function downloadAllPractices(practiceId: string): Promise<void> {
 }
 
 export async function downloadPracticeByNiub(practiceId: string, niub: string): Promise<void> {
-  await downloadFile(`${API_URL}/api/v1/practices/${practiceId}/download/${niub}`, `practice_${niub}.zip`);
+  await downloadFile(`${API_URL}/api/v1/practices/${practiceId}/download/${niub}`, `practice_${practiceId}_${niub}.zip`);
 }
 
-async function downloadFile(url: string, filename: string): Promise<void> {
+async function downloadFile(url: string, fallbackFilename: string): Promise<void> {
   const res = await fetch(url, {
     method: "GET",
     headers: {
@@ -264,6 +264,27 @@ async function downloadFile(url: string, filename: string): Promise<void> {
   }
 
   const blob = await res.blob();
+
+  const disposition = res.headers.get("Content-Disposition");
+  let filename = fallbackFilename;
+
+  if (disposition) {
+		// For your specific format: attachment; filename=MVC App_student_niub20601356.zip
+		const simpleMatch = disposition.match(/filename=([^;]+)/i);
+		if (simpleMatch && simpleMatch[1]) {
+			// Take everything after 'filename=' until the end of string or next semicolon
+			filename = simpleMatch[1].trim().replace(/['"]/g, '');
+		} else {
+			// Fallback to standard format with quotes
+			const filenameRegex = /filename\*?=['"]?(?:UTF-\d['"]*)?([\w,.%+-]+(?:\s[\w,.%+-]+)*)['"]?;?/i;
+			const matches = disposition.match(filenameRegex);
+			
+			if (matches && matches[1]) {
+				filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+			}
+		}
+	}
+
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
   link.download = filename;

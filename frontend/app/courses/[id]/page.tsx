@@ -109,12 +109,12 @@ export default function CourseDetailPage() {
       updatedPractices[existingPracticeIndex] = updatedPractice;
 
       setCourseInfo({ ...courseInfo, practices: updatedPractices });
+      setCoursePractices(updatedPractices);
     } else if (courseInfo) {
       // Añadir nueva práctica
-      setCourseInfo({
-        ...courseInfo,
-        practices: [...courseInfo.practices, updatedPractice],
-      });
+      const newPractices = [...courseInfo.practices, updatedPractice];
+      setCourseInfo({ ...courseInfo, practices: newPractices });
+      setCoursePractices(newPractices);
     }
   };
 
@@ -129,6 +129,8 @@ export default function CourseDetailPage() {
       ...courseInfo,
       practices: filteredPractices,
     });
+    
+    setCoursePractices(filteredPractices);
   };
 
   const [filterValue, setFilterValue] = React.useState("");
@@ -386,6 +388,7 @@ export default function CourseDetailPage() {
         isOpen={isPracticeDrawerOpen}
         onOpenChange={setIsPracticeDrawerOpen}
         initialPractice={currentPractice}
+        course={courseInfo}
         onSave={handleSavePractice}
         onDelete={handleDeletePractice}
       />

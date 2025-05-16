@@ -14,6 +14,11 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon,
   UserIcon,
+  PencilIcon,
+  ArrowDownTrayIcon,
+  InformationCircleIcon,
+  PencilSquareIcon,
+  ArrowUpOnSquareIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@heroui/button';
 import { Card, CardHeader, CardBody, CardFooter } from '@heroui/card';
@@ -27,7 +32,7 @@ import {
 } from "@/types";
 import { addToast } from '@heroui/toast';
 import { useParams } from 'next/navigation';
-import { getPracticeById, getPracticeFileInfo, getPracticeFileInfoForUser, getPracticeStudent, uploadPractice } from '@/app/actions/practice';
+import { downloadMyPractice, downloadPracticeByNiub, getPracticeById, getPracticeFileInfo, getPracticeFileInfoForUser, getPracticeStudent, uploadPractice } from '@/app/actions/practice';
 import { Practice, PracticeFileInfo } from '@/types/practice';
 import { FileUploader } from '@/components/file-uploader';
 import { FileList } from '@/components/file-list';
@@ -36,6 +41,9 @@ import { User } from '@/app/lib/definitions';
 import { Input } from '@heroui/input';
 import { getUserFromClient } from '@/app/lib/client-session';
 import { Spinner } from '@heroui/spinner';
+import { Avatar } from '@heroui/avatar';
+import { PracticeDrawer } from '@/components/drawer-practice';
+import { FilesIcon } from '@/components/icons';
 
 const PracticeStatus = ({ status }: {status: string}) => {
   const getStatusName = (uid: string) =>
@@ -72,8 +80,11 @@ const FeedbackSection = ({ feedback, grade }) => {
   return (
     <Card>
       <CardHeader>
-				<div className="w-full flex items-center justify-between gap-2 px-2 pt-1">
-					<h3 className="text-xl font-semibold">Retroalimentació</h3>
+				<div className="w-full flex items-center justify-between gap-2 pl-0.5">
+          <div className="flex items-center gap-2">
+            <PencilSquareIcon className="size-6 text-default-700" />
+            <h2 className="text-xl font-semibold">Retroalimentació</h2>
+          </div>
 					{grade !== undefined && (
 						<Chip 
 							color={grade >= 5 ? "success" : "danger"} 
@@ -125,20 +136,12 @@ const StudentSidebar = ({ practiceStudents, onSelectStudent }) => {
     <div className="h-full">
       <div className="mb-2 relative">
         <Input
+          isClearable
           placeholder="Cerca estudiants..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           startContent={<MagnifyingGlassIcon className="size-4 text-default-500" />}
-          endContent={
-            searchTerm ? (
-              <button 
-                className="text-default-400 hover:text-default-600" 
-                onClick={() => setSearchTerm('')}
-              >
-                <XMarkIcon className="size-4" />
-              </button>
-            ) : null
-          }
+          onClear={() => setSearchTerm("")}
         />
       </div>
       
@@ -153,13 +156,18 @@ const StudentSidebar = ({ practiceStudents, onSelectStudent }) => {
               <li key={student.niub}>
                 <button
                   onClick={() => onSelectStudent(student)}
-                  className="w-full text-left p-2 rounded-md hover:bg-default-100 active:scale-95 transition-all flex items-center justify-between"
+                  className="w-full text-left p-2 rounded-lg hover:bg-default-100 active:scale-95 transition-all flex items-center justify-between"
                 >
-                  <div className="flex items-center gap-2">
-                    <UserIcon className="size-4 text-default-500" />
+                  <div className="flex items-center gap-3">
+                    <Avatar 
+                      name={student.name[0]}
+                      classNames={{
+                        base: "text-large"
+                      }}  
+                    />
                     <div>
-                      <p className="text-sm font-medium">{student.name + " " + student.surnames}</p>
-                      <p className="text-xs text-default-500">NIUB: {student.niub}</p>
+                      <p className="text font-medium">{student.name + " " + student.surnames}</p>
+                      <p className="text-sm text-default-500">{student.niub}</p>
                     </div>
                   </div>
                 </button>
@@ -180,6 +188,7 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
   const [studentPractice, setStudentPractice] = useState<Practice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [studentFiles, setStudentFiles] = useState<PracticeFileInfo[]>([]);
+  const [isDownloading, setIsDownloading] = React.useState(false);
 
   useEffect(() => {
     const fetchStudentDetail = async () => {
@@ -218,6 +227,29 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
       minute: '2-digit'
     });
   };
+
+  const handleDownloadSubmission = async (niub: string) => {
+    try {
+      setIsDownloading(true);
+      await downloadPracticeByNiub(practiceId, niub)
+
+      addToast({
+        title: "Descarrega realitzada amb èxit",
+        color: "success",
+        timeout: 5000,
+        shouldShowTimeoutProgress: true,
+      })
+    } catch (error) {
+      console.error("Error submitting practice:", error);
+      addToast({
+        title: "Error en descarrega la tramesa",
+        description: "Torna-ho a intentar més tard",
+        color: "danger"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -258,8 +290,11 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
       {/* Información del estudiante */}
       <Card>
         <CardHeader>
-          <div className="w-full flex items-center justify-between gap-2 px-2 pt-1">
-            <h3 className="text-xl font-semibold">Informació de l'estudiant</h3>
+          <div className="w-full flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <InformationCircleIcon className="size-6 text-default-700" />
+              <h2 className="text-xl font-semibold">Informació de l'estudiant</h2>
+            </div>
             {student.grade !== undefined && (
               <Chip 
                 color={student.grade >= 5 ? "success" : "danger"} 
@@ -273,7 +308,7 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
         </CardHeader>
         <Divider />
         <CardBody>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 px-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 px-1.5 items-center">
             <div>
               <p className="text-sm text-default-500">Nom complet</p>
               <p className="font-medium">{student.name + " " + student.surnames}</p>
@@ -306,14 +341,29 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
       {(studentPractice?.status !== 'not_submitted' ) && (
         <Card>
           <CardHeader>
-            <h3 className="text-xl font-semibold px-2 pt-1">Arxius enviats</h3>
+            <div className="pl-1 w-full flex items-end justify-between">
+              <div className="flex items-center gap-2">
+                <FilesIcon className="size-6 text-default-700" />
+                <h2 className="text-xl font-semibold">Arxius enviats</h2>
+              </div>
+              <Button
+                size="sm"
+                color="primary"
+                variant="flat"
+                startContent={!isDownloading && <ArrowDownTrayIcon className="size-4"/>}
+                isLoading={isDownloading}
+                onPress={() => handleDownloadSubmission(student.niub)}
+              >
+                Descarregar
+              </Button>
+            </div>
           </CardHeader>
           <Divider />
           <CardBody>
             {studentFiles.length > 0 ? (
               <FileList files={studentFiles} />
             ) : (
-              <p className="text-center text-default-500 py-3">No hi ha arxius disponibles</p>
+              <p className="text-center text-default-500 py-3">No hi ha arxius disponibles.</p>
             )}
           </CardBody>
         </Card>
@@ -349,6 +399,8 @@ export default function PracticeDetailPage() {
   const [submissionFilesInfo, setSubmissionFilesInfo] = useState<PracticeFileInfo[]>([]);
   const [isTeacher, setIsTeacher] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
+  const [isPracticeDrawerOpen, setIsPracticeDrawerOpen] = React.useState(false);
+  const [isDownloading, setIsDownloading] = React.useState(false);
 
   useEffect(() => {
     const fetchUserAndPractice = async () => {
@@ -426,6 +478,17 @@ export default function PracticeDetailPage() {
     }
   };
 
+  const handleUpdatePractice = (updatedPractice: Practice) => {
+    setPractice(prev => ({
+      ...prev,
+      ...updatedPractice,
+    }));
+  };
+
+  const handleDeletePractice = (practiceId: string) => {
+    router.push(`/courses/${practice?.course_id}`);
+  };
+
   const handleSelectStudent = (student: User) => {
     setSelectedStudent(student);
   };
@@ -433,6 +496,29 @@ export default function PracticeDetailPage() {
   const handleBackToPractice = () => {
     setSelectedStudent(null);
   };
+
+  const handleDownloadSubmission = async () => {
+    try {
+      setIsDownloading(true);
+      await downloadMyPractice(practice.id)
+
+      addToast({
+        title: "Descarrega realitzada amb èxit",
+        color: "success",
+        timeout: 5000,
+        shouldShowTimeoutProgress: true,
+      })
+    } catch (error) {
+      console.error("Error submitting practice:", error);
+      addToast({
+        title: "Error en descarrega la tramesa",
+        description: "Torna-ho a intentar més tard",
+        color: "danger"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   const canSubmit = useMemo(() => {
     return ['not_submitted', 'rejected'].includes(practice?.status) || showResubmit;
@@ -459,7 +545,16 @@ export default function PracticeDetailPage() {
           <Chip color="primary" variant="flat">
 						{practice?.course?.name}
 					</Chip>
-          <PracticeStatus status={practice?.status || "not_submitted"} />
+          {isTeacher ? <Button
+            color="secondary"
+            variant="flat"
+            radius="lg"
+            startContent={<PencilIcon className="size-4" />}
+            onPress={() => setIsPracticeDrawerOpen(true)}
+          >
+            Editar pràctica
+          </Button> :
+          <PracticeStatus status={practice?.status || "not_submitted"} />}
         </div>
         <h1 className="text-3xl font-bold mb-3">{practice?.name}</h1>
         <div className="flex flex-wrap gap-7 text-default-700">
@@ -494,7 +589,10 @@ export default function PracticeDetailPage() {
               {/* Descripción de la práctica */}
               <Card>
                 <CardHeader>
-                  <h2 className="text-xl font-semibold px-2 pt-1">Descripció de la pràctica</h2>
+                  <div className="flex items-center gap-2">
+                    <InformationCircleIcon className="size-6 text-default-700" />
+                    <h2 className="text-xl font-semibold">Descripció de la pràctica</h2>
+                  </div>
                 </CardHeader>
                 <Divider />
                 <CardBody>
@@ -515,7 +613,22 @@ export default function PracticeDetailPage() {
               {practice?.submission_file_name && practice?.submission_file_name.length > 0 && !isTeacher && (
                 <Card className="mt-6">
                   <CardHeader>
-                    <h2 className="text-xl font-semibold px-2 pt-1">Arxius enviats</h2>
+                    <div className="pl-1 w-full flex items-end justify-between">
+                      <div className="flex items-center gap-2">
+                        <FilesIcon className="size-6 text-default-700" />
+                        <h2 className="text-xl font-semibold">Arxius enviats</h2>
+                      </div>
+                      <Button
+                        size="sm"
+                        color="primary"
+                        variant="flat"
+                        startContent={!isDownloading && <ArrowDownTrayIcon className="size-4"/>}
+                        isLoading={isDownloading}
+                        onPress={handleDownloadSubmission}
+                      >
+                        Descarregar
+                      </Button>
+                    </div>
                   </CardHeader>
                   <Divider />
                   <CardBody>
@@ -533,7 +646,7 @@ export default function PracticeDetailPage() {
             <Card className="h-full">
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <UserGroupIcon className="size-5 text-default-600" />
+                  <UserGroupIcon className="size-6 text-default-700" />
                   <h2 className="text-xl font-semibold">Estudiants</h2>
                 </div>
               </CardHeader>
@@ -549,9 +662,12 @@ export default function PracticeDetailPage() {
             /* Panel de subida de archivos para estudiantes */
             <Card>
               <CardHeader>
-                <h2 className="text-xl font-semibold px-2 pt-1">
-                  {showResubmit ? "Tornar a enviar" : "Lliurar pràctica"}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <ArrowUpOnSquareIcon className="size-6 text-default-700" />
+                  <h2 className="text-xl font-semibold">
+                    {showResubmit ? "Tornar a enviar" : "Lliurar pràctica"}
+                  </h2>
+                </div>
               </CardHeader>
               <Divider />
               <CardBody>
@@ -616,6 +732,14 @@ export default function PracticeDetailPage() {
           )}
         </div>
       </div>
+      <PracticeDrawer 
+        isOpen={isPracticeDrawerOpen}
+        onOpenChange={setIsPracticeDrawerOpen}
+        initialPractice={practice || null}
+        course={practice?.course}
+        onSave={handleUpdatePractice}
+        onDelete={handleDeletePractice}
+      />
     </div>
   );
 }

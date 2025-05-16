@@ -1,5 +1,5 @@
 import { Practice } from "@/types/practice";
-import { Button,ButtonGroup } from "@heroui/button";
+import { Button } from "@heroui/button";
 import {
   Drawer,
   DrawerContent,
@@ -19,20 +19,23 @@ import Image from 'next/image'
 import XLSXIcon from "@/public/xlsx_icon.svg";
 import { addToast } from "@heroui/toast";
 import { createPractice, deletePractice, updatePractice } from "@/app/actions/practice";
-import { DateValue, parseAbsoluteToLocal } from "@internationalized/date";
+import { DateValue, parseAbsoluteToLocal, parseZonedDateTime } from "@internationalized/date";
+import { Course } from "@/types/course";
 
 interface PracticeDrawerProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  initialPractice: Practice | null
-  onSave: (updatedCourse: Practice) => void
-  onDelete: (courseId: string) => void
+  initialPractice: Practice | null,
+  course: Course,
+  onSave: (updatedPractice: Practice) => void
+  onDelete: (practiceId: string) => void
 }
 
 export const PracticeDrawer = ({ 
   isOpen = false, 
   onOpenChange,  
   initialPractice = null,
+  course,
   onSave,
   onDelete
 }: PracticeDrawerProps) => {
@@ -48,9 +51,9 @@ export const PracticeDrawer = ({
     description: practice?.description || "",
     programming_language: practice?.programming_language || "",
     due_date: practice?.due_date
-      ? parseAbsoluteToLocal(practice.due_date)
+      ? parseZonedDateTime(practice.due_date.split(".")[0] + "[Europe/Madrid]")
       : parseAbsoluteToLocal(new Date().toISOString()),
-    course_id: practice?.course_id || ""
+    course_id: course?.id || ""
   });
 
   useEffect(() => {
@@ -60,9 +63,9 @@ export const PracticeDrawer = ({
         description: initialPractice?.description || "",
         programming_language: initialPractice?.programming_language || "",
         due_date: initialPractice?.due_date
-          ? parseAbsoluteToLocal(initialPractice.due_date)
+          ? parseZonedDateTime(initialPractice.due_date.split(".")[0] + "[Europe/Madrid]")
           : parseAbsoluteToLocal(new Date().toISOString()),
-        course_id: initialPractice?.course_id || ""
+        course_id: course?.id || ""
       });
       setPractice(initialPractice);
       setFiles([]);
@@ -73,12 +76,12 @@ export const PracticeDrawer = ({
         description: "",
         programming_language: "",
         due_date: parseAbsoluteToLocal(new Date().toISOString()),
-        course_id: ""
+        course_id: course?.id || ""
       });
       setPractice(null);
       setFiles([]);
     }
-  }, [initialPractice, isOpen]);
+  }, [initialPractice, course, isOpen]);
 
   const handleEditFormChange = (field, value) => {
     setEditFormData({
@@ -234,7 +237,7 @@ export const PracticeDrawer = ({
                   <PopoverContent>
                     <div className="flex flex-col gap-3 p-2">
                       <p className="text-sm text-default-600">
-                        Estàs segur que vols esborrar el curs <strong>{practice.name}</strong>?
+                        Estàs segur que vols esborrar la pràctica <strong>{practice.name}</strong>?
                       </p>
                       <div className="flex justify-end gap-2">
                         <Button size="sm" variant="light" onPress={() => setIsOpenPopoverDelete(false)}>
@@ -294,7 +297,7 @@ export const PracticeDrawer = ({
                   isReadOnly
                   label="Curs"
                   radius="lg"
-                  value={practice?.course?.name}
+                  value={course.name}
                 />
                 <DatePicker
                   hideTimeZone
@@ -311,12 +314,6 @@ export const PracticeDrawer = ({
                 </h2>
                 <div className="w-full flex flex-col gap-3 rounded-lg bg-default-200/60 p-5">
                   <div className="flex items-center gap-3 font-medium text-sm">
-                    <Image
-                      src={XLSXIcon}
-                      alt="XLSX icon"
-                      width={20}
-                      className="block"
-                    />
                     Exemple de fitxers
                   </div>
                   <p className="text-default-500/80 text-sm font-light">

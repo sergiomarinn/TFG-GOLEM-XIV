@@ -60,7 +60,7 @@ export const PracticeCourseCard = ({ practice, isTeacher }: PracticeCardProps) =
 							{/* Programming Language Badge */}
               <div className="flex items-center mt-2">
                 <CodeBracketIcon className="size-4 text-gray-300 mr-1" />
-                <span className="text-sm text-gray-300 leading-none">{practice.programming_language}</span>
+                <span className="text-sm text-gray-300 leading-none capitalize">{practice.programming_language}</span>
               </div>
 						</div>
 						<span className="inline-flex items-center justify-center gap-1 text-[0.9rem] font-light text-gray-200 leading-none">

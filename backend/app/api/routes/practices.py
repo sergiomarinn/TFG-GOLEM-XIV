@@ -371,7 +371,7 @@ def delete_practice(session: SessionDep, practice_id: uuid.UUID) -> Any:
     if not practice:
         raise HTTPException(status_code=404, detail="Practice not found")
     
-    crud.practice.remove_practice(session=session, id=practice_id)
+    crud.practice.delete_practice(session=session, practice=practice)
 
     return Message(message="Practice deleted")
 

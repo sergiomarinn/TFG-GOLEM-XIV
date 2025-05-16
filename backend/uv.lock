@@ -95,6 +95,7 @@ dependencies = [
     { name = "sqlmodel" },
     { name = "tenacity" },
     { name = "xlsxwriter" },
+    { name = "zipstream-new" },
 ]
 
 [package.dev-dependencies]
@@ -131,6 +132,7 @@ requires-dist = [
     { name = "sqlmodel", specifier = ">=0.0.21,<1.0.0" },
     { name = "tenacity", specifier = ">=8.2.3,<9.0.0" },
     { name = "xlsxwriter", specifier = ">=3.2.2" },
+    { name = "zipstream-new", specifier = ">=1.1.8" },
 ]
 
 [package.metadata.requires-dev]
@@ -1746,4 +1748,13 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a1/08/26f69d1e9264e8107253018de9fc6b96f9219817d01c5f021e927384a8d1/xlsxwriter-3.2.2.tar.gz", hash = "sha256:befc7f92578a85fed261639fb6cde1fd51b79c5e854040847dde59d4317077dc", size = 205202 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9b/07/df054f7413bdfff5e98f75056e4ed0977d0c8716424011fac2587864d1d3/XlsxWriter-3.2.2-py3-none-any.whl", hash = "sha256:272ce861e7fa5e82a4a6ebc24511f2cb952fde3461f6c6e1a1e81d3272db1471", size = 165121 },
+]
+
+[[package]]
+name = "zipstream-new"
+version = "1.1.8"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e5/f3/1b5228576f215b200c7e922a280a92e4494df33baae6e0280a6f45371f13/zipstream-new-1.1.8.tar.gz", hash = "sha256:b031fe181b94e51678389d26b174bc76382605a078d7d5d8f5beae083f111c76", size = 9377 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/81/f3/d7b4c8c9b6657ff0db27b739894ed0665fa8f3c78a7452bf74d6447f6865/zipstream_new-1.1.8-py3-none-any.whl", hash = "sha256:0662eb3ebe764fa168a5883cd8819ef83b94bd9e39955537188459d2264a7f60", size = 20168 },
 ]

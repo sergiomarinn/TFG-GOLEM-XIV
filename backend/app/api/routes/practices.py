@@ -7,6 +7,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
+import zipstream
 from sqlmodel import col, delete, func, select
 import logging
 logger = logging.getLogger("uvicorn")
@@ -462,7 +463,16 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
         }
     }
 
-def add_files_to_zip(zip_file: zipfile.ZipFile, user_path: str, base_dir: str = "") -> None:
+def get_single_zip_file_path(folder_path: str) -> str | None:
+    if not os.path.exists(folder_path):
+        return None
+    
+    files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    if len(files) == 1 and files[0].lower().endswith(".zip"):
+        return os.path.join(folder_path, files[0])
+    return None
+
+def add_files_to_zip(zip_file: zipstream.ZipFile, user_path: str, base_dir: str = "") -> None:
     """
     Add files from a directory to a ZIP file with relative paths.
 
@@ -478,7 +488,7 @@ def add_files_to_zip(zip_file: zipfile.ZipFile, user_path: str, base_dir: str = 
                 # Add file to zip
                 rel_path = os.path.relpath(file_path, user_path)
                 arcname = os.path.join(base_dir, rel_path) if base_dir else rel_path
-                zip_file.write(file_path, arcname=arcname)
+                zip_file.write(file_path, arcname)
 
 @router.get("/{practice_id}/download/me", response_class=StreamingResponse)
 async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser) -> Any:
@@ -503,18 +513,23 @@ async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, curr
     file_path = os.path.join(base_path, practice.course.academic_year, practice.course.name, practice.name)
     user_path = os.path.join(file_path, current_user.niub) if not current_user.is_teacher else file_path
     
-    # Create ZIP in memory
-    zip_io = BytesIO()
-    with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
-        add_files_to_zip(zip_file, user_path)
-    
-    # Reset file pointer
-    zip_io.seek(0)
+    # Si hay un único archivo ZIP, se devuelve directamente
+    # single_zip = get_single_zip_file_path(user_path)
+    # if single_zip:
+    #     return StreamingResponse(
+    #         open(single_zip, "rb"),
+    #         media_type="application/zip",
+    #         headers={"Content-Disposition": f"attachment; filename={os.path.basename(single_zip)}"}
+    #     )
+
+    # Create zipstream
+    z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    add_files_to_zip(z, user_path)
     
     # Create response with appropriate headers
     filename = f"{practice.name}_{"teacher" if current_user.is_teacher else "student"}_{current_user.niub}.zip"
     return StreamingResponse(
-        zip_io,
+        z,
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
@@ -539,27 +554,22 @@ async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, cur
     prof_base_path = os.path.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
     student_base_path = os.path.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
     
-    # Create ZIP in memory
-    zip_io = BytesIO()
-    with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
-        # Add professor files
-        for user in practice.users:
-            if not user.is_teacher:
-                user_path = os.path.join(student_base_path, user.niub)
-                base_dir = f"students/{user.niub}"
-                # Add student files to zip
-                add_files_to_zip(zip_file, user_path, base_dir)
+    # Create zipstream
+    z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    for user in practice.users:
+        if not user.is_teacher:
+            user_path = os.path.join(student_base_path, user.niub)
+            base_dir = f"students/{user.niub}"
+            # Add student files to zip
+            add_files_to_zip(z, user_path, base_dir)
         
-        # Add teachers files to zip
-        add_files_to_zip(zip_file, prof_base_path, "teachers")
-    
-    # Reset file pointer
-    zip_io.seek(0)
+    # Add teachers files to zip
+    add_files_to_zip(z, prof_base_path, "teachers")
     
     # Create response with appropriate headers
     filename = f"{practice.name}_all_submissions.zip"
     return StreamingResponse(
-        zip_io,
+        z,
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
@@ -601,18 +611,23 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
     file_path = os.path.join(base_path, practice.course.academic_year, practice.course.name, practice.name)
     user_path = os.path.join(file_path, target_user.niub) if not current_user.is_teacher else file_path
     
-    # Create ZIP in memory
-    zip_io = BytesIO()
-    with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
-        add_files_to_zip(zip_file, user_path)
-    
-    # Reset file pointer
-    zip_io.seek(0)
+    # Si hay un único archivo ZIP, se devuelve directamente
+    # single_zip = get_single_zip_file_path(user_path)
+    # if single_zip:
+    #     return StreamingResponse(
+    #         open(single_zip, "rb"),
+    #         media_type="application/zip",
+    #         headers={"Content-Disposition": f"attachment; filename={os.path.basename(single_zip)}"}
+    #     )
+
+    # Create zipstream
+    z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+    add_files_to_zip(z, user_path)
     
     # Create response with appropriate headers
     filename = f"{practice.name}_{"teacher" if target_user.is_teacher else "student"}_{target_user.niub}.zip"
     return StreamingResponse(
-        zip_io,
+        z,
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )

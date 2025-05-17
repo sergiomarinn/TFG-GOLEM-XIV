@@ -35,7 +35,7 @@ export async function getStudentsUsers(search: string): Promise<Users> {
   return await res.json();
 }
 
-export async function getCourseByNIUB(niub: string): Promise<User> {
+export async function getUserByNIUB(niub: string): Promise<User> {
   const res = await fetch(`${API_URL}/api/v1/users/${niub}`, {
     method: "GET",
 		headers: {
@@ -79,14 +79,14 @@ export async function createUser(data: Partial<User>): Promise<User> {
 
   if (!res.ok) {
         const errorData = await res.json()
-    throw new Error(errorData.detail || "Failed to create course")
+    throw new Error(errorData.detail || "Failed to create user")
   }
 
   return await res.json();
 }
 
 export async function updateUser(niub: string, data: Partial<User>): Promise<User> {
-	const res = await fetch(`${API_URL}/api/v1/courses/${niub}`, {
+	const res = await fetch(`${API_URL}/api/v1/users/${niub}`, {
 			method: "PATCH",
 			headers: { 
 				"Content-Type": "application/json",
@@ -97,14 +97,14 @@ export async function updateUser(niub: string, data: Partial<User>): Promise<Use
 
 	if (!res.ok) {
 			const errorData = await res.json()
-			throw new Error(errorData.detail || "Failed to update course")
+			throw new Error(errorData.detail || "Failed to update user")
 	}
 
 	return await res.json();
 }
 
 export async function updateMyUser(data: Partial<User>): Promise<User> {
-	const res = await fetch(`${API_URL}/api/v1/courses/me/password`, {
+	const res = await fetch(`${API_URL}/api/v1/users/me`, {
 			method: "PATCH",
 			headers: { 
 				"Content-Type": "application/json",
@@ -115,14 +115,14 @@ export async function updateMyUser(data: Partial<User>): Promise<User> {
 
 	if (!res.ok) {
 			const errorData = await res.json()
-			throw new Error(errorData.detail || "Failed to update course")
+			throw new Error(errorData.detail || "Failed to update user")
 	}
 
 	return await res.json();
 }
 
 export async function updateMyUserPassword(data: Partial<UpdatePassword>): Promise<void> {
-	const res = await fetch(`${API_URL}/api/v1/courses/me/password`, {
+	const res = await fetch(`${API_URL}/api/v1/users/me/password`, {
 			method: "PATCH",
 			headers: { 
 				"Content-Type": "application/json",
@@ -133,7 +133,7 @@ export async function updateMyUserPassword(data: Partial<UpdatePassword>): Promi
 
 	if (!res.ok) {
 		const errorData = await res.json()
-		throw new Error(errorData.detail || "Failed to update course")
+		throw new Error(errorData.detail || "Failed to update user")
 	}
 
 	return await res.json();

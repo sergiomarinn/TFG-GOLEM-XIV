@@ -14,11 +14,13 @@ import { useState, useEffect } from 'react';
 import { logout } from '@/app/actions/auth';
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from 'next-themes';
+import { UserConfigModal } from '@/components/user-config-modal';
 
 export const SideNav = () => {
 	const pathname = usePathname()
 	const [isCollapsed, setIsCollapsed] = useState(false);
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
+  const [isUserConfigModalOpen, setUserConfigModalOpen] = useState(false);
   const { theme } = useTheme();
 
 	useEffect(() => {
@@ -156,6 +158,7 @@ export const SideNav = () => {
             variant="light"
             startContent={<Cog6ToothIcon className="size-6" />}
             aria-label="Configuració"
+            onPress={() => setUserConfigModalOpen(true)}
           >
             <span className={clsx(
               "origin-left transition-all duration-150 ease-in-out whitespace-nowrap",
@@ -164,6 +167,7 @@ export const SideNav = () => {
               Configuració
             </span>
           </Button>
+          <UserConfigModal isOpen={isUserConfigModalOpen} onClose={() => setUserConfigModalOpen(false)} />
           <Button
             isIconOnly={isCollapsed}
             radius="lg"

@@ -121,9 +121,9 @@ def update_user_me(
 
     if user_in.email:
         existing_user = crud.user.get_user_by_email(session=session, email=user_in.email)
-        if existing_user and existing_user.id != current_user.id:
+        if existing_user and existing_user.niub != current_user.niub:
             raise HTTPException(
-                status_code=409, detail="User with this email already exists"
+                status_code=409, detail="USER_EMAIL_EXISTS"
             )
     user_data = user_in.model_dump(exclude_unset=True)
     current_user.sqlmodel_update(user_data)
@@ -144,7 +144,7 @@ def update_password_me(
         raise HTTPException(status_code=400, detail="Incorrect password")
     if body.current_password == body.new_password:
         raise HTTPException(
-            status_code=400, detail="New password cannot be the same as the current one"
+            status_code=400, detail="NEW_PASSWORD_SAME_AS_CURRENT_ONE"
         )
     hashed_password = get_password_hash(body.new_password)
     current_user.hashed_password = hashed_password

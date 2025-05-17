@@ -17,6 +17,7 @@ import {
   InformationCircleIcon,
   PencilSquareIcon,
   ArrowUpOnSquareIcon,
+  CloudArrowUpIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@heroui/button';
 import { Card, CardHeader, CardBody, CardFooter } from '@heroui/card';
@@ -679,7 +680,7 @@ export default function PracticeDetailPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <ArrowUpOnSquareIcon className="size-6 text-default-700" />
+                  <CloudArrowUpIcon className="size-6 text-default-700" />
                   <h2 className="text-xl font-semibold">
                     {showResubmit ? "Tornar a enviar" : "Lliurar pràctica"}
                   </h2>

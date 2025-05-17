@@ -48,10 +48,10 @@ const getRelativeTime = (dateString: string) => {
 };
 
 const getRoleName = (user: User) =>
-  user.is_student ? 'Estudiant' : user.is_teacher ? 'Professor' : '—';
+  user.is_student ? 'Estudiant' : user.is_teacher ? 'Professor' : 'Admin';
 
 const getRoleColor = (user: User) =>
-  user.is_student ? 'default' : user.is_teacher ? 'primary' : 'default';
+  user.is_student ? 'default' : user.is_teacher ? 'primary' : 'warning';
 
 export function ParticipantsSection({courseId, courseUsers, canEditCourse}: {courseId: string, courseUsers: User[], canEditCourse: boolean}) {
   const [users, setUsers] = React.useState<User[]>([]);
@@ -304,8 +304,8 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse}: {cou
       <div className="flex flex-col gap-3">
         {filteredUsers.map((user) => (
           <Card key={user.niub} className="w-full">
-            <CardBody className="flex flex-row items-center py-3">
-              <Avatar showFallback className="mr-4" />
+            <CardBody className="flex flex-row items-center px-3.5 py-3">
+              <Avatar showFallback className="mr-3" />
               <div className="flex-grow">
                 <div className="flex items-center">
                   <h3 className="font-semibold text-lg mr-2">{user.name}</h3>
@@ -397,7 +397,7 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse}: {cou
               <ModalHeader className="flex flex-col gap-1">Afegir estudiants</ModalHeader>
               <ModalBody>
                 <div className="flex flex-col gap-4">
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5">
                     <Input
                       isClearable
                       fullWidth
@@ -435,11 +435,10 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse}: {cou
                             <CardBody className="py-2 px-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <Avatar showFallback size="sm" />
+                                  <Avatar showFallback name={student.name[0]} size="sm" />
                                   <div>
                                     <p className="font-medium">{student.name}</p>
-                                    <p className="text-xs text-default-500">{student.email}</p>
-                                    <p className="text-xs text-default-500">NIUB: {student.niub}</p>
+                                    <p className="text-xs text-default-500">{student.niub} • {student.email}</p>
                                   </div>
                                 </div>
                                 <Button

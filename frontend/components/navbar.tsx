@@ -5,7 +5,6 @@ import { Link } from "@heroui/link";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { User } from "@heroui/user";
-import { BellIcon } from "@heroicons/react/24/outline";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 
 import { siteConfig } from "@/config/site";
@@ -13,6 +12,7 @@ import { ThemeSwitch } from "@/components/theme-switch";
 import { SearchIcon } from "@/components/icons";
 import { getUserFromClient } from "@/app/lib/client-session";
 import { User as UserType } from '@/app/lib/definitions';
+import { NotificationPopover } from "@/components/notification-popover";
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -144,14 +144,7 @@ export const Navbar = () => {
           {/* Iconos y perfil de usuario */}
           <div className="flex items-center gap-3">
             <ThemeSwitch />
-            <Button
-              isIconOnly
-              radius="full"
-              variant="bordered"
-              className="border-small"
-            >
-              <BellIcon className="size-5"/>
-            </Button>
+            <NotificationPopover />
             
             <div className="mx-1 w-[1.5px] h-[50px] bg-default-400/80 rounded-full" />
             

@@ -15,6 +15,7 @@ import { logout } from '@/app/actions/auth';
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from 'next-themes';
 import { UserConfigModal } from '@/components/user-config-modal';
+import { useNotifications } from '@/components/notification-context';
 
 export const SideNav = () => {
 	const pathname = usePathname()
@@ -22,6 +23,7 @@ export const SideNav = () => {
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
   const [isUserConfigModalOpen, setUserConfigModalOpen] = useState(false);
   const { theme } = useTheme();
+  const { hasNewCorrected } = useNotifications();
 
 	useEffect(() => {
     const saved = localStorage.getItem("sidenav-collapsed");
@@ -98,6 +100,8 @@ export const SideNav = () => {
           {siteConfig.navItems.map(({ href, label, icon: Icon, iconFilled: IconFilled }) => {
             const isActive = pathname === href || pathname.startsWith(href + "/");
             const ActiveIcon = isActive ? IconFilled : Icon;
+            const isPracticesButton = href.includes("/practices") || label.includes("Pràctiques");
+            const showNotificationIndicator = isPracticesButton && hasNewCorrected && !isCollapsed;
 
             return (
               <Button
@@ -131,9 +135,15 @@ export const SideNav = () => {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -10 }}
                       transition={{ duration: 0.2 }}
-                      className="origin-left whitespace-nowrap pl-7"
+                      className="origin-left whitespace-nowrap pl-7 flex items-center gap-3"
                     >
                       {label}
+                      {showNotificationIndicator && !isActive && (
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-primary-400"></span>
+                        </span>
+                      )}
                     </motion.span>
                   )}
                 </AnimatePresence>

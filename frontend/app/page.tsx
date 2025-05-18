@@ -61,7 +61,7 @@ export default function Home() {
         const { data: courses } = await getMyRecentCourses(cardsPerRow+1);
         setRecentCourses(courses);
 
-        const { data: practices } = await getMyPracitces();
+        const { data: practices } = await getMyPractices();
         setPractices(practices);
       } catch (error) {
         console.error("Error fetching data:", error);

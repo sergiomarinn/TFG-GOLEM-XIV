@@ -22,6 +22,22 @@ export async function getAllCourses(): Promise<Courses> {
   return await res.json();
 }
 
+export async function searchCourses(search: string): Promise<Courses> {
+	const res = await fetch(`${API_URL}/api/v1/courses/search?search=${search}`, {
+		method: "GET",
+		headers: {
+			"Authorization": `Bearer ${await getTokenFromClient()}`
+		}
+	})
+
+	if (!res.ok) {
+		const errorData = await res.json()
+		throw new Error(errorData.detail || "Failed to fetch courses")
+	}
+
+	return await res.json();
+}
+
 export async function getCourseById(id: string): Promise<Course> {
   const res = await fetch(`${API_URL}/api/v1/courses/${id}`, {
     method: "GET",

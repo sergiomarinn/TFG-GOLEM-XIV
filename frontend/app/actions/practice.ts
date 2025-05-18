@@ -21,6 +21,22 @@ export async function getAllPractices(): Promise<Practices> {
   return await res.json();
 }
 
+export async function searchPractices(search: string): Promise<Practices> {
+	const res = await fetch(`${API_URL}/api/v1/practices/search?search=${search}`, {
+		method: "GET",
+		headers: {
+			"Authorization": `Bearer ${await getTokenFromClient()}`
+		}
+	})
+
+	if (!res.ok) {
+		const errorData = await res.json()
+		throw new Error(errorData.detail || "Failed to fetch courses")
+	}
+
+	return await res.json();
+}
+
 export async function getPracticeById(id: string): Promise<Practice> {
   const res = await fetch(`${API_URL}/api/v1/practices/${id}`, {
     method: "GET",
@@ -37,7 +53,7 @@ export async function getPracticeById(id: string): Promise<Practice> {
   return await res.json();
 }
 
-export async function getMyPracitces(): Promise<Practices> {
+export async function getMyPractices(): Promise<Practices> {
 	const res = await fetch(`${API_URL}/api/v1/practices/me`, {
 		method: "GET",
 		headers: {

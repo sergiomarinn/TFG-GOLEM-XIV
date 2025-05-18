@@ -5,9 +5,7 @@ import { CourseCard } from '@/components/course-card';
 import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs";
 import { Input } from "@heroui/input";
 import { Button } from '@heroui/button';
-import { Chip } from "@heroui/chip";
 import { Divider } from "@heroui/divider";
-import { Badge } from "@heroui/badge";
 import {
   DropdownTrigger,
   Dropdown,
@@ -17,90 +15,18 @@ import {
 import { Selection } from '@react-types/shared';
 import { SearchIcon, ChevronDownIcon, AlphabeticalSortIcon } from '@/components/icons';
 import { 
-  AcademicCapIcon, 
-  FunnelIcon,
-  BookOpenIcon,
+  AcademicCapIcon,
 	CodeBracketIcon,
 	CalendarIcon,
-	ClockIcon
+	ClockIcon,
+  PlusIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
-
-// Datos de ejemplo para los cursos
-const sampleCourses = [
-  {
-    id: "eda",
-    title: "Algorísmica Avançada",
-    students_number: 40,
-    academic_year: "2024-2025",
-    programmingLanguage: "Python",
-    color: "blue",
-    completedPractices: 2,
-    totalPractices: 3
-  },
-  {
-    id: "ia",
-    title: "Intel·ligència Artificial",
-    students_number: 65,
-    academic_year: "2024-2025",
-    programmingLanguage: "Python",
-    color: "green",
-    completedPractices: 1,
-    totalPractices: 4
-  },
-  {
-    id: "bd",
-    title: "Bases de Dades",
-    students_number: 85,
-    academic_year: "2024-2025",
-    programmingLanguage: "SQL",
-    color: "orange",
-    completedPractices: 3,
-    totalPractices: 5
-  },
-  {
-    id: "pds",
-    title: "Projecte Integrat de Software",
-    students_number: 30,
-    academic_year: "2024-2025",
-    programmingLanguage: "JavaScript",
-    color: "purple",
-    completedPractices: 4,
-    totalPractices: 6
-  },
-  {
-    id: "xar",
-    title: "Xarxes de Computadors",
-    students_number: 55,
-    academic_year: "2024-2025",
-    programmingLanguage: "C",
-    color: "red",
-    completedPractices: 0,
-    totalPractices: 2
-  },
-  {
-    id: "so",
-    title: "Sistemes Operatius",
-    students_number: 75,
-    academic_year: "2024-2025",
-    programmingLanguage: "C",
-    color: "cyan",
-    completedPractices: 2,
-    totalPractices: 3
-  }
-];
-
-const academicYearOptions = [
-	{ name: "Actual", uid: "2024-2025" },
-  { name: "2023-2024", uid: "2023-2024" },
-  { name: "2022-2023", uid: "2022-2023" }
-];
-
-const languageOptions = [
-  { name: "Python", uid: "Python" },
-  { name: "C", uid: "C" },
-  { name: "SQL", uid: "SQL" },
-  { name: "JavaScript", uid: "JavaScript" }
-];
+import { Course } from '@/types/course';
+import { getMyCourses } from '../actions/course';
+import { CourseDrawer } from '@/components/drawer-course';
+import { getUserFromClient } from '@/app/lib/client-session';
+import { CourseCardSkeleton } from '@/components/course-cards-skeleton';
 
 const sortOptions = [
 	{ name: "Per Nom", uid: "name", icon: <AlphabeticalSortIcon className="size-4" /> },
@@ -108,6 +34,82 @@ const sortOptions = [
 ];
 
 export default function CoursesPage() {
+  const [courses, setCourses] = React.useState<Course[]>([]);
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+  const [currentCourse, setCurrentCourse] = React.useState<Course | null>(null);
+  const [isTeacher, setIsTeacher] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  const handleEditCourse = (course: Course) => {
+    setCurrentCourse(course);
+    setIsDrawerOpen(true);
+  };
+  
+  const handleNewCourse = () => {
+    setCurrentCourse(null);
+    setIsDrawerOpen(true);
+  };
+
+  const handleSaveCourse = (updatedCourse: Course) => {
+    const courseExists = courses.some(course => course.id === updatedCourse.id);
+
+    if (courseExists) {
+      // Actualizar curso existente
+      setCourses(courses.map(course => 
+        course.id === updatedCourse.id ? updatedCourse : course
+      ));
+    } else {
+      // Crear nuevo curso
+      setCourses([...courses, updatedCourse]);
+    }
+  };
+
+  const handleDeleteCourse = (courseId: string) => {
+    setCourses(prevCourses => prevCourses.filter(course => course.id !== courseId));
+  }
+  
+  
+  React.useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setIsLoading(true);
+        const user = await getUserFromClient();
+        setIsTeacher(user?.is_teacher || user?.is_admin || false);
+        const { data: courses } = await getMyCourses();
+        setCourses(courses);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchCourses();
+  }, []);
+
+  const programmingLanguageOptions = React.useMemo(() => {
+    const languages = new Set<string>();
+    courses.forEach((course) => {
+      course.programming_languages?.forEach((language) => {
+        languages.add(language);
+      });
+    });
+    return Array.from(languages).map((language) => ({
+      name: language,
+      uid: language
+    }));
+  }, [courses]);
+
+  const academicYearOptions = React.useMemo(() => {
+    const years = new Set<string>();
+    courses.forEach((course) => {
+      years.add(course.academic_year);
+    });
+    return Array.from(years).map((year) => ({
+      name: year,
+      uid: year
+    }));
+  }, [courses]);
+
   const [filterValue, setFilterValue] = React.useState("");
   const [academicYearFilter, setAcademicYearFilter] = React.useState<Selection>("all");
   const [languageFilter, setLanguageFilter] = React.useState<Selection>("all");
@@ -125,12 +127,12 @@ export default function CoursesPage() {
 
   // Filtrar cursos según búsqueda y filtros
   const filteredCourses = React.useMemo(() => {
-    let filtered = [...sampleCourses];
+    let filtered = [...courses];
 
     // Filtro de búsqueda
     if (hasSearchFilter) {
       filtered = filtered.filter((course) => 
-        course.title.toLowerCase().includes(filterValue.toLowerCase())
+        course.name.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
@@ -142,23 +144,23 @@ export default function CoursesPage() {
     }
 
     // Filtro de lenguaje de programación
-    if (languageFilter !== "all" && Array.from(languageFilter).length !== languageOptions.length) {
-      filtered = filtered.filter((course) => 
-        Array.from(languageFilter).includes(course.programmingLanguage)
+    if (languageFilter !== "all" && Array.from(languageFilter).length !== programmingLanguageOptions.length) {
+      filtered = filtered.filter((course) =>
+        course.programming_languages?.some(lang => languageFilter.has(lang))
       );
     }
 
     return filtered;
-  }, [sampleCourses, filterValue, academicYearFilter, languageFilter]);
+  }, [courses, filterValue, academicYearFilter, languageFilter]);
 
 	const sortedData = React.useMemo(() => {
 		let sorted = [...filteredCourses];
 		const sortKey = Array.from(sortFilter)[0] as string;
 		switch(sortKey) {
 			case "name": // Sort by course name (alphabetical)
-				return sorted.sort((a, b) => a.title.localeCompare(b.title));
+				return sorted.sort((a, b) => a.name.localeCompare(b.name));
 			case "recently_accessed": // Sort by recently accessed (example logic)
-				return sorted.sort((a, b) => b.students_number - a.students_number); // Example: sort by number of students
+				return sorted.sort((a, b) => b.students_count - a.students_count); // Example: sort by number of students
 			default:
 				return sorted;
 		}
@@ -169,8 +171,8 @@ export default function CoursesPage() {
       <div className="flex justify-between gap-3 items-end mb-6">
         <Input
           isClearable
-					variant="faded"
-          className="w-full max-w-md"
+          variant="faded"
+          className="w-full"
           placeholder="Cerca per nom de curs..."
           startContent={<SearchIcon />}
           value={filterValue}
@@ -247,8 +249,8 @@ export default function CoursesPage() {
               selectionMode="multiple"
               onSelectionChange={setLanguageFilter}
             >
-              {languageOptions.map((option) => (
-                <DropdownItem key={option.uid}>
+              {programmingLanguageOptions.map((option) => (
+                <DropdownItem key={option.uid} className="capitalize">
                   {option.name}
                 </DropdownItem>
               ))}
@@ -258,47 +260,48 @@ export default function CoursesPage() {
       </div>
     );
   }, [
+    hasSearchFilter,
     filterValue,
     academicYearFilter,
     languageFilter,
-		sortFilter
+		sortFilter,
+    courses.length
   ]);
 
-  // Estado para contar los cursos por semestre
   const [fallCount, springCount] = React.useMemo(() => {
-    // En un caso real, deberías tener un campo 'semester' en cada curso
-    // Aquí simplemente divido los cursos a la mitad para el ejemplo
-    const totalCount = filteredCourses.length;
-    return [Math.ceil(totalCount / 2), Math.floor(totalCount / 2)];
-  }, [filteredCourses]);
+    const primaveraCount = filteredCourses.filter(course => course.semester === 'primavera').length;
+    const tardorCount = filteredCourses.filter(course => course.semester === 'tardor').length;
+
+    return [tardorCount, primaveraCount];
+  }, [courses]);
 
   return (
-    <div className="px-8 pb-8 min-h-screen bg-slate-100 dark:bg-neutral-900">
+    <div className="px-8 pb-8 min-h-screen">
       <Breadcrumbs>
         <BreadcrumbItem href="/">Dashboard</BreadcrumbItem>
         <BreadcrumbItem href="/courses">Cursos</BreadcrumbItem>
       </Breadcrumbs>
 
       {/* Header section */}
-      <div className="container px-2 pt-8 pb-5">
-        <div className="flex items-center justify-between mb-2">
+      <div className="relative container px-2 pt-8 pb-5">
+        <div className="flex items-start justify-between mb-2">
           <div>
             <h1 className="text-4xl font-bold">Els meus cursos</h1>
             <p className="text-default-600 mt-2">
               Explora els teus cursos i accedeix a les seves pràctiques
             </p>
           </div>
-          <div className="flex gap-3">
-            <Badge content={fallCount} color="primary" placement="top-right">
-              <Chip color="primary" variant="flat" size="lg">
-                Tardor
-              </Chip>
-            </Badge>
-            <Badge content={springCount} color="warning" placement="top-right">
-              <Chip color="warning" variant="flat" size="lg">
-                Primavera
-              </Chip>
-            </Badge>
+          <div className="flex gap-3 pt-2">
+            {isTeacher && <Button
+              className=""
+              color="secondary"
+              variant="flat"
+              radius="lg"
+              startContent={<PlusIcon className="size-5" />}
+              onPress={() => handleNewCourse()}
+            >
+              Afegir nou curs
+            </Button>}
           </div>
         </div>
       </div>
@@ -307,24 +310,35 @@ export default function CoursesPage() {
       <div className="container px-2">
         {topContent}
         
-        {filteredCourses.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <CourseCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedData.map((course) => (
-              <CourseCard
-                key={course.id}
-								id={course.id}
-                title={course.title}
-                students_number={course.students_number}
-                academic_year={course.academic_year}
-                programmingLanguage={course.programmingLanguage}
-                color={course.color}
-                completedPractices={course.completedPractices}
-                totalPractices={course.totalPractices}
-              />
+              <div className="relative">
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                />
+                {isTeacher && <Button
+                  className="absolute top-4 left-4"
+                  variant="shadow"
+                  radius="full"
+                  size="sm"
+                  startContent={<PencilIcon className="size-4" />}
+                  onPress={() => handleEditCourse(course)}
+                >
+                  Editar
+                </Button>}
+              </div>
             ))}
           </div>
         ) : (
-          <div className="bg-default-50 border border-default-200 rounded-lg p-8 text-center">
+          <div className="bg-content1 border border-default-200 rounded-lg p-8 text-center">
             <AcademicCapIcon className="size-16 mx-auto text-default-400 mb-4" />
             <h3 className="text-xl font-semibold text-default-700 mb-2">Cap curs trobat</h3>
             <p className="text-default-500">
@@ -333,6 +347,13 @@ export default function CoursesPage() {
           </div>
         )}
       </div>
+      <CourseDrawer 
+        isOpen={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        initialCourse={currentCourse}
+        onSave={handleSaveCourse}
+        onDelete={handleDeleteCourse}
+      />
     </div>
   );
 }

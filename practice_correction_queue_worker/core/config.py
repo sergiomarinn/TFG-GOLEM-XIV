@@ -70,13 +70,18 @@ class Settings(BaseSettings):
         if self.DB_ENGINE == 'postgres':
             if self.DB_NAME is None:
                 self.DB_NAME = 'golem_xiv_db'
+            
+            is_supabase = self.DB_HOST.endswith(".supabase.com")
+            query = "sslmode=require" if is_supabase else None
+            
             database_uri = MultiHostUrl.build(
-                scheme="postgresql+psycopg",
+                scheme="postgresql+asyncpg",
                 username=self.DB_USER,
                 password=self.DB_PASSWORD,
                 host=self.DB_HOST,
                 port=self.DB_PORT,
                 path=self.DB_NAME,
+                query=query
             )
         elif self.DB_ENGINE == 'sqlite':
             if self.DB_NAME is None:

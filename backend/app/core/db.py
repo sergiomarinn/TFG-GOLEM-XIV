@@ -1,10 +1,11 @@
 from sqlmodel import Session, create_engine, select
+from sqlalchemy.pool import NullPool
 
 from app import crud
 from app.core.config import settings
 from app.models import User, UserCreate
 
-engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI), poolclass=NullPool)
 
 def init_db(session: Session) -> None:
     user = session.exec(

@@ -61,6 +61,29 @@ export async function getTokenFromSession() {
   return payload.token
 }
 
+export async function updateUserInSession(updatedUser: User) {
+  const payload = await getSession()
+  if (!payload) return null
+
+  const newSession = await encrypt({
+    ...payload,
+    user: updatedUser,
+  });
+
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const cookieStore = await cookies();
+
+  cookieStore.set('session', newSession, {
+    httpOnly: true,
+    secure: true,
+    expires,
+    sameSite: 'lax',
+    path: '/',
+  });
+
+  return true;
+}
+
 export async function updateSession() {
   const session = (await cookies()).get('session')?.value
   const payload = await decrypt(session)

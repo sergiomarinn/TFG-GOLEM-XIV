@@ -1,33 +1,49 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
   CalendarIcon,
   CodeBracketIcon,
-  DocumentIcon,
-  DocumentTextIcon,
   PaperClipIcon,
-  ArrowUpTrayIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-	TrashIcon,
+  ArrowLeftCircleIcon,
+  UserGroupIcon,
+  MagnifyingGlassIcon,
+  PencilIcon,
+  ArrowDownTrayIcon,
+  InformationCircleIcon,
+  PencilSquareIcon,
+  ArrowUpOnSquareIcon,
+  CloudArrowUpIcon,
 } from '@heroicons/react/24/outline';
-import { DocumentArrowUpIcon } from '@heroicons/react/24/solid';
 import { Button } from '@heroui/button';
 import { Card, CardHeader, CardBody, CardFooter } from '@heroui/card';
 import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
 import { Progress } from '@heroui/progress';
-
 import { 
   practiceStatusOptions as statusOptions, 
   practiceStatusColorMap as statusColorMap,
 	practiceStatusIconColorMap as statusIconColorMap
 } from "@/types";
 import { addToast } from '@heroui/toast';
+import { useParams } from 'next/navigation';
+import { downloadMyPractice, downloadPracticeByNiub, getPracticeById, getPracticeFileInfo, getPracticeFileInfoForUser, getPracticeStudent, uploadPractice } from '@/app/actions/practice';
+import { Practice, PracticeFileInfo } from '@/types/practice';
+import { FileUploader } from '@/components/file-uploader';
+import { FileList } from '@/components/file-list';
+import { useRouter } from "next/navigation";
+import { User } from '@/app/lib/definitions';
+import { Input } from '@heroui/input';
+import { getUserFromClient } from '@/app/lib/client-session';
+import { Spinner } from '@heroui/spinner';
+import { Avatar } from '@heroui/avatar';
+import { PracticeDrawer } from '@/components/drawer-practice';
+import { FilesIcon } from '@/components/icons';
+import { Skeleton } from '@heroui/skeleton';
 
 const PracticeStatus = ({ status }: {status: string}) => {
   const getStatusName = (uid: string) =>
@@ -60,215 +76,15 @@ const PracticeStatus = ({ status }: {status: string}) => {
   );
 };
 
-// Componente para el listado de archivos
-const FileList = ({ files, onDelete }) => {
-  if (!files || files.length === 0) {
-    return (
-      <div className="text-center px-2 py-2 text-default-500">
-        <DocumentTextIcon className="size-12 mx-auto mb-3 opacity-60" />
-        <p>No s'ha afegit cap arxiu.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-2 px-2">
-      {files.map((file, index) => (
-        <div key={index} className="flex items-center justify-between p-3.5 gap-5 bg-default-100/90 rounded-lg">
-          <div className="flex items-center gap-2 min-w-0">
-            <DocumentIcon className="size-[1.9rem] text-default-500 shrink-0" />
-						<div className="flex flex-col min-w-0">
-							<span className="font-medium truncate">{file.name}</span>
-							<span className="text-xs text-default-400">{file.size}</span>
-						</div>
-          </div>
-          {onDelete && (
-            <Button 
-              isIconOnly 
-              size="sm"
-              variant="flat" 
-              color="danger" 
-              aria-label="Eliminar" 
-              onPress={() => onDelete(index)}
-            >
-              <TrashIcon className="size-4" />
-            </Button>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// Componente para manejar la subida de archivos
-const FileUploader = ({ files, setFiles, disabled = false }) => {
-  const fileInputRef = useRef(null);
-	const [isDragging, setIsDragging] = useState(false);
-
-  const handleFileChange = (e) => {
-    const newFiles = Array.from(e.target.files);
-    if (newFiles.length > 0) {
-      processFiles(newFiles);
-    }
-  };
-
-	const processFiles = (newFiles) => {
-    const validFiles = [];
-		let rejected = false;
-
-		newFiles.forEach(file => {
-			const isZip =
-				file.name.toLowerCase().endsWith('.zip') ||
-				file.type === 'application/zip' ||
-				file.type === 'application/x-zip-compressed';
-
-			if (!isZip) {
-				rejected = true;
-			} else {
-				validFiles.push({
-					file,
-					id: Math.random().toString(36).substring(7),
-					name: file.name,
-					size: formatFileSize(file.size),
-					type: file.type
-				});
-			}
-		});
-
-		if (rejected) {
-			addToast({
-				title: "Només es permeten arxius ZIP",
-				color: "danger",
-			})
-		}
-
-		if (validFiles.length > 0) {
-			setFiles([...files, ...validFiles]);
-		}
-	}
-
-  const deleteFile = (index) => {
-    const newFiles = [...files];
-    newFiles.splice(index, 1);
-    setFiles(newFiles);
-  };
-
-	const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + ' B';
-    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-    else return (bytes / 1048576).toFixed(1) + ' MB';
-  };
-
-	// Handlers for drag and drop
-  const handleDragEnter = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!disabled) setIsDragging(true);
-  }, [disabled]);
-
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
-
-	const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!disabled && !isDragging) setIsDragging(true);
-  }, [isDragging, disabled]);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    
-    if (disabled) return;
-    
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    if (droppedFiles.length > 0) {
-      processFiles(droppedFiles);
-    }
-  }, [disabled, processFiles]);
-
-	const openFileDialog = () => {
-    if (!disabled) {
-      fileInputRef.current.click();
-    }
-  };
-
-  return (
-    <div className="pt-1 px-1">
-			{/* Área de drag and drop */}
-      <div 
-        className={`group border-1.5 border-dashed rounded-lg p-4 mb-1 text-center flex flex-col items-center justify-center transition-all ${
-          isDragging 
-            ? 'border-primary-500 bg-primary-50' 
-            : disabled 
-              ? 'border-default-200 bg-default-50 opacity-60' 
-              : 'border-default-300 bg-default-50 hover:border-primary-300 hover:bg-primary-50/50'
-        }`}
-        onDragEnter={handleDragEnter}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={openFileDialog}
-        style={{ minHeight: '140px', cursor: disabled ? 'not-allowed' : 'pointer' }}
-      >
-        <DocumentArrowUpIcon className={
-					`transition-colors size-12 text-default-400 mb-2 ${
-					disabled ? '' : 'group-hover:text-primary-500'}` } />
-        
-        <p className="text-sm text-default-600 mb-3">
-          {disabled 
-            ? "No es poden pujar arxius" 
-            : "Arrossega i deixa els teus arxius aquí o"}
-        </p>
-        
-        <Button
-          variant="flat"
-          color="primary"
-          startContent={<ArrowUpTrayIcon className="size-4" />}
-          disabled={disabled}
-          onPress={(e) => {
-            e.stopPropagation();
-            openFileDialog();
-          }}
-        >
-          Selecciona arxius
-        </Button>
-        
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          multiple
-					accept=".zip"
-          className="hidden"
-          disabled={disabled}
-        />
-      </div>
-      
-      <span className="text-xs text-default-500 mb-4 px-1">
-        Arxius soportats: ZIP
-      </span>
-			<div className="mt-4">
-				<h4 className="text-default-900 text-lg font-medium mb-3 px-1">
-					Arxius pujats
-				</h4>
-	      <FileList files={files} onDelete={!disabled ? deleteFile : null} />
-			</div>
-    </div>
-  );
-};
-
-// Componente de Feedback
 const FeedbackSection = ({ feedback, grade }) => {
   return (
     <Card>
       <CardHeader>
-				<div className="w-full flex items-center justify-between gap-2 px-2 pt-1">
-					<h3 className="text-xl font-semibold">Retroalimentació</h3>
+				<div className="w-full flex items-center justify-between gap-2 pl-0.5">
+          <div className="flex items-center gap-2">
+            <PencilSquareIcon className="size-6 text-default-700" />
+            <h2 className="text-xl font-semibold">Retroalimentació</h2>
+          </div>
 					{grade !== undefined && (
 						<Chip 
 							color={grade >= 5 ? "success" : "danger"} 
@@ -296,51 +112,337 @@ const FeedbackSection = ({ feedback, grade }) => {
   );
 };
 
-// Datos de ejemplo para la práctica
-const practiceSample = {
-  id: 1,
-  name: "Implementació d'algorismes de cerca avançats",
-  description: "En aquesta pràctica, hauràs d'implementar diversos algorismes de cerca estudiats durant el curs, incloent cerca binària, interpolació i Jump Search. Hauràs de comparar l'eficiència d'aquests algorismes amb diferents conjunts de dades i realitzar una anàlisi de la seva complexitat temporal i espacial.",
-  language: "Python",
-  due_date: "2025-05-20T23:59:59",
-  submission_date: "2025-05-18T14:32:10",
-  status: "corrected",
-  grade: 8.5,
-  feedback: "Molt bona implementació dels algorismes de cerca. L'anàlisi és detallada i ben estructurada. Els experiments realitzats demostren un bon enteniment dels conceptes. Per millorar: podries haver optimitzat l'algorisme d'interpolació per als casos límit.\n\nT'animo a revisar la secció 3.2 on hi ha una petita ineficiència en la implementació del Jump Search.",
-  course: {
-    id: "EDA",
-    name: "Algorísmica Avançada",
-    color: "indigo"
-  },
-  resubmit_available: true,
-  submitted_files: [
-    { name: "search_algorithms.py", size: "4.2 KB" },
-    { name: "benchmark_results.csv", size: "1.8 KB" },
-    { name: "report.pdf", size: "523.1 KB" }
-  ]
+const StudentSidebar = ({ practiceStudents, onSelectStudent, selectedStudent }) => {
+  const [students, setStudents] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (practiceStudents) {
+      setStudents(practiceStudents.filter((student) => student.is_student));
+      setIsLoading(false)
+    }
+  }, [practiceStudents]);
+
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => 
+      student.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      student.surnames?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      student.niub?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [students, searchTerm]);
+
+  const handleStudentClick = (student: User) => {
+    if (selectedStudent && selectedStudent.niub === student.niub) {
+      // Si el estudiante ya está seleccionado, lo deseleccionamos
+      onSelectStudent(null);
+    } else {
+      // Si no, lo seleccionamos
+      onSelectStudent(student);
+    }
+  };
+
+  return (
+    <div className="h-full">
+      <div className="mb-2 relative">
+        <Input
+          isClearable
+          placeholder="Cerca estudiants..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          startContent={<MagnifyingGlassIcon className="size-4 text-default-500" />}
+          onClear={() => setSearchTerm("")}
+        />
+      </div>
+      
+      <div className="overflow-y-auto max-h-auto">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-40">
+            <Spinner />
+          </div>
+        ) : filteredStudents.length > 0 ? (
+          <ul className="space-y-1">
+            {filteredStudents.map((student) => {
+              const isSelected = selectedStudent && selectedStudent.niub === student.niub;
+              return (
+                <li key={student.niub}>
+                  <button
+                    onClick={() => handleStudentClick(student)}
+                    className={`w-full text-left p-2.5 rounded-lg ${
+                      isSelected 
+                        ? 'bg-primary-100 border-l-4 border-primary-500' 
+                        : 'hover:bg-default-100'
+                    } active:scale-95 transition-all flex items-center justify-between`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar 
+                        name={student.name[0]}
+                        classNames={{
+                          base: "text-large"
+                        }}  
+                      />
+                      <div>
+                        <p className={`text font-medium ${isSelected ? 'text-primary-700' : ''}`}>
+                          {student.name + " " + student.surnames}
+                        </p>
+                        <p className="text-sm text-default-500">{student.niub} • {student.email}</p>
+                      </div>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="text-center py-8 text-default-500">
+            {searchTerm ? 'No s\'han trobat estudiants' : 'No hi ha estudiants inscrits'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const StudentContentView = ({ practiceId, student, onBack }) => {
+  const [studentPractice, setStudentPractice] = useState<Practice | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [studentFiles, setStudentFiles] = useState<PracticeFileInfo[]>([]);
+  const [isDownloading, setIsDownloading] = React.useState(false);
+
+  useEffect(() => {
+    const fetchStudentDetail = async () => {
+      try {
+        setIsLoading(true);
+        const studentPractice = await getPracticeStudent(practiceId, student.niub);
+        setStudentPractice(studentPractice);
+        
+        if (studentPractice.status !== "not_submitted") {
+          const fileInfo = await getPracticeFileInfoForUser(practiceId, student.niub);
+          setStudentFiles([fileInfo]);
+        }
+      } catch (error) {
+        console.error("Error fetching student details:", error);
+        addToast({
+          title: "Error en carregar els detalls de l'estudiant",
+          description: "No s'han pogut carregar els detalls de l'estudiant.",
+          color: "danger"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (practiceId && student) {
+      fetchStudentDetail();
+    }
+  }, [practiceId, student]);
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'No disponible';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ca-ES', { 
+      day: '2-digit', 
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleDownloadSubmission = async (niub: string) => {
+    try {
+      setIsDownloading(true);
+      await downloadPracticeByNiub(practiceId, niub)
+
+      addToast({
+        title: "Descarrega realitzada amb èxit",
+        color: "success",
+        timeout: 5000,
+        shouldShowTimeoutProgress: true,
+      })
+    } catch (error) {
+      console.error("Error submitting practice:", error);
+      addToast({
+        title: "Error en descarrega la tramesa",
+        description: "Torna-ho a intentar més tard",
+        color: "danger"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-default-500">No s'ha trobat la informació de l'estudiant</p>
+        <Button 
+          color="primary" 
+          variant="light" 
+          className="mt-4"
+          onPress={onBack}
+        >
+          Tornar
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Información del estudiante */}
+      <Card>
+        <CardHeader>
+          <div className="w-full flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <InformationCircleIcon className="size-6 text-default-700" />
+              <h2 className="text-xl font-semibold">Informació de l'estudiant</h2>
+            </div>
+            {student.grade !== undefined && (
+              <Chip 
+                color={student.grade >= 5 ? "success" : "danger"} 
+                variant="flat" 
+                className="ml-auto"
+              >
+                Nota: {student.grade.toFixed(1)}
+              </Chip>
+            )}
+          </div>
+        </CardHeader>
+        <Divider />
+        <CardBody>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 px-1.5 items-center">
+            <div>
+              <p className="text-sm text-default-500">Nom complet</p>
+              <p className="font-medium">{student.name + " " + student.surnames}</p>
+            </div>
+            <div>
+              <p className="text-sm text-default-500">NIUB</p>
+              <p>{student.niub}</p>
+            </div>
+            <div>
+              <p className="text-sm text-default-500">Estat</p>
+              <Chip
+                color={statusColorMap[studentPractice.status] || "default"}
+                variant="flat"
+                className="mt-1"
+              >
+                {statusOptions.find(opt => opt.uid === studentPractice?.status)?.name || student.status || 'No entregada'}
+              </Chip>
+            </div>
+            {student.submission_date && (
+              <div>
+                <p className="text-sm text-default-500">Data d'enviament</p>
+                <p>{formatDate(studentPractice.submission_date)}</p>
+              </div>
+            )}
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* Archivos enviados */}
+      {(studentPractice?.status !== 'not_submitted' ) && (
+        <Card>
+          <CardHeader>
+            <div className="pl-1 w-full flex items-end justify-between">
+              <div className="flex items-center gap-2">
+                <FilesIcon className="size-6 text-default-700" />
+                <h2 className="text-xl font-semibold">Arxius enviats</h2>
+              </div>
+              <Button
+                size="sm"
+                color="primary"
+                variant="flat"
+                startContent={!isDownloading && <ArrowDownTrayIcon className="size-4"/>}
+                isLoading={isDownloading}
+                onPress={() => handleDownloadSubmission(student.niub)}
+              >
+                Descarregar
+              </Button>
+            </div>
+          </CardHeader>
+          <Divider />
+          <CardBody>
+            {studentFiles.length > 0 ? (
+              <FileList files={studentFiles} />
+            ) : (
+              <p className="text-center text-default-500 py-3">No hi ha arxius disponibles.</p>
+            )}
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Sección de retroalimentación */}
+      {studentPractice?.status === 'corrected' && (
+        <FeedbackSection feedback={student.feedback} grade={student.grade} />
+      )}
+
+      {/* Botones de acción para corrección */}
+      {(student.status === 'submitted' || student.status === 'corrected' || student.status === 'rejected') && (
+        <div className="flex justify-end">
+          <Button
+            color="primary"
+            size="lg"
+          >
+            Corregir pràctica
+          </Button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Página principal
-export default function PracticeDetailPage({ params }) {
+export default function PracticeDetailPage() {
+  const params = useParams();
+  const practiceId = params.id as string;
   const router = useRouter();
-  const [practice, setPractice] = useState(practiceSample);
-  const [files, setFiles] = useState([]);
+
+  const [practice, setPractice] = useState<Practice>();
+  const [submissionFilesInfo, setSubmissionFilesInfo] = useState<PracticeFileInfo[]>([]);
+  const [isTeacher, setIsTeacher] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
+  const [isPracticeDrawerOpen, setIsPracticeDrawerOpen] = React.useState(false);
+  const [isDownloading, setIsDownloading] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  useEffect(() => {
+    const fetchUserAndPractice = async () => {
+      try {
+        setIsLoading(true);
+        const user = await getUserFromClient();
+        setIsTeacher(user?.is_teacher || user?.is_admin || false);
+
+        const practice = await getPracticeById(practiceId);
+        setPractice(practice);
+        
+        if (practice.status !== "not_submitted") {
+          const submissionFileInfo = await getPracticeFileInfo(practiceId);
+          setSubmissionFilesInfo([submissionFileInfo]);
+        }
+      } catch (error) {
+        console.error("Error fetching practice:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (practiceId) {
+      fetchUserAndPractice();
+    }
+  }, [practiceId]);
+  
+  const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResubmit, setShowResubmit] = useState(false);
-
-  // En una implementación real, aquí se cargarían los datos de la práctica
-  // useEffect(() => {
-  //   const fetchPractice = async () => {
-  //     try {
-  //       const response = await fetch(`/api/practices/${params.id}`);
-  //       const data = await response.json();
-  //       setPractice(data);
-  //     } catch (error) {
-  //       console.error("Error fetching practice:", error);
-  //     }
-  //   };
-  //   fetchPractice();
-  // }, [params.id]);
 
   // Función para formatear fechas
   const formatDate = (dateString: string) => {
@@ -354,192 +456,369 @@ export default function PracticeDetailPage({ params }) {
     });
   };
 
-  // Función para manejar la subida de archivos
   const handleSubmit = async () => {
+    if (!practice) return;
     if (files.length === 0) {
-      alert("Has d'afegir almenys un arxiu per enviar la pràctica.");
+      addToast({
+        title: "Cap arxiu seleccionat",
+        description: "Has d'afegir almenys un arxiu per poder enviar la pràctica.",
+        color: "danger"
+      })
       return;
     }
-
-    setIsSubmitting(true);
     
-    // Aquí iría el código para enviar los archivos al servidor
-    // const formData = new FormData();
-    // files.forEach(fileObj => {
-    //   formData.append('files', fileObj.file);
-    // });
-    // formData.append('practiceId', practice.id);
-    
-    // try {
-    //   await fetch('/api/submissions', {
-    //     method: 'POST',
-    //     body: formData
-    //   });
-    //   router.refresh();
-    // } catch (error) {
-    //   console.error("Error submitting practice:", error);
-    // }
+    try {
+      setIsSubmitting(true);
+      await uploadPractice(practice.id, files[0])
 
-    // Simulación de envío
-    setTimeout(() => {
-      alert("Pràctica enviada correctament!");
-      setIsSubmitting(false);
-      setShowResubmit(false);
-      
-      // Actualizar el estado de la práctica (simulación)
       setPractice({
         ...practice,
-        status: 'submitted',
+        status: "submitted",
         submission_date: new Date().toISOString()
       });
-    }, 1500);
+
+      addToast({
+        title: "Pràctica enviada amb èxit",
+        color: "success",
+        timeout: 5000,
+        shouldShowTimeoutProgress: true,
+      })
+    } catch (error) {
+      console.error("Error submitting practice:", error);
+      addToast({
+        title: "Error en enviar la pràctica",
+        description: "Torna-ho a intentar més tard",
+        color: "danger"
+      });
+    } finally {
+      setIsSubmitting(false);
+      setShowResubmit(false);
+    }
   };
 
-  const canSubmit = ['not_submitted', 'rejected'].includes(practice.status) || showResubmit;
-  const isPastDue = new Date(practice.due_date) < new Date();
+  const handleUpdatePractice = (updatedPractice: Practice) => {
+    setPractice(prev => ({
+      ...prev,
+      ...updatedPractice,
+    }));
+  };
+
+  const handleDeletePractice = (practiceId: string) => {
+    router.push(`/courses/${practice?.course_id}`);
+  };
+
+  const handleSelectStudent = (student: User) => {
+    setSelectedStudent(student);
+  };
+
+  const handleBackToPractice = () => {
+    setSelectedStudent(null);
+  };
+
+  const handleDownloadSubmission = async () => {
+    try {
+      setIsDownloading(true);
+      await downloadMyPractice(practice.id)
+
+      addToast({
+        title: "Descarrega realitzada amb èxit",
+        color: "success",
+        timeout: 5000,
+        shouldShowTimeoutProgress: true,
+      })
+    } catch (error) {
+      console.error("Error downloading practice:", error);
+      addToast({
+        title: "Error en descarrega la tramesa",
+        description: "Torna-ho a intentar més tard",
+        color: "danger"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  }
+
+  const canSubmit = useMemo(() => {
+    return ['not_submitted', 'rejected'].includes(practice?.status) || showResubmit;
+  }, [practice?.status, showResubmit]);
+
+  const isPastDue = useMemo(() => {
+    return new Date(practice?.due_date) < new Date();
+  }, [practice?.due_date]);
 
   return (
-    <div className="px-8 pb-12 min-h-screen bg-slate-100 dark:bg-neutral-900">
+    <div className="px-8 pb-12 min-h-screen">
       {/* Header con navegación */}
-      <Link
-				href="/practices"
-				className="inline-flex items-center gap-2 text-[0.85rem] text-default-600 hover:text-primary-500 transition-colors"
-			>
-				<ArrowLeftIcon className="size-5" />
-				<span>Tornar enrere</span>
-			</Link>
+      <button
+        onClick={() => router.back()}
+        className="inline-flex items-center gap-2 text-[0.85rem] text-default-600 hover:text-primary-500 transition-colors"
+      >
+        <ArrowLeftIcon className="size-5" />
+        <span>Tornar enrere</span>
+      </button>
       
       {/* Header section */}
-      <div className="mt-2 mb-8">
-        <div className="flex items-end justify-between gap-2 mb-2">
-          <Chip color="primary" variant="flat">
-						{practice.course.name}
-					</Chip>
-          <PracticeStatus status={practice.status} />
-        </div>
-        <h1 className="text-3xl font-bold mb-3">{practice.name}</h1>
-        <div className="flex flex-wrap gap-7 text-default-700">
-          <div className="flex items-center gap-1">
-            <CalendarIcon className="size-4" />
-            <span>Data límit: {formatDate(practice.due_date)}</span>
+      {isLoading ? (
+        <div className="mt-2 mb-8">
+          <div className="flex items-end justify-between gap-2 mb-2">
+            {/* Course name chip skeleton */}
+            <Skeleton className="h-6 w-32 rounded-full" />
+            
+            {/* Edit button or status skeleton based on user role */}
+            {isTeacher ? (
+              <Button
+                color="secondary"
+                variant="flat"
+                radius="lg"
+                isDisabled
+                className="opacity-50"
+                startContent={<PencilIcon className="size-4" />}
+              >
+                Editar pràctica
+              </Button>
+            ) : (
+              <Skeleton className="h-10 w-36 rounded-xl" />
+            )}
           </div>
-          <div className="flex items-center gap-1">
-            <CodeBracketIcon className="size-4" />
-            <span>Llenguatge: {practice.language}</span>
-          </div>
-          {practice.submission_date && (
-            <div className="flex items-center gap-1">
-              <PaperClipIcon className="size-4" />
-              <span>Últim lliurament: {formatDate(practice.submission_date)}</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Columna principal */}
-        <div className="md:col-span-2">
-          {/* Descripción de la práctica */}
-          <Card className="mb-6">
-            <CardHeader>
-              <h2 className="text-xl font-semibold px-2 pt-1">Descripció de la pràctica</h2>
-            </CardHeader>
-            <Divider />
-            <CardBody>
-              <div className="text-default-700 whitespace-pre-line px-2 pb-1">
-                {practice.description}
-              </div>
-            </CardBody>
-          </Card>
           
-          {/* Sección de retroalimentación, si existe */}
-          {(practice.status === 'corrected' || practice.status === 'rejected') && (
-            <div className="mb-6">
-              <FeedbackSection feedback={practice.feedback} grade={practice.grade} />
+          {/* Practice name skeleton */}
+          <Skeleton className="h-9 w-3/4 rounded-lg mb-3" />
+          
+          {/* Practice details skeleton */}
+          <div className="flex flex-wrap gap-7 text-default-700">
+            {/* Due date skeleton */}
+            <div className="flex items-center gap-1">
+              <CalendarIcon className="size-4 text-default-400" />
+              <Skeleton className="h-5 w-36 rounded-md" />
             </div>
-          )}
+            
+            {/* Programming language skeleton */}
+            <div className="flex items-center gap-1">
+              <CodeBracketIcon className="size-4 text-default-400" />
+              <Skeleton className="h-5 w-44 rounded-md" />
+            </div>
+            
+            {/* Submission date skeleton (conditional) */}
+            <div className="flex items-center gap-1">
+              <PaperClipIcon className="size-4 text-default-400" />
+              <Skeleton className="h-5 w-48 rounded-md" />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-2 mb-8">
+          <div className="flex items-end justify-between gap-2 mb-2">
+            <Chip color="primary" variant="flat">
+              {practice?.course?.name}
+            </Chip>
+            {isTeacher ? <Button
+              color="secondary"
+              variant="flat"
+              radius="lg"
+              startContent={<PencilIcon className="size-4" />}
+              onPress={() => setIsPracticeDrawerOpen(true)}
+            >
+              Editar pràctica
+            </Button> :
+            <PracticeStatus status={practice?.status || "not_submitted"} />}
+          </div>
+          <h1 className="text-3xl font-bold mb-3">{practice?.name}</h1>
+          <div className="flex flex-wrap gap-7 text-default-700">
+            <div className="flex items-center gap-1">
+              <CalendarIcon className="size-4" />
+              <span>Data límit: {formatDate(practice?.due_date)}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <CodeBracketIcon className="size-4" />
+              <span className="capitalize">Llenguatge: {practice?.programming_language}</span>
+            </div>
+            {practice?.submission_date && (
+              <div className="flex items-center gap-1">
+                <PaperClipIcon className="size-4" />
+                <span>Últim lliurament: {formatDate(practice.submission_date)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-          {/* Archivos actuales, si hay una entrega */}
-          {practice.submitted_files && practice.submitted_files.length > 0 && (
-            <Card className="mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Columna principal */}
+        <div className="lg:col-span-2">
+          {isTeacher && selectedStudent ? (
+            <StudentContentView 
+              practiceId={practiceId}
+              student={selectedStudent}
+              onBack={handleBackToPractice}
+            />
+          ) : (
+            <>
+              {/* Descripción de la práctica */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <InformationCircleIcon className="size-6 text-default-700" />
+                    <h2 className="text-xl font-semibold">Descripció de la pràctica</h2>
+                  </div>
+                </CardHeader>
+                <Divider />
+                <CardBody>
+                  {isLoading ? (
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-4 w-full rounded-md" />
+                      <Skeleton className="h-4 w-5/6 rounded-md" />
+                      <Skeleton className="h-4 w-4/6 rounded-md" />
+                    </div>
+                  ) : (
+                    <div className="text-default-700 whitespace-pre-line px-2 pb-1">
+                      {practice?.description}
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+              
+              {/* Sección de retroalimentación, si existe */}
+              {(practice?.status === 'corrected' && !isTeacher) && (
+                <div className="mt-6">
+                  <FeedbackSection feedback={practice.correction} grade={practice.grade} />
+                </div>
+              )}
+
+              {/* Archivos actuales, si hay una entrega */}
+              {practice?.submission_file_name && practice?.submission_file_name.length > 0 && !isTeacher && (
+                <Card className="mt-6">
+                  <CardHeader>
+                    <div className="pl-1 w-full flex items-end justify-between">
+                      <div className="flex items-center gap-2">
+                        <FilesIcon className="size-6 text-default-700" />
+                        <h2 className="text-xl font-semibold">Arxius enviats</h2>
+                      </div>
+                      <Button
+                        size="sm"
+                        color="primary"
+                        variant="flat"
+                        startContent={!isDownloading && <ArrowDownTrayIcon className="size-4"/>}
+                        isLoading={isDownloading}
+                        onPress={handleDownloadSubmission}
+                      >
+                        Descarregar
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <Divider />
+                  <CardBody>
+                    <FileList files={submissionFilesInfo} />
+                  </CardBody>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Columna lateral - Panel de subida de archivos o menú de estudiantes */}
+        <div>
+          {isTeacher ? (
+            <Card className="h-full">
               <CardHeader>
-                <h2 className="text-xl font-semibold px-2 pt-1">Arxius enviats</h2>
+                <div className="flex items-center gap-2">
+                  <UserGroupIcon className="size-6 text-default-700" />
+                  <div className="flex gap-1">
+                    <h2 className="text-xl font-semibold mr-2">Estudiants</h2>
+                    <Chip color="primary" variant="flat" className="px-0">{practice?.users?.length}</Chip>
+                  </div>
+                </div>
               </CardHeader>
               <Divider />
               <CardBody>
-                <FileList files={practice.submitted_files} onDelete={null} />
+                <StudentSidebar 
+                  practiceStudents={practice?.users} 
+                  onSelectStudent={handleSelectStudent}
+                  selectedStudent={selectedStudent}
+                />
               </CardBody>
+            </Card>
+          ) : (
+            /* Panel de subida de archivos para estudiantes */
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <CloudArrowUpIcon className="size-6 text-default-700" />
+                  <h2 className="text-xl font-semibold">
+                    {showResubmit ? "Tornar a enviar" : "Lliurar pràctica"}
+                  </h2>
+                </div>
+              </CardHeader>
+              <Divider />
+              <CardBody>
+                {practice?.status === 'corrected' && !showResubmit ? (
+                  <div className="text-center py-4">
+                    <CheckCircleIcon className="size-12 mx-auto mb-3 text-success-500" />
+                    <p className="mb-4 px-1.5">Aquesta pràctica ja ha estat corregida i avaluada.</p>
+                    
+                    {/* Prepare for resubmit_available boolean condition for future*/}
+                    {true && (
+                      <Button 
+                        color="primary" 
+                        variant="flat" 
+                        onPress={() => setShowResubmit(true)}
+                      >
+                        Tornar a enviar
+                      </Button>
+                    )}
+                  </div>
+                ) : isPastDue && !practice?.submission_date ? (
+                  <div className="text-center py-4">
+                    <ExclamationTriangleIcon className="size-14 mx-auto mb-2 text-danger-500" />
+                    <p className="text-danger-500 font-medium mb-2">La data límit ha passat</p>
+                    <p className="px-1.5 text-default-800 text-sm">Contacta amb el professor si necessites una extensió.</p>
+                  </div>
+                ) : (
+                  <FileUploader 
+                    files={files} 
+                    setFiles={setFiles} 
+                    disabled={!canSubmit || ['correcting', 'submitted'].includes(practice?.status)}
+                    acceptedExtensions={['zip']}
+                    multiple={false}
+                  />
+                )}
+              </CardBody>
+              {canSubmit && !isPastDue && (
+                <CardFooter className="flex justify-end gap-2">
+                  {showResubmit && (
+                    <Button 
+                      variant="light" 
+                      onPress={() => setShowResubmit(false)}
+                    >
+                      Cancel·lar
+                    </Button>
+                  )}
+                  <Button 
+                    color="primary" 
+                    onPress={handleSubmit} 
+                    isLoading={isSubmitting}
+                    isDisabled={files.length === 0}
+                  >
+                    {isSubmitting 
+                      ? "Enviant..." 
+                      : showResubmit 
+                        ? "Tornar a enviar" 
+                        : "Enviar pràctica"
+                    }
+                  </Button>
+                </CardFooter>
+              )}
             </Card>
           )}
         </div>
-
-        {/* Columna lateral */}
-        <div>
-          {/* Panel de subida de archivos */}
-          <Card>
-            <CardHeader>
-              <h2 className="text-xl font-semibold px-2 pt-1">
-                {showResubmit ? "Tornar a enviar" : "Lliurar pràctica"}
-              </h2>
-            </CardHeader>
-            <Divider />
-            <CardBody>
-              {practice.status === 'corrected' && !showResubmit ? (
-                <div className="text-center py-4">
-                  <CheckCircleIcon className="size-12 mx-auto mb-3 text-success-500" />
-                  <p className="mb-4 px-1.5">Aquesta pràctica ja ha estat corregida i avaluada.</p>
-                  {practice.resubmit_available && (
-                    <Button 
-                      color="primary" 
-                      variant="flat" 
-                      onPress={() => setShowResubmit(true)}
-                    >
-                      Tornar a enviar
-                    </Button>
-                  )}
-                </div>
-              ) : isPastDue && !practice.submission_date ? (
-                <div className="text-center py-4">
-                  <ExclamationTriangleIcon className="size-12 mx-auto mb-3 text-danger-500" />
-                  <p className="text-danger-500 font-medium mb-2">La data límit ha passat</p>
-                  <p className="mb-4">Contacta amb el professor si necessites una extensió.</p>
-                </div>
-              ) : (
-                <FileUploader 
-                  files={files} 
-                  setFiles={setFiles} 
-                  disabled={!canSubmit || ['correcting', 'submitted'].includes(practice.status)}
-                />
-              )}
-            </CardBody>
-            {canSubmit && !isPastDue && (
-              <CardFooter className="flex justify-end gap-2">
-                {showResubmit && (
-                  <Button 
-                    variant="light" 
-                    onPress={() => setShowResubmit(false)}
-                  >
-                    Cancel·lar
-                  </Button>
-                )}
-                <Button 
-                  color="primary" 
-                  onPress={handleSubmit} 
-                  isLoading={isSubmitting}
-                  isDisabled={files.length === 0}
-                >
-                  {isSubmitting 
-                    ? "Enviant..." 
-                    : showResubmit 
-                      ? "Tornar a enviar" 
-                      : "Enviar pràctica"
-                  }
-                </Button>
-              </CardFooter>
-            )}
-          </Card>
-        </div>
       </div>
+      <PracticeDrawer 
+        isOpen={isPracticeDrawerOpen}
+        onOpenChange={setIsPracticeDrawerOpen}
+        initialPractice={practice || null}
+        course={practice?.course}
+        onSave={handleUpdatePractice}
+        onDelete={handleDeletePractice}
+      />
     </div>
   );
 }

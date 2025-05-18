@@ -34,7 +34,7 @@ class AsyncRpcClient():
         """ Callback que maneja la respuesta del servidor RPC """
         async with message.process():
             correlation_id = message.correlation_id
-            logger.info(f"Respuesta recibida en RPC Client: {message.body.decode('utf-8')}")
+            logger.info(f"Response received in RPC Client: {message.body.decode('utf-8')}")
             
             try:
                 if correlation_id in self.futures:
@@ -42,9 +42,9 @@ class AsyncRpcClient():
                     future.set_result(message.body)
                     
             except Exception as e:
-                logger.error(f"Error procesando el mensaje con correlation_id {correlation_id}: {e}")
+                logger.error(f"Error processing message with correlation_id {correlation_id}: {e}")
     
-    async def call(self, body):
+    async def call(self, procedure: str, data: dict[str, any]):
         """ Envía un mensaje al servidor RPC y espera la respuesta """
         if not self.connection or self.connection.is_closed:
             await self.connect()
@@ -53,18 +53,29 @@ class AsyncRpcClient():
         future = asyncio.get_event_loop().create_future()
         self.futures[correlation_id] = future
 
-        body_json = json.dumps(body)
+        # Format the body according to the rpc server format:
+        # subject,year,task,student_id,student_dir,teacher_dir
+        subject = data.get("subject", "")
+        year = data.get("year", "")
+        task = data.get("task", "")  # Using practice_id as task
+        student_id = data.get("student_id", "")  # Using niub as student_id
+        student_dir = data.get("student_dir", "")
+        teacher_dir = data.get("teacher_dir", "")
+        
+        # Format the message body as a simple string with comma-separated values
+        body = f"{subject},{year},{task},{student_id},{student_dir},{teacher_dir}"
+        logger.info(f"Sending request to '{procedure}' queue: {body}")
 
         await self.channel.default_exchange.publish(
             Message(
-                body=body_json.encode(),
+                body=body.encode(),
                 correlation_id=correlation_id,
                 reply_to=self.callback_queue.name,
             ),
-            routing_key="rpc_queue",
+            routing_key=procedure,
         )
 
-        logger.info(f"Mensaje RPC enviado, esperando respuesta (correlation_id: {correlation_id})")
+        logger.info(f"Request sent to {procedure}, waiting for response (correlation_id: {correlation_id})")
         return await future
 
     async def close(self):
@@ -72,3 +83,4 @@ class AsyncRpcClient():
         if self.connection and not self.connection.is_closed:
             logger.info("Closing RPC connection")
             await self.connection.close()
+            logger.info("RPC connection closed")

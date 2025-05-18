@@ -9,6 +9,7 @@ from app.api.deps import (
     CurrentUser,
     SessionDep,
     get_current_active_superuser,
+    get_current_teacher
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
@@ -48,6 +49,40 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
     return UsersPublic(data=users, count=count)
 
+@router.get(
+    "/students",
+    dependencies=[Depends(get_current_teacher)],
+    response_model=UsersPublic,
+)
+def read_students_users(
+    session: SessionDep, 
+    skip: int = 0, 
+    limit: int = 100,
+    search: str = None
+) -> Any:
+    """
+    Retrieve only student users with optional search functionality.
+    """
+    base_query = select(User).where(User.is_student == True)
+    
+    if search:
+        search_term = f"%{search}%"
+        base_query = base_query.where(
+            (User.email.ilike(search_term)) |
+            (User.name.ilike(search_term)) |
+            (User.surnames.ilike(search_term)) |
+            (User.niub.ilike(search_term))
+        )
+    
+    count_query = select(func.count()).select_from(
+        base_query.subquery()
+    )
+    count = session.exec(count_query).one()
+    
+    students_query = base_query.offset(skip).limit(limit)
+    students = session.exec(students_query).all()
+    
+    return UsersPublic(data=students, count=count)
 
 @router.post(
     "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
@@ -86,9 +121,9 @@ def update_user_me(
 
     if user_in.email:
         existing_user = crud.user.get_user_by_email(session=session, email=user_in.email)
-        if existing_user and existing_user.id != current_user.id:
+        if existing_user and existing_user.niub != current_user.niub:
             raise HTTPException(
-                status_code=409, detail="User with this email already exists"
+                status_code=409, detail="USER_EMAIL_EXISTS"
             )
     user_data = user_in.model_dump(exclude_unset=True)
     current_user.sqlmodel_update(user_data)
@@ -109,7 +144,7 @@ def update_password_me(
         raise HTTPException(status_code=400, detail="Incorrect password")
     if body.current_password == body.new_password:
         raise HTTPException(
-            status_code=400, detail="New password cannot be the same as the current one"
+            status_code=400, detail="NEW_PASSWORD_SAME_AS_CURRENT_ONE"
         )
     hashed_password = get_password_hash(body.new_password)
     current_user.hashed_password = hashed_password

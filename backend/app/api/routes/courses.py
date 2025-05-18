@@ -1,10 +1,11 @@
+from datetime import datetime
 from io import BytesIO
 import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, logger
 from fastapi.responses import StreamingResponse
-from sqlmodel import col, delete, func, select
+from sqlmodel import col, delete, func, select, desc, update
 
 from app import crud
 from app.api.deps import (
@@ -24,10 +25,20 @@ from app.models import (
     CoursePublicWithUsersAndPractices,
     CoursePublicWithUsers,
     CoursePublicWithPractices,
-    CoursesPublic
+    CoursesPublic,
+    CoursesUsersLink,
+    Practice,
+    PracticesUsersLink,
+    PracticePublic,
+    StatusEnum,
+    UserPublic
 )
 import pandas as pd
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -44,6 +55,62 @@ def read_courses(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
     return CoursesPublic(data=courses, count=count)
 
+@router.get("/search", response_model=CoursesPublic)
+def search_courses(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100, search: str = None) -> Any:
+    """
+    Retrieve only student users with optional search functionality.
+    """
+
+    if not current_user.is_admin: 
+        base_query = select(Course).where(Course.users.contains(current_user))
+    else: 
+        base_query = select(Course)
+    
+    if search:
+        search_term = f"%{search}%"
+        base_query = base_query.where(
+            (Course.name.ilike(search_term)) |
+            (Course.description.ilike(search_term))
+        )
+    
+    count_query = select(func.count()).select_from(
+        base_query.subquery()
+    )
+    count = session.exec(count_query).one()
+    
+    courses_query = base_query.offset(skip).limit(limit)
+    courses = session.exec(courses_query).all()
+    
+    return CoursesPublic(data=courses, count=count)
+
+def enrich_courses_with_practice_stats(session: SessionDep, user_niub: str, courses: list[Course]) -> list[CoursePublic]:
+    result: list[CoursePublic] = []
+
+    for course in courses:
+        # Count total practices for this course
+        total_practices_count = len(course.practices)
+
+        # Count corrected practices for this user in this course
+        # Practices are considered corrected if status is CORRECTED
+        corrected_practices_count = session.exec(
+            select(func.count())
+            .select_from(Practice)
+            .join(PracticesUsersLink, Practice.id == PracticesUsersLink.practice_id)
+            .where(
+                Practice.course_id == course.id,
+                PracticesUsersLink.user_niub == user_niub,
+                PracticesUsersLink.status == StatusEnum.CORRECTED
+            )
+        ).one()
+
+        course_response = CoursePublic.model_validate(course)
+        course_response.total_practices = total_practices_count
+        course_response.corrected_practices = corrected_practices_count
+
+        result.append(course_response)
+
+    return result
+
 @router.get("/me", response_model=CoursesPublic)
 def read_my_courses(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
     """
@@ -55,7 +122,29 @@ def read_my_courses(session: SessionDep, current_user: CurrentUser, skip: int = 
     statement = select(Course).where(Course.users.contains(current_user)).offset(skip).limit(limit)
     courses = session.exec(statement).all()
 
-    return CoursesPublic(data=courses, count=count)
+    enriched_courses = enrich_courses_with_practice_stats(session, current_user.niub, courses)
+
+    return CoursesPublic(data=enriched_courses, count=count)
+
+@router.get("/me/recent", response_model=CoursesPublic)
+def read_my_recent_courses(session: SessionDep, current_user: CurrentUser, limit: int = 5) -> Any:
+    """
+    Retrieve the most recently accessed courses of the current user.
+    Orders by last_access timestamp (newest first) and limits to the specified count.
+    
+    - By default, only returns courses with non-null last_access values.
+    """
+
+    statement = select(Course).join(CoursesUsersLink).where(
+        CoursesUsersLink.user_niub == current_user.niub,
+        CoursesUsersLink.last_access.is_not(None)
+    ).order_by(desc(CoursesUsersLink.last_access)).limit(limit)
+    
+    courses = session.exec(statement).all()
+
+    enriched_courses = enrich_courses_with_practice_stats(session, current_user.niub, courses)
+
+    return CoursesPublic(data=enriched_courses, count=len(courses))
 
 @router.get("/{course_id}", response_model=CoursePublicWithUsersAndPractices)
 def read_course(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
@@ -68,7 +157,29 @@ def read_course(course_id: uuid.UUID, session: SessionDep, current_user: Current
     
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    return course
+    
+    statement = select(Practice, PracticesUsersLink).join(PracticesUsersLink).where(
+        PracticesUsersLink.user_niub == current_user.niub,
+        PracticesUsersLink.practice_id == Practice.id,
+        Practice.course_id == course_id
+    )
+    practices = session.exec(statement).all()
+
+    practices_public = []
+    for practice, link in practices:
+        practice_data = PracticePublic(
+            **practice.model_dump(),
+            submission_date=link.submission_date,
+            status=link.status,
+            submission_file_name=link.submission_file_name
+        )
+        practices_public.append(practice_data)
+
+    return CoursePublicWithUsersAndPractices(
+        **course.model_dump(),
+        users=course.users,
+        practices=practices_public,
+    )
 
 @router.get("/{course_id}/users", response_model=CoursePublicWithUsers)
 def read_course_users(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
@@ -83,6 +194,22 @@ def read_course_users(course_id: uuid.UUID, session: SessionDep, current_user: C
         raise HTTPException(status_code=404, detail="Course not found")
     
     return course
+
+@router.get("/{course_id}/teachers", response_model=list[UserPublic])
+def read_course_teachers(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Retrieve teachers of the course by ID.
+    """
+    course = crud.course.get_course(session=session, id=course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    if current_user not in course.users:
+        raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
+    
+    teachers = [user for user in course.users if user.is_teacher]
+
+    return teachers
 
 @router.get("/{course_id}/practices", response_model=CoursePublicWithPractices)
 def read_course_practices(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
@@ -139,6 +266,8 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
         else:
             not_found_users.append(user_niub)
         
+    logger.info("Students not found: ", not_found_users)
+    
     session.add(course)
     session.commit()
 
@@ -146,6 +275,48 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
         logger.warning(f"Users not found: {not_found_users}")
     
     return course
+
+from fastapi import HTTPException, Depends
+from pydantic import BaseModel
+from typing import Any
+import uuid
+
+class UserNIUBRequest(BaseModel):
+    niub: str
+    
+@router.post("/{course_id}/students/{niub}", dependencies=[Depends(get_current_teacher)], response_model=Message)
+def add_student_by_niub(course_id: uuid.UUID, niub: str, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Add a student to a course using their NIUB.
+    """
+    course = crud.course.get_course(session=session, id=course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    if current_user not in course.users:
+        raise HTTPException(status_code=403, detail="You are not authorized to modify this course")
+    
+    user = crud.user.get_user_by_niub(session=session, niub=niub)
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User with NIUB {niub} not found")
+    
+    if user in course.users:
+        raise HTTPException(status_code=400, detail=f"User with NIUB {niub} is already enrolled in this course")
+    
+    if not user.is_student:
+        raise HTTPException(status_code=400, detail=f"User with NIUB {niub} is not a student")
+    
+    course.users.append(user)
+
+    for practice in course.practices:
+        if user not in practice.users:
+            practice.users.append(user)
+            session.add(practice)
+    
+    session.add(course)
+    session.commit()
+    
+    return Message(message=f"Student with NIUB {niub} successfully added to the course")
 
 @router.put("/{course_id}", dependencies=[Depends(get_current_teacher)], response_model=CoursePublic)
 def update_course(
@@ -159,8 +330,30 @@ def update_course(
         raise HTTPException(status_code=404, detail="Course not found")
     if current_user not in course.users:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
-    course = crud.course.update_course(session=session, course=course, course_in=course_in)
+    course = crud.course.update_course(session=session, db_course=course, course_in=course_in)
     return course
+
+@router.patch("/me/{course_id}/access", response_model=Message)
+def update_course_last_access(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Update the last access timestamp for a specific course of the current user.
+    """
+    course_user = select(CoursesUsersLink).where(
+        CoursesUsersLink.course_id == course_id,
+        CoursesUsersLink.user_niub == current_user.niub
+    )
+    course_user = session.exec(course_user).first()
+
+    if not course_user:
+        raise HTTPException(status_code=404, detail="Course not found or you don't have access to it")
+
+    course_user.last_access = datetime.now()
+
+    session.add(course_user)
+    session.commit()
+    session.refresh(course_user)
+    
+    return Message(message="Last access updated successfully")
 
 @router.delete("/{course_id}", dependencies=[Depends(get_current_teacher)], response_model=Message)
 def delete_course(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
@@ -174,6 +367,39 @@ def delete_course(course_id: uuid.UUID, session: SessionDep, current_user: Curre
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
     crud.course.delete_course(session=session, course=course)
     return Message(message="Course deleted successfully")
+
+@router.delete("/{course_id}/students/{niub}", dependencies=[Depends(get_current_teacher)], response_model=Message)
+def delete_student_from_course(course_id: uuid.UUID, niub: str, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Remove a student from a course.
+    """
+    course = crud.course.get_course(session=session, id=course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    if current_user not in course.users:
+        raise HTTPException(status_code=403, detail="You are not authorized to modify this course")
+    
+    student = crud.user.get_user_by_niub(session=session, niub=niub)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    if student not in course.users:
+        raise HTTPException(status_code=404, detail="Student is not enrolled in this course")
+    
+    if not student.is_student:
+        raise HTTPException(status_code=400, detail="Only students can be removed from a course using this endpoint")
+    
+    for practice in course.practices:
+        if student in practice.users:
+            practice.users.remove(student)
+    
+    course.users.remove(student)
+
+    session.add(student)
+    session.commit()
+    
+    return Message(message=f"Student successfully removed from the course")
 
 @router.get("/students-template/csv", dependencies=[Depends(get_current_teacher)])
 def get_students_template_csv() -> Any:

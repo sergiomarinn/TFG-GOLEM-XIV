@@ -4,17 +4,26 @@ import Link from 'next/link';
 import Image from 'next/image';
 import LogoUB from "@/public/logo-ub.svg";
 import LogoUBExtended from "@/public/logo-ub-extended.svg";
+import LogoUBExtendedWhite from "@/public/logo-ub-extended-white.svg";
 import { Button } from "@heroui/button";
-import { usePathname } from 'next/navigation';
+import { redirect, usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { siteConfig } from "@/config/site";
 import { ArrowLeftStartOnRectangleIcon, Cog6ToothIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from 'react';
+import { logout } from '@/app/actions/auth';
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from 'next-themes';
+import { UserConfigModal } from '@/components/user-config-modal';
+import { useNotifications } from '@/components/notification-context';
 
 export const SideNav = () => {
 	const pathname = usePathname()
 	const [isCollapsed, setIsCollapsed] = useState(false);
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
+  const [isUserConfigModalOpen, setUserConfigModalOpen] = useState(false);
+  const { theme } = useTheme();
+  const { hasNewCorrected } = useNotifications();
 
 	useEffect(() => {
     const saved = localStorage.getItem("sidenav-collapsed");
@@ -26,27 +35,27 @@ export const SideNav = () => {
   }, [isCollapsed]);
 
 	return (
-  	<aside
-			className={clsx(
-				"flex flex-col justify-between px-4 py-5 transition-all duration-300 ease-in-out",
-				isCollapsed ? "w-[80px]" : "w-[220px]"
-			)}
-		>
+    <motion.aside
+      initial={false}
+      animate={{ width: isCollapsed ? 80 : 220 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="hidden sm:flex flex-col justify-between px-4 py-5 transition-colors duration-300 ease-in-out"
+    >
 			{/* Toggle button */}
       <button
         aria-label="Toggle sidebar"
         onClick={toggleSidebar}
         className={clsx(
-          "absolute top-10 z-50 border rounded-full p-[0.16rem] active:scale-90 transform transition-all duration-300 ease-in-out",
+          "absolute top-8 z-50 border rounded-full p-[0.16rem] active:scale-90 transform transition-all duration-300 ease-in-out",
           "text-primary bg-white hover:bg-default-100",
           "dark:bg-black dark:text-white dark:hover:bg-default-200 dark:border-default-300",
           isCollapsed ? "left-[69px]" : "left-52"
         )}
       >
         {isCollapsed ? (
-          <ChevronRightIcon className="size-4" />
+          <ChevronRightIcon className="size-4 translate-x-[0.8px]" />
         ) : (
-          <ChevronLeftIcon className="size-4" />
+          <ChevronLeftIcon className="size-4 -translate-x-[0.8px]" />
         )}
       </button>
 			<div className="flex flex-col gap-2">
@@ -61,7 +70,7 @@ export const SideNav = () => {
 						)}
 					>
 						<Image
-							src={LogoUBExtended}
+							src={theme === "dark" ? LogoUBExtendedWhite : LogoUBExtended}
 							alt="Logo UB Extended"
 							width={160}
 							height={32}
@@ -91,6 +100,8 @@ export const SideNav = () => {
           {siteConfig.navItems.map(({ href, label, icon: Icon, iconFilled: IconFilled }) => {
             const isActive = pathname === href || pathname.startsWith(href + "/");
             const ActiveIcon = isActive ? IconFilled : Icon;
+            const isPracticesButton = href.includes("/practices") || label.includes("Pràctiques");
+            const showNotificationIndicator = isPracticesButton && hasNewCorrected && !isCollapsed;
 
             return (
               <Button
@@ -116,12 +127,26 @@ export const SideNav = () => {
                       isActive ? "text-primary" : "")} />
                   )}
                 </div>
-                <span className={clsx(
-                  "origin-left whitespace-nowrap pl-7",
-                  isCollapsed ? "opacity-0 w-0 scale-0 transition-all duration-150 ease-in-out" : "opacity-100 w-auto scale-100 transition-all duration-300 ease-in-out"
-                )}>
-                  {label}
-                </span>
+                <AnimatePresence mode="wait">
+                  {!isCollapsed && (
+                    <motion.span
+                      key={`label-${label}`}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="origin-left whitespace-nowrap pl-7 flex items-center gap-3"
+                    >
+                      {label}
+                      {showNotificationIndicator && !isActive && (
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-primary-400"></span>
+                        </span>
+                      )}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </Button>
             );
           })}
@@ -143,6 +168,7 @@ export const SideNav = () => {
             variant="light"
             startContent={<Cog6ToothIcon className="size-6" />}
             aria-label="Configuració"
+            onPress={() => setUserConfigModalOpen(true)}
           >
             <span className={clsx(
               "origin-left transition-all duration-150 ease-in-out whitespace-nowrap",
@@ -151,23 +177,25 @@ export const SideNav = () => {
               Configuració
             </span>
           </Button>
+          <UserConfigModal isOpen={isUserConfigModalOpen} onClose={() => setUserConfigModalOpen(false)} />
           <Button
             isIconOnly={isCollapsed}
             radius="lg"
             color="danger"
             variant="light"
             startContent={<ArrowLeftStartOnRectangleIcon className="size-6" />}
-            aria-label="Tanca sessió"
+            aria-label="Tancar sessió"
+            onPress={async () => {await logout(); redirect('/login');}}
           >
 						<span className={clsx(
               "origin-left transition-all duration-150 ease-in-out whitespace-nowrap",
               isCollapsed ? "opacity-0 w-0 scale-0" : "opacity-100 w-auto scale-100"
             )}>
-              Tanca sessió
+              Tancar sessió
             </span>
           </Button>
 				</div>
 			</div>
-		</aside>
+		</motion.aside>
 	);
 };

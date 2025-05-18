@@ -1,5 +1,6 @@
 """ Application configuration module """
 import os
+import posixpath
 import secrets
 import warnings
 from typing import Annotated, Any, Literal
@@ -65,8 +66,8 @@ class Settings(BaseSettings):
     DOMAIN: str = "localhost"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
-    PROFESSOR_FILES_PATH: str = os.path.join('.', 'corrections_files', 'teachers')
-    STUDENT_FILES_PATH: str = os.path.join('.', 'corrections_files', 'students')
+    PROFESSOR_FILES_PATH: str = posixpath.join('uploads','corrections_files', 'teachers')
+    STUDENT_FILES_PATH: str = posixpath.join('uploads', 'corrections_files', 'students')
 
     ENABLE_EXTERNAL_SERVICE: bool = False
 
@@ -97,6 +98,10 @@ class Settings(BaseSettings):
     DB_NAME: str | None = None
     CLOUDAMQP_URL: str = "amqp://guest:guest@localhost:5672/%2f"
     # CLOUDAMQP_URL: str = "amqp://guest:guest@localhost:5672/"
+    SFTP_HOST: str
+    SFTP_PORT: int
+    SFTP_USER: str
+    SFTP_PASSWORD: str
 
     @computed_field  # type: ignore[misc]
     @property
@@ -107,7 +112,7 @@ class Settings(BaseSettings):
             if self.DB_NAME is None:
                 self.DB_NAME = 'golem_xiv_db'
 
-            is_supabase = self.DB_HOST.endswith(".supabase.co")
+            is_supabase = self.DB_HOST.endswith(".supabase.com")
             query = "sslmode=require" if is_supabase else None
 
             database_uri = MultiHostUrl.build(

@@ -30,7 +30,7 @@ import {
 import { PracticeCard } from '@/components/practice-card';
 import { Practice } from '@/types/practice';
 import { Course } from '@/types/course';
-import { getMyPracitces } from '@/app/actions/practice';
+import { getMyPractices } from '@/app/actions/practice';
 
 const sortOptions = [
   { name: "Més recents", uid: "recent" },
@@ -44,7 +44,7 @@ export default function PracticesGeneralPage() {
   React.useEffect(() => {
     const fetchPracticesData = async () => {
       try {
-        const { data: practices } = await getMyPracitces();
+        const { data: practices } = await getMyPractices();
         setAllPractices(practices);
       } catch (error) {
         console.error("Error fetching course data:", error);

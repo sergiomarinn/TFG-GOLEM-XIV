@@ -9,7 +9,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Course } from "@/types/course";
 import { Practice } from "@/types/practice";
 import { getMyRecentCourses } from "@/app/actions/course";
-import { getMyPracitces } from "@/app/actions/practice";
+import { getMyPractices } from "@/app/actions/practice";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import { AcademicCapIcon } from "@heroicons/react/24/outline";

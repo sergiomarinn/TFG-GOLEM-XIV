@@ -7,7 +7,7 @@ import { getUserFromClient } from "@/app/lib/client-session";
 import { getPracticeById } from '@/app/actions/practice';
 import { Button } from '@heroui/button';
 import { DocumentIcon } from '@heroicons/react/24/solid';
-import { redirect } from 'next/navigation';
+import { Link } from '@heroui/link';
 
 export type NotificationType = {
   id: string;
@@ -165,10 +165,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 				),
 				endContent: (
 					<Button 
-						size="sm" 
+						size="sm"
+            as={Link}
 						variant="flat" 
 						color={getToastVariant(data.status)}
-						onPress={() => redirect(`/practices/${data.practice_id}`)}
+            href={`/practices/${data.practice_id}`}
 					>
 						Anar
 					</Button>

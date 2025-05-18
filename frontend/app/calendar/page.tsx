@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import { practiceStatusOptions } from "@/types";
 import { getMyPractices } from "@/app/actions/practice";
 import { Practice } from "@/types/practice";
+import { Link } from "@heroui/link";
 
 export default function CalendariPage() {
   // Estado para las prácticas
@@ -313,10 +314,11 @@ export default function CalendariPage() {
                               <div 
                                 key={idx}
                                 className={`h-1 w-1 rounded-full ${
-                                  evt.status === 'urgent' ? 'bg-red-500' :
-                                  evt.status === 'submitted' ? 'bg-yellow-500' :
-                                  evt.status === 'correcting' ? 'bg-orange-500' :
+                                  evt.status === 'not_submitted' ? 'bg-red-500' :
+                                  evt.status === 'submitted' ? 'bg-blue-500' :
+                                  evt.status === 'correcting' ? 'bg-yellow-500' :
                                   evt.status === 'corrected' ? 'bg-green-500' :
+                                  evt.status === 'rejected' ? 'bg-red-500' :
                                   'bg-blue-500'
                                 }`}
                               ></div>
@@ -452,18 +454,23 @@ export default function CalendariPage() {
                                         <p className="text-sm mb-2 line-clamp-5">{practice.description}</p>
                                         
                                         <div className="flex gap-2 mb-4">
+                                          <div className="flex items-center gap-1 bg-default-100 px-2 py-1 rounded-lg">
+                                            <span className="text-xs text-default-600 capitalize">{practice.programming_language}</span>
+                                          </div>
                                           <div className={`flex items-center gap-1 ${bgColorChip} px-2 py-1 rounded-lg`}>
                                             <span className={`text-xs ${textColorChip}`}>{getStatusName(practice.status || "not_submitted")}</span>
                                           </div>
                                         </div>
                                         
                                         <p className="text-xs text-default-600 mb-4">
-                                          Llenguatge: {practice.programming_language} • Data límit: {new Date(practice.due_date).toLocaleDateString('ca-ES')}
+                                          Data límit: {new Date(practice.due_date).toLocaleDateString('ca-ES')}
                                         </p>
                                         
                                         <Button
                                           fullWidth
+                                          as={Link}
                                           color="primary"
+                                          href={`/practices/${practice.id}`}
                                         >
                                           Anar a la pràctica
                                         </Button>

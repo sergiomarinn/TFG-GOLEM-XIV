@@ -59,6 +59,34 @@ def read_practices(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
     return PracticesPublic(data=practices, count=count)
 
+@router.get("/search", response_model=PracticesPublic)
+def search_courses(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100, search: str = None) -> Any:
+    """
+    Retrieve only student users with optional search functionality.
+    """
+
+    if not current_user.is_admin: 
+        base_query = select(Practice).where(Practice.users.contains(current_user))
+    else: 
+        base_query = select(Practice)
+    
+    if search:
+        search_term = f"%{search}%"
+        base_query = base_query.where(
+            (Practice.name.ilike(search_term)) |
+            (Practice.description.ilike(search_term))
+        )
+    
+    count_query = select(func.count()).select_from(
+        base_query.subquery()
+    )
+    count = session.exec(count_query).one()
+    
+    practices_query = base_query.offset(skip).limit(limit)
+    practices = session.exec(practices_query).all()
+    
+    return PracticesPublic(data=practices, count=count)
+
 @router.get("/me", response_model=PracticesPublicWithCourse)
 def read_my_practices(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100) -> Any:
     """

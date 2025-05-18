@@ -55,6 +55,34 @@ def read_courses(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
 
     return CoursesPublic(data=courses, count=count)
 
+@router.get("/search", response_model=CoursesPublic)
+def search_courses(session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100, search: str = None) -> Any:
+    """
+    Retrieve only student users with optional search functionality.
+    """
+
+    if not current_user.is_admin: 
+        base_query = select(Course).where(Course.users.contains(current_user))
+    else: 
+        base_query = select(Course)
+    
+    if search:
+        search_term = f"%{search}%"
+        base_query = base_query.where(
+            (Course.name.ilike(search_term)) |
+            (Course.description.ilike(search_term))
+        )
+    
+    count_query = select(func.count()).select_from(
+        base_query.subquery()
+    )
+    count = session.exec(count_query).one()
+    
+    courses_query = base_query.offset(skip).limit(limit)
+    courses = session.exec(courses_query).all()
+    
+    return CoursesPublic(data=courses, count=count)
+
 def enrich_courses_with_practice_stats(session: SessionDep, user_niub: str, courses: list[Course]) -> list[CoursePublic]:
     result: list[CoursePublic] = []
 

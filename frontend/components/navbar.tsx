@@ -20,11 +20,13 @@ import { Practice } from "@/types/practice";
 import { searchCourses } from "@/app/actions/course";
 import { searchPractices } from "@/app/actions/practice";
 import { BookOpenIcon, DocumentIcon } from "@heroicons/react/24/solid";
+import { Skeleton } from "@heroui/skeleton";
 
 export const Navbar = () => {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<UserType>();
+  const [isLoading, setIsLoading] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [show, setShow] = useState(true);
   const mainContentRef = useRef<HTMLElement | null>(null);
@@ -79,10 +81,13 @@ export const Navbar = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
+        setIsLoading(true);
         const userData = await getUserFromClient();
         if (userData) setUser(userData);
       } catch (error) {
         console.error(error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -458,16 +463,28 @@ export const Navbar = () => {
             
             <div className="mx-1 w-[1.5px] h-[50px] bg-default-400/80 rounded-full" />
             
-            <User
-              avatarProps={{
-                showFallback: true,
-                name: user?.name?.[0],
-                className: "text-lg"
-              }}
-              isFocusable={true}
-              description={user?.email}
-              name={`${user?.name || ''} ${user?.surnames || ''}`}
-            />
+            {isLoading ? (
+              <div className="flex items-center w-40 gap-2">
+                <div>
+                  <Skeleton className="size-10 rounded-full" />
+                </div>
+                <div className="w-full space-y-1">
+                  <Skeleton className="h-4 w-5/6 rounded-md" />
+                  <Skeleton className="h-4 w-full rounded-md" />
+                </div>
+              </div>
+            ) : (
+              <User
+                avatarProps={{
+                  showFallback: true,
+                  name: user?.name?.[0],
+                  className: "text-lg"
+                }}
+                isFocusable={true}
+                description={user?.email}
+                name={`${user?.name || ''} ${user?.surnames || ''}`}
+              />
+            )}
           </div>
         </div>
       </motion.header>

@@ -46,7 +46,7 @@ export const dueDateRangesOptions = [
   { name: "Propers 6 mesos", uid: "next_6_months" },
 ];
 
-export const PracticeTable = ({ practices }: { practices: Practice[] }) => {
+export const PracticeTable = ({ practices, isLoading }: { practices: Practice[], isLoading: boolean }) => {
   const [filterValue, setFilterValue] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
   const [selectedDueRangeFilter, setSelectedDueRangeFilter] = React.useState<Selection>(new Set(["next_7_days"]));
@@ -340,7 +340,7 @@ export const PracticeTable = ({ practices }: { practices: Practice[] }) => {
           </TableColumn>
         )}
       </TableHeader>
-      <TableBody emptyContent={"No hi ha cap pràctica que requereixi una acció"} items={items}>
+      <TableBody loadingContent={isLoading} emptyContent={"No hi ha cap pràctica que requereixi una acció"} items={items}>
         {(item) => (
           <TableRow key={item.id}>
             {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}

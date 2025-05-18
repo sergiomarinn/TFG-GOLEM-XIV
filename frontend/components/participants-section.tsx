@@ -25,6 +25,42 @@ import { motion, AnimatePresence } from "framer-motion";
 import { addToast } from '@heroui/toast';
 import { addStudentByNiub, deleteStudentFromCourse } from '@/app/actions/course';
 import { getStudentsUsers } from '@/app/actions/user';
+import { Skeleton } from '@heroui/skeleton';
+
+const UserCardSkeleton = ({ count = 5, showDeleteButton = true }) => {
+  return (
+    <div>
+      {Array(count).fill(0).map((_, index) => (
+        <Card key={index} className="w-full">
+          <CardBody className="flex flex-row items-center px-3.5 py-3">
+            {/* Avatar skeleton with shimmer effect */}
+            <div className="mr-3">
+              <Skeleton className="size-9 rounded-full" />
+            </div>
+            
+            {/* User info skeleton with varying widths */}
+            <div className="flex-grow">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-6 w-24 rounded-md" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-36 rounded-md mt-1" />
+            </div>
+            
+            {/* Action buttons skeleton */}
+            <div className="flex items-center gap-2">
+              <Skeleton className="size-9 rounded-lg" />
+              
+              {showDeleteButton && (
+                <Skeleton className="size-9 rounded-lg" />
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      ))}
+    </div>
+  );
+};
 
 const getRelativeTime = (dateString: string) => {
   const date = new Date(dateString);
@@ -53,7 +89,7 @@ const getRoleName = (user: User) =>
 const getRoleColor = (user: User) =>
   user.is_student ? 'default' : user.is_teacher ? 'primary' : 'warning';
 
-export function ParticipantsSection({courseId, courseUsers, canEditCourse}: {courseId: string, courseUsers: User[], canEditCourse: boolean}) {
+export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoading}: {courseId: string, courseUsers: User[], canEditCourse: boolean, isLoading: boolean}) {
   const [users, setUsers] = React.useState<User[]>([]);
   const [filterValue, setFilterValue] = React.useState("");
   const [tabSelection, setTabSelection] = React.useState("all");
@@ -302,7 +338,9 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse}: {cou
       {topContent}
       
       <div className="flex flex-col gap-3">
-        {filteredUsers.map((user) => (
+        {isLoading ? (
+          <UserCardSkeleton />
+        ) : filteredUsers.map((user) => (
           <Card key={user.niub} className="w-full">
             <CardBody className="flex flex-row items-center px-3.5 py-3">
               <Avatar showFallback className="mr-3" />

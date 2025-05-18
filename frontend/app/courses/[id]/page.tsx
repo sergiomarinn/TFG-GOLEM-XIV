@@ -28,6 +28,8 @@ import { getUserFromClient } from '@/app/lib/client-session';
 import { CourseDrawer } from '@/components/drawer-course';
 import { motion, AnimatePresence } from "framer-motion";
 import { PracticeDrawer } from '@/components/drawer-practice';
+import { PracticeCourseCardSkeleton } from '@/components/practice-cards-skeleton';
+import { Skeleton } from '@heroui/skeleton';
 
 const sortOptions = [
   { name: "Més properes", uid: "asc" },
@@ -46,10 +48,12 @@ export default function CourseDetailPage() {
   const [isCourseDrawerOpen, setIsCourseDrawerOpen] = React.useState(false);
   const [isPracticeDrawerOpen, setIsPracticeDrawerOpen] = React.useState(false);
   const [currentPractice, setCurrentPractice] = React.useState<Practice | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchCourse = async () => {
       try {
+        setIsLoading(true);
         const course = await getCourseById(courseId);
         setCourseInfo(course);
         setCoursePractices(course.practices || []);
@@ -63,6 +67,8 @@ export default function CourseDetailPage() {
         setCanEditCourse(isTeacherInCourse || user?.is_admin || false);
       } catch (error) {
         console.error(error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -289,30 +295,61 @@ export default function CourseDetailPage() {
       
       {/* Header section */}
       <div className="relative container px-2 pt-8 pb-5">
-        <div className="flex items-center mb-2">
-          <Chip color="primary" size="sm" variant="flat" className="mr-2">
-            {courseInfo?.academic_year}
-          </Chip>
-          <Chip color="primary" size="sm" variant="flat" className="mr-2 capitalize">
-            {courseInfo?.semester}
-          </Chip>
-        </div>
-        <h1 className="text-4xl font-bold mb-2">{courseInfo?.name}</h1>
-        <div className="pl-0.5 flex items-center text-default-800 mb-3">
-          <AcademicCapIcon className="size-5 mr-1" />
-          <span>{courseTeacher}</span>
-        </div>
-        <p className="text-default-600 pl-0.5">{courseInfo?.description}</p>
-        <Button
-          className="absolute top-10 right-2"
-          color="secondary"
-          variant="flat"
-          radius="lg"
-          startContent={<PencilIcon className="size-4" />}
-          onPress={() => setIsCourseDrawerOpen(true)}
-        >
-          Editar curs
-        </Button>
+        {isLoading ? (
+          <div>
+            <div className="flex items-center mb-2">
+              {/* Academic year and semester chip skeletons */}
+              <Skeleton className="h-6 w-24 rounded-full mr-2" />
+              <Skeleton className="h-6 w-28 rounded-full mr-2" />
+            </div>
+            
+            {/* Course name skeleton */}
+            <Skeleton className="h-10 w-3/4 rounded-lg mb-2" />
+            
+            {/* Teacher name skeleton */}
+            <div className="pl-0.5 flex items-center mb-3">
+              <Skeleton className="size-5 mr-1 rounded-md" />
+              <Skeleton className="h-5 w-48 rounded-md" />
+            </div>
+            
+            {/* Description skeleton - multiple lines */}
+            <div className="pl-0.5 space-y-2">
+              <Skeleton className="h-4 w-full rounded-md" />
+              <Skeleton className="h-4 w-5/6 rounded-md" />
+              <Skeleton className="h-4 w-4/6 rounded-md" />
+            </div>
+            
+            {/* Edit button skeleton */}
+            <Skeleton className="h-10 w-32 rounded-lg absolute top-10 right-2" />
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-center mb-2">
+              <Chip color="primary" size="sm" variant="flat" className="mr-2">
+                {courseInfo?.academic_year}
+              </Chip>
+              <Chip color="primary" size="sm" variant="flat" className="mr-2 capitalize">
+                {courseInfo?.semester}
+              </Chip>
+            </div>
+            <h1 className="text-4xl font-bold mb-2">{courseInfo?.name}</h1>
+            <div className="pl-0.5 flex items-center text-default-800 mb-3">
+              <AcademicCapIcon className="size-5 mr-1" />
+              <span>{courseTeacher}</span>
+            </div>
+            <p className="text-default-600 pl-0.5">{courseInfo?.description}</p>
+            <Button
+              className="absolute top-10 right-2"
+              color="secondary"
+              variant="flat"
+              radius="lg"
+              startContent={<PencilIcon className="size-4" />}
+              onPress={() => setIsCourseDrawerOpen(true)}
+            >
+              Editar curs
+            </Button>
+          </div>
+        )}
       </div>
       <Divider className="mb-8" />
 
@@ -326,7 +363,14 @@ export default function CourseDetailPage() {
           </div>
           <div className="flex flex-col gap-4 ml-1 p-4 rounded-3xl border-1.5 border-default-200 bg-content1">  
             {practicesTopContent}
-            {sortedPractices.length !== 0 ? (
+            
+            {isLoading ? (
+              <div className="flex flex-col gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <PracticeCourseCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : sortedPractices.length !== 0 ? (
               <div className="flex flex-col gap-3">
                 {sortedPractices.map((practice) => (
                   <div className="relative">
@@ -374,7 +418,7 @@ export default function CourseDetailPage() {
             <UsersIcon className="size-9 text-primary-600 mr-2" />
             <h2 className="text-3xl font-semibold text-default-900">Participants</h2>
           </div>
-          <ParticipantsSection courseId={courseInfo?.id || ""} courseUsers={courseUsers} canEditCourse={canEditCourse} />
+          <ParticipantsSection courseId={courseInfo?.id || ""} courseUsers={courseUsers} canEditCourse={canEditCourse} isLoading={isLoading} />
         </div>
       </div>
       <CourseDrawer 

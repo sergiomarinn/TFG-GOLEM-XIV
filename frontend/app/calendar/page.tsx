@@ -9,6 +9,7 @@ import { practiceStatusOptions } from "@/types";
 import { getMyPractices } from "@/app/actions/practice";
 import { Practice } from "@/types/practice";
 import { Link } from "@heroui/link";
+import { Spinner } from "@heroui/spinner";
 
 export default function CalendariPage() {
   // Estado para las prácticas
@@ -242,13 +243,17 @@ export default function CalendariPage() {
     }
   };
   
-  if (loading) {
-    return <div className="h-screen flex items-center justify-center">Carregant...</div>;
+  if (!loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Spinner classNames={{wrapper: "w-[60px] h-[60px]"}} />
+      </div>
+    )
   }
   
   return (
     <div className="h-full flex flex-col">
-      <div className="p-6 flex-1 overflow-hidden flex flex-col">
+      <div className="px-8 pb-4 flex-1 overflow-hidden flex flex-col">
         <div className="rounded-3xl border-1 border-default-200 bg-content1 px-8 py-7 flex-1 overflow-hidden flex flex-col">
           <div className="flex justify-between items-center pb-5">
             <h1 className="text-3xl font-semibold">Calendari</h1>

@@ -43,6 +43,7 @@ import { Spinner } from '@heroui/spinner';
 import { Avatar } from '@heroui/avatar';
 import { PracticeDrawer } from '@/components/drawer-practice';
 import { FilesIcon } from '@/components/icons';
+import { Skeleton } from '@heroui/skeleton';
 
 const PracticeStatus = ({ status }: {status: string}) => {
   const getStatusName = (uid: string) =>
@@ -412,10 +413,12 @@ export default function PracticeDetailPage() {
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
   const [isPracticeDrawerOpen, setIsPracticeDrawerOpen] = React.useState(false);
   const [isDownloading, setIsDownloading] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   useEffect(() => {
     const fetchUserAndPractice = async () => {
       try {
+        setIsLoading(true);
         const user = await getUserFromClient();
         setIsTeacher(user?.is_teacher || user?.is_admin || false);
 
@@ -428,6 +431,8 @@ export default function PracticeDetailPage() {
         }
       } catch (error) {
         console.error("Error fetching practice:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     if (practiceId) {
@@ -553,40 +558,89 @@ export default function PracticeDetailPage() {
       </button>
       
       {/* Header section */}
-      <div className="mt-2 mb-8">
-        <div className="flex items-end justify-between gap-2 mb-2">
-          <Chip color="primary" variant="flat">
-						{practice?.course?.name}
-					</Chip>
-          {isTeacher ? <Button
-            color="secondary"
-            variant="flat"
-            radius="lg"
-            startContent={<PencilIcon className="size-4" />}
-            onPress={() => setIsPracticeDrawerOpen(true)}
-          >
-            Editar pràctica
-          </Button> :
-          <PracticeStatus status={practice?.status || "not_submitted"} />}
-        </div>
-        <h1 className="text-3xl font-bold mb-3">{practice?.name}</h1>
-        <div className="flex flex-wrap gap-7 text-default-700">
-          <div className="flex items-center gap-1">
-            <CalendarIcon className="size-4" />
-            <span>Data límit: {formatDate(practice?.due_date)}</span>
+      {isLoading ? (
+        <div className="mt-2 mb-8">
+          <div className="flex items-end justify-between gap-2 mb-2">
+            {/* Course name chip skeleton */}
+            <Skeleton className="h-6 w-32 rounded-full" />
+            
+            {/* Edit button or status skeleton based on user role */}
+            {isTeacher ? (
+              <Button
+                color="secondary"
+                variant="flat"
+                radius="lg"
+                isDisabled
+                className="opacity-50"
+                startContent={<PencilIcon className="size-4" />}
+              >
+                Editar pràctica
+              </Button>
+            ) : (
+              <Skeleton className="h-10 w-36 rounded-xl" />
+            )}
           </div>
-          <div className="flex items-center gap-1">
-            <CodeBracketIcon className="size-4" />
-            <span className="capitalize">Llenguatge: {practice?.programming_language}</span>
-          </div>
-          {practice?.submission_date && (
+          
+          {/* Practice name skeleton */}
+          <Skeleton className="h-9 w-3/4 rounded-lg mb-3" />
+          
+          {/* Practice details skeleton */}
+          <div className="flex flex-wrap gap-7 text-default-700">
+            {/* Due date skeleton */}
             <div className="flex items-center gap-1">
-              <PaperClipIcon className="size-4" />
-              <span>Últim lliurament: {formatDate(practice.submission_date)}</span>
+              <CalendarIcon className="size-4 text-default-400" />
+              <Skeleton className="h-5 w-36 rounded-md" />
             </div>
-          )}
+            
+            {/* Programming language skeleton */}
+            <div className="flex items-center gap-1">
+              <CodeBracketIcon className="size-4 text-default-400" />
+              <Skeleton className="h-5 w-44 rounded-md" />
+            </div>
+            
+            {/* Submission date skeleton (conditional) */}
+            <div className="flex items-center gap-1">
+              <PaperClipIcon className="size-4 text-default-400" />
+              <Skeleton className="h-5 w-48 rounded-md" />
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="mt-2 mb-8">
+          <div className="flex items-end justify-between gap-2 mb-2">
+            <Chip color="primary" variant="flat">
+              {practice?.course?.name}
+            </Chip>
+            {isTeacher ? <Button
+              color="secondary"
+              variant="flat"
+              radius="lg"
+              startContent={<PencilIcon className="size-4" />}
+              onPress={() => setIsPracticeDrawerOpen(true)}
+            >
+              Editar pràctica
+            </Button> :
+            <PracticeStatus status={practice?.status || "not_submitted"} />}
+          </div>
+          <h1 className="text-3xl font-bold mb-3">{practice?.name}</h1>
+          <div className="flex flex-wrap gap-7 text-default-700">
+            <div className="flex items-center gap-1">
+              <CalendarIcon className="size-4" />
+              <span>Data límit: {formatDate(practice?.due_date)}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <CodeBracketIcon className="size-4" />
+              <span className="capitalize">Llenguatge: {practice?.programming_language}</span>
+            </div>
+            {practice?.submission_date && (
+              <div className="flex items-center gap-1">
+                <PaperClipIcon className="size-4" />
+                <span>Últim lliurament: {formatDate(practice.submission_date)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna principal */}
@@ -609,9 +663,17 @@ export default function PracticeDetailPage() {
                 </CardHeader>
                 <Divider />
                 <CardBody>
-                  <div className="text-default-700 whitespace-pre-line px-2 pb-1">
-                    {practice?.description}
-                  </div>
+                  {isLoading ? (
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-4 w-full rounded-md" />
+                      <Skeleton className="h-4 w-5/6 rounded-md" />
+                      <Skeleton className="h-4 w-4/6 rounded-md" />
+                    </div>
+                  ) : (
+                    <div className="text-default-700 whitespace-pre-line px-2 pb-1">
+                      {practice?.description}
+                    </div>
+                  )}
                 </CardBody>
               </Card>
               

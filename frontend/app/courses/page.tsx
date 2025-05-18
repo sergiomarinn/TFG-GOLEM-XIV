@@ -26,6 +26,7 @@ import { Course } from '@/types/course';
 import { getMyCourses } from '../actions/course';
 import { CourseDrawer } from '@/components/drawer-course';
 import { getUserFromClient } from '@/app/lib/client-session';
+import { CourseCardSkeleton } from '@/components/course-cards-skeleton';
 
 const sortOptions = [
 	{ name: "Per Nom", uid: "name", icon: <AlphabeticalSortIcon className="size-4" /> },
@@ -37,6 +38,7 @@ export default function CoursesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [currentCourse, setCurrentCourse] = React.useState<Course | null>(null);
   const [isTeacher, setIsTeacher] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   const handleEditCourse = (course: Course) => {
     setCurrentCourse(course);
@@ -70,12 +72,15 @@ export default function CoursesPage() {
   React.useEffect(() => {
     const fetchCourses = async () => {
       try {
+        setIsLoading(true);
         const user = await getUserFromClient();
         setIsTeacher(user?.is_teacher || user?.is_admin || false);
         const { data: courses } = await getMyCourses();
         setCourses(courses);
       } catch (error) {
         console.error("Error fetching courses:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchCourses();
@@ -305,7 +310,13 @@ export default function CoursesPage() {
       <div className="container px-2">
         {topContent}
         
-        {filteredCourses.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <CourseCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedData.map((course) => (
               <div className="relative">

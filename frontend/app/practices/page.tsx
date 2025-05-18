@@ -31,6 +31,7 @@ import { PracticeCard } from '@/components/practice-card';
 import { Practice } from '@/types/practice';
 import { Course } from '@/types/course';
 import { getMyPractices } from '@/app/actions/practice';
+import { PracticeCardSkeleton } from '@/components/practice-cards-skeleton';
 
 const sortOptions = [
   { name: "Més recents", uid: "recent" },
@@ -40,14 +41,18 @@ const sortOptions = [
 
 export default function PracticesGeneralPage() {
   const [practices, setAllPractices] = React.useState<Practice[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchPracticesData = async () => {
       try {
+        setIsLoading(true);
         const { data: practices } = await getMyPractices();
         setAllPractices(practices);
       } catch (error) {
         console.error("Error fetching course data:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -305,7 +310,11 @@ export default function PracticesGeneralPage() {
       
       {/* Practice list */}
       <div className="flex flex-col gap-4">
-        {filteredPractices.length > 0 ? (
+        {isLoading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <PracticeCardSkeleton key={i} />
+          ))
+        ) : filteredPractices.length > 0 ? (
           filteredPractices.map(practice => (
             <PracticeCard key={practice.id} practice={practice}/>
           ))

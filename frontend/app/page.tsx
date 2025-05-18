@@ -14,6 +14,7 @@ import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
 import { AcademicCapIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
+import { CourseCardSkeleton, HorizontalCourseCardSkeleton } from "@/components/course-cards-skeleton";
 
 export default function Home() {
   const [recentCourses, setRecentCourses] = useState<Course[]>([]);
@@ -21,6 +22,7 @@ export default function Home() {
   const [containerWidth, setContainerWidth] = useState(0);
   const [cardsPerRow, setCardsPerRow] = useState(3);
   const [expandFeaturedCourse, setExpandFeaturedCourse] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -58,6 +60,7 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setIsLoading(true);
         const { data: courses } = await getMyRecentCourses(cardsPerRow+1);
         setRecentCourses(courses);
 
@@ -65,6 +68,8 @@ export default function Home() {
         setPractices(practices);
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -77,12 +82,12 @@ export default function Home() {
     : [];
 
   return (
-    <section className="px-8 flex flex-col min-h-screen gap-16">
+    <section className="px-8 pb-4 flex flex-col min-h-screen gap-16">
       <div className="flex flex-col lg:flex-row items-start gap-16">
         <div ref={containerRef} className="w-full lg:flex-1 min-w-0 flex flex-col">
           <h2 className={title({ size: "sm" })}>Cursos recents</h2>
 
-          {recentCourses.length === 0 ? (
+          {!isLoading && recentCourses.length === 0 ? (
             <div className="mt-4 p-6 bg-content1 rounded-3xl border border-default-200 text-center">
               <AcademicCapIcon className="size-16 mx-auto text-default-400 mb-4" />
               <h3 className="text-xl font-semibold text-default-700 mb-2">Cap curs recent trobat</h3>
@@ -100,7 +105,13 @@ export default function Home() {
           ) : (
             <>
               {/* Featured Course (Horizontal Card) */}
-              {featuredCourse && (
+              {isLoading ? (
+                <div className="mt-4 mb-6">
+                  <HorizontalCourseCardSkeleton
+                    expand={expandFeaturedCourse}
+                  />
+                </div> 
+              ) : featuredCourse && (
                 <div className="mt-4 mb-6">
                   <HorizontalCourseCard
                     course={featuredCourse} 
@@ -110,7 +121,16 @@ export default function Home() {
               )}
               
               {/* Regular Course Cards in a grid */}
-              {remainingCourses.length > 0 && (
+              {isLoading ? (
+                <div className={`grid grid-cols-1 ${
+                  cardsPerRow >= 2 ? 'sm:grid-cols-2' : ''
+                } ${
+                  cardsPerRow >= 3 ? 'lg:grid-cols-3' : ''} gap-6`}>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <CourseCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : remainingCourses.length > 0 && (
                 <div className={`grid grid-cols-1 ${
                   cardsPerRow >= 2 ? 'sm:grid-cols-2' : ''
                 } ${
@@ -118,12 +138,12 @@ export default function Home() {
                   <AnimatePresence initial={false} mode="popLayout">
                     {remainingCourses.map((course, index) => (
                       <motion.div
-                        key={course.id || index}
+                        key={course.id}
                         layout
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        transition={{ duration: 0.3 }}
                       >
                         <CourseCard course={course} />
                       </motion.div>
@@ -149,7 +169,7 @@ export default function Home() {
       <div className="hidden lg:block">
         <h2 className={title({ size: "sm" })}>Properes entregues</h2>
         <div className="mt-4 p-4 rounded-3xl border-1.5 border-default-200 bg-content1">
-          <PracticeTable practices={practices} />
+          <PracticeTable practices={practices} isLoading={isLoading} />
         </div>
       </div>
     </section>

@@ -18,7 +18,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
 import { UserIcon as UserIconFilled } from '@heroicons/react/24/solid';
 import { User } from "@/app/lib/definitions";
 import { getAllUsers, updateMyUser, updateMyUserPassword, updateUser } from '@/app/actions/user';
-import { getUserFromClient } from '@/app/lib/client-session';
+import { getUserFromClient, updateUserFromClient } from '@/app/lib/client-session';
 import { Switch } from '@heroui/switch';
 import { Avatar } from '@heroui/avatar';
 import { addToast } from '@heroui/toast';
@@ -201,6 +201,12 @@ export const UserConfigModal = ({ isOpen, onClose }: { isOpen: boolean, onClose:
   const handleUpdateProfile = async () => {
     try {
 			setLoadingUpdateUser(true)
+			await updateUserFromClient({
+				...currentUser,
+        name: userForm.name,
+        surnames: userForm.surnames,
+        email: userForm.email
+      });
       const user = await updateMyUser({
         name: userForm.name,
         surnames: userForm.surnames,

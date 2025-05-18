@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromSession, getTokenFromSession } from '@/app/lib/session';
+import { getUserFromSession, getTokenFromSession, updateUserInSession } from '@/app/lib/session';
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,5 +28,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       error: 'Session error' 
     }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json();
+
+    await updateUserInSession(body);
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Error updating user:', err);
+    return NextResponse.json({ error: 'Error updating user' }, { status: 500 });
   }
 }

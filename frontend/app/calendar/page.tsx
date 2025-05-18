@@ -243,7 +243,7 @@ export default function CalendariPage() {
     }
   };
   
-  if (!loading) {
+  if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
         <Spinner classNames={{wrapper: "w-[60px] h-[60px]"}} />

@@ -34,6 +34,24 @@ export async function getTokenFromClient(): Promise<string | null> {
   }
 }
 
+export async function updateUserFromClient(updatedUser: User): Promise<boolean> {
+  const res = await fetch('/api/session', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updatedUser),
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    console.error('Failed to update user session:', error);
+    throw new Error(error);
+  }
+
+  return true;
+}
+
 export async function isAuthenticated(): Promise<boolean> {
   try {
     const res = await fetch('/api/session');

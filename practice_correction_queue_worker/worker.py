@@ -22,8 +22,7 @@ if platform.system() == 'Windows':
 configure_logging()
 logger = logging.getLogger(__name__)
 
-logger.info(f"Usant el event loop: {asyncio.get_event_loop_policy()}")
-logger.info(f"Número de processos: {os.cpu_count()}")
+logger.info(f"Using event loop: {asyncio.get_event_loop_policy()}")
 
 class PracticeCorrectionQueueWorker:
     def __init__(self, max_concurrent_tasks=5, max_retries=3):
@@ -32,17 +31,6 @@ class PracticeCorrectionQueueWorker:
         self.semaphore = asyncio.Semaphore(max_concurrent_tasks)
         self.tasks = set()  # Para mantener un seguimiento de tareas activas
         self.channel = None
-
-    async def notify_practice_corrected(self, data):
-        async with ClientSession() as session:
-            try:
-                async with session.post('http://localhost:5000/notify', json=data) as response:
-                    if response.status == 200:
-                        print("Notificació enviada correctamente.")
-                    else:
-                        print(f"Error a l'enviar notificación: {response.status}")
-            except Exception as e:
-                print(f"Error al enviar notificació: {e}")
 
     async def process_message(self, message: IncomingMessage):
         # Usamos semáforo para limitar la cantidad de tareas concurrentes
@@ -61,16 +49,23 @@ class PracticeCorrectionQueueWorker:
                             # Decodificar el mensaje JSON
                             body_json = json.loads(message.body.decode('utf-8'))
                         except json.JSONDecodeError:
-                            raise ValueError("Error al deserialitzar el missatge JSON")
+                            raise ValueError("Error deserializing JSON message")
                         
-                        if not body_json.get("niub") and not body_json.get("practice_id") and not body_json.get("language"):
-                            hasInvalidFields = True
-                            raise ValueError("El missatge no conté els camps necessaris: niub, practice_id o language")
+                        required_fields = ["subject", "year", "task", "task_id", "student_id", "language"]
+                        for field in required_fields:
+                            if field not in body_json:
+                                hasInvalidFields = True
+                                raise ValueError(f"Message missing required field: {field}")
                         
-                        niub = body_json["niub"]
-                        id_curs = body_json["course_id"]
-                        id_practice = body_json["practice_id"]
-                        practice_name = body_json["name"]
+                        niub = body_json["student_id"]
+                        id_practice = body_json["task_id"]
+                        practice_name = body_json["task"]
+                        language = body_json["language"]
+                        subject = body_json["subject"]
+                        year = body_json["year"]
+
+                        body_json["student_dir"] = body_json.get("student_dir", f"student_{niub}")
+                        body_json["teacher_dir"] = body_json.get("teacher_dir", f"teacher_{id_practice}")
 
                         practice = await db_session.execute(
                             select(Practice).where(Practice.id == id_practice)
@@ -78,7 +73,7 @@ class PracticeCorrectionQueueWorker:
                         practice = practice.scalar_one_or_none()
 
                         if not practice:
-                            raise Exception(f"No se encontró la práctica con ID {id_practice}")
+                            raise Exception(f"Practice with ID {id_practice} not found")
 
                         practice_user = await db_session.execute(select(PracticesUsersLink)
                             .where(
@@ -89,7 +84,7 @@ class PracticeCorrectionQueueWorker:
                         practice_user = practice_user.scalar_one_or_none()
 
                         if not practice_user:
-                            raise Exception(f"No se encontró la práctica del usuario con NIUB {niub} y ID de práctica {id_practice}")
+                            raise Exception(f"Practice for user with NIUB {niub} and practice ID {id_practice} not found")
                         
                         practice_user.status = StatusEnum.CORRECTING
                         db_session.add(practice_user)
@@ -97,51 +92,48 @@ class PracticeCorrectionQueueWorker:
                         await db_session.refresh(practice_user)
 
                         # Llamada al cliente RPC
-                        result: bytes = await asyncio.wait_for(rpc_client.call(body_json), timeout=600)
+                        result: bytes = await asyncio.wait_for(rpc_client.call(language, body_json), timeout=1200)
                         await rpc_client.close()
 
                         if not result:
-                            raise ValueError("No se recibió respuesta del servidor RPC")
+                            raise ValueError("No response received from RPC server")
                         
                         result_str = result.decode('utf-8')
-                        logger.info(f"Respuesta del servidor RPC: {result_str}")
+                        logger.info(f"Response from RPC server: {result_str}")
                         
-                        result_dict = json.loads(result_str)
-                        if result_dict.get("error"):
-                            raise ValueError(f"Error en el servidor RPC: {result_dict['error']}")
+                        result_str = result_str.strip()
 
-                        if not result_dict.get("niub") or not result_dict.get("course_id") or not result_dict.get("practice_id") or not result_dict.get("name") or not result_dict.get("info"):
-                            raise ValueError("El missatge no conté els camps necessaris: niub, course_id, practice_id, name o info")
-
-                        if result_dict["niub"] != niub or result_dict["course_id"] != id_curs or result_dict["practice_id"] != id_practice or result_dict["name"] != practice_name:
-                            raise ValueError(f"El missatge conté camps amb valors diferents als esperats\n Original: {body_json} \n Resposta RPC: {result_dict}")
-
-                        if not result_dict.get("info"):
-                            raise ValueError(f"El missatge no conté la correcció de la pràctica {practice_name} del NIUB {niub}")
+                        if result_str.startswith("Error:"):
+                            raise ValueError(f"Error from RPC server: {result_str}")
                         
-                        correction = result_dict["info"]
+                        correction = result_str
 
-                        # Actualizar el campo `correction` con la información recibida
+                        if not correction:
+                            raise ValueError(f"Empty correction result for practice {practice_name} of NIUB {niub}")
+
+                        # For logging purposes, create a dictionary with relevant information
+                        result_dict = {
+                            "niub": niub,
+                            "course_id": subject,
+                            "practice_id": id_practice,
+                            "name": practice_name,
+                            "correction": correction
+                        }
+                        logger.info(f"Processed correction result: {result_dict}")
+
+                        # Update correction with the received information
                         practice_user.status = StatusEnum.CORRECTED
                         practice_user.correction = correction
                         db_session.add(practice_user)
                         await db_session.commit()
                         await db_session.refresh(practice_user)
-                        logger.info(f"Práctica {id_practice} actualizada con la corrección.")
-
-                        # Notificar que la práctica ha sido corregida
-                        data = {
-                            'id': id,
-                            'practica_id': id_practice,
-                            'status': 'corrected'
-                        }
-                        await self.notify_practice_corrected(data)
+                        logger.info(f"Practice {id_practice} updated with correction.")
 
                         await message.ack()
                         logger.info(f"Correction for NIUB {niub} completed successfully for practice {practice_name}")
 
                     except Exception as e:
-                        logger.error(e)
+                        logger.error(f"Error processing message: {str(e)}")
                         
                         # Obtener contador de reintentos
                         headers = message.headers or {}
@@ -219,26 +211,26 @@ class PracticeCorrectionQueueWorker:
         await self.channel.declare_queue('practicas.dlq', durable=True)
         
         await main_queue.consume(self.callback)
-        logger.info(f'Worker iniciado con capacidad para {self.max_concurrent_tasks} tareas concurrentes')
+        logger.info(f'Worker started with capacity for {self.max_concurrent_tasks} concurrent tasks')
         logger.warning('Waiting for messages. To exit press CTRL+C')
         return connection
 
     async def close(self):
         # Esperar a que todas las tareas activas terminen
         if self.tasks:
-            logger.warning(f"Esperando a que {len(self.tasks)} tareas terminen...")
+            logger.warning(f"Waiting for {len(self.tasks)} tasks to complete...")
             await asyncio.gather(*self.tasks, return_exceptions=True)
         await engine.dispose()
 
 if __name__ == "__main__":
-    worker = PracticeCorrectionQueueWorker(max_concurrent_tasks=5)
+    worker = PracticeCorrectionQueueWorker(max_concurrent_tasks=os.cpu_count())
 
     async def main():
         connection = await worker.start()
         try:
             await asyncio.Future() # Wait indefinitely
         except KeyboardInterrupt:
-            logger.warning("Interrupció de l'usuari")
+            logger.warning("User interruption")
         finally:
             await connection.close()
             await worker.close()
@@ -246,4 +238,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.warning("Interrupció de l'usuari")
+        logger.warning("User interruption")

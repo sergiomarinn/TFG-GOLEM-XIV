@@ -223,7 +223,7 @@ class PracticeCorrectionQueueWorker:
         await engine.dispose()
 
 if __name__ == "__main__":
-    worker = PracticeCorrectionQueueWorker(max_concurrent_tasks=os.cpu_count())
+    worker = PracticeCorrectionQueueWorker(max_concurrent_tasks=os.cpu_count() * 4)
 
     async def main():
         connection = await worker.start()

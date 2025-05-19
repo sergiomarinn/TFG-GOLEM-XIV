@@ -7,7 +7,7 @@ import { User } from "@/app/lib/definitions";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getAllCourses(): Promise<Courses> {
-  const res = await fetch(`${API_URL}/api/v1/courses`, {
+  const res = await fetch(`${API_URL}/api/v1/courses/`, {
     method: "GET",
     headers: {
 			"Authorization": `Bearer ${await getTokenFromClient()}`

@@ -126,7 +126,7 @@ export default function Home() {
                   cardsPerRow >= 2 ? 'sm:grid-cols-2' : ''
                 } ${
                   cardsPerRow >= 3 ? 'lg:grid-cols-3' : ''} gap-6`}>
-                  {Array.from({ length: 3 }).map((_, i) => (
+                  {Array.from({ length: cardsPerRow }).map((_, i) => (
                     <CourseCardSkeleton key={i} />
                   ))}
                 </div>

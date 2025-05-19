@@ -4,7 +4,7 @@ import { getTokenFromClient } from "@/app/lib/client-session";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getAllUsers(): Promise<Users> {
-  const res = await fetch(`${API_URL}/api/v1/users`, {
+  const res = await fetch(`${API_URL}/api/v1/users/`, {
     method: "GET",
 		headers: {
 			"Authorization": `Bearer ${await getTokenFromClient()}`

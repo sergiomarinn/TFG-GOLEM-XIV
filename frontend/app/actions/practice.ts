@@ -6,7 +6,7 @@ import { getTokenFromClient } from "@/app/lib/client-session";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getAllPractices(): Promise<Practices> {
-  const res = await fetch(`${API_URL}/api/v1/practices`, {
+  const res = await fetch(`${API_URL}/api/v1/practices/`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${await getTokenFromClient()}`,
@@ -226,7 +226,7 @@ export async function uploadPractice(practiceId: string, file: File): Promise<vo
 	const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/upload/`, {
+  const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/upload`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${await getTokenFromClient()}`,

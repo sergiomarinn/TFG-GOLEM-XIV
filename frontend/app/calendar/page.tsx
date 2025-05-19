@@ -27,7 +27,7 @@ export default function CalendariPage() {
   const [displayYear, setDisplayYear] = useState(currentDate.getFullYear());
   
   // Ref para el contenedor de scroll
-  const timeGridRef = useRef(null);
+  const timeGridRef = useRef<HTMLDivElement>(null);
   
   // Estado para la altura disponible
   const [availableHeight, setAvailableHeight] = useState(0);
@@ -136,8 +136,8 @@ export default function CalendariPage() {
   // Actualizar el mes y año mostrados al cargar el componente
   useEffect(() => {
     // Determinar el mes y año predominantes en la semana
-    const monthCounts = {};
-    let mostFrequentMonth = null;
+    const monthCounts: { [key: string]: number } = {};
+    let mostFrequentMonth: { month: number; year: number } = { month: 0, year: 0 };
     let maxCount = 0;
     
     weekDays.forEach(day => {
@@ -157,7 +157,7 @@ export default function CalendariPage() {
   }, [weekOffset]);
   
   // Función para navegar entre semanas
-  const navigateWeek = (direction) => {
+  const navigateWeek = (direction: number) => {
     setWeekOffset(prev => prev + direction);
   };
   
@@ -174,7 +174,7 @@ export default function CalendariPage() {
   const dayHours = getHours();
   
   // Función para obtener las prácticas de un día específico
-  const getDayPractices = (day, month, year) => {
+  const getDayPractices = (day: number, month: number, year: number) => {
     return practices.filter(practice => {
       const dueDate = new Date(practice.due_date);
       return dueDate.getDate() === day && 
@@ -184,7 +184,7 @@ export default function CalendariPage() {
   };
   
   // Función para obtener prácticas por hora y día
-  const getPracticesByHour = (hour, day, month, year) => {
+  const getPracticesByHour = (hour: string, day: number, month: number, year: number) => {
     const hourNum = parseInt(hour.split(':')[0]);
     
     return practices.filter(practice => {

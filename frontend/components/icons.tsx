@@ -369,9 +369,9 @@ export const DashboardIcon = (props: IconSvgProps) => (
     stroke="currentColor"
     {...props}
   >
-    <path d="M10.5 19.9V4.1C10.5 2.6 9.86 2 8.27 2H4.23C2.64 2 2 2.6 2 4.1V19.9C2 21.4 2.64 22 4.23 22H8.27C9.86 22 10.5 21.4 10.5 19.9Z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M22 10.9V4.1C22 2.6 21.36 2 19.77 2H15.73C14.14 2 13.5 2.6 13.5 4.1V10.9C13.5 12.4 14.14 13 15.73 13H19.77C21.36 13 22 12.4 22 10.9Z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M22 19.9V18.1C22 16.6 21.36 16 19.77 16H15.73C14.14 16 13.5 16.6 13.5 18.1V19.9C13.5 21.4 14.14 22 15.73 22H19.77C21.36 22 22 21.4 22 19.9Z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M10.5 19.9V4.1C10.5 2.6 9.86 2 8.27 2H4.23C2.64 2 2 2.6 2 4.1V19.9C2 21.4 2.64 22 4.23 22H8.27C9.86 22 10.5 21.4 10.5 19.9Z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M22 10.9V4.1C22 2.6 21.36 2 19.77 2H15.73C14.14 2 13.5 2.6 13.5 4.1V10.9C13.5 12.4 14.14 13 15.73 13H19.77C21.36 13 22 12.4 22 10.9Z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M22 19.9V18.1C22 16.6 21.36 16 19.77 16H15.73C14.14 16 13.5 16.6 13.5 18.1V19.9C13.5 21.4 14.14 22 15.73 22H19.77C21.36 22 22 21.4 22 19.9Z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -404,11 +404,11 @@ export const PracticesIcon = (props: IconSvgProps) => (
     stroke="currentColor"
     {...props}
   >
-    <path d="M12.37 8.87988H17.62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M6.38 8.87988L7.13 9.62988L9.38 7.37988" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M12.37 15.8799H17.62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M6.38 15.8799L7.13 16.6299L9.38 14.3799" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M12.37 8.87988H17.62" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M6.38 8.87988L7.13 9.62988L9.38 7.37988" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M12.37 15.8799H17.62" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M6.38 15.8799L7.13 16.6299L9.38 14.3799" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -442,11 +442,11 @@ export const AlphabeticalSortIcon = (props: IconSvgProps) => (
     stroke="currentColor"
     {...props}
   >
-    <line fill="none" stroke-width="2" stroke-miterlimit="10" x1="23" y1="26.1" x2="23" y2="5"/>
-    <polyline fill="none" stroke-width="2" stroke-miterlimit="10" points="18.7,21.8 23,26.1 27.3,21.8 "/>
-    <polyline fill="none" stroke-width="2" stroke-miterlimit="10" points="12,15 12,14 9.1,6 8.9,6 6,14 6,15 "/>
-    <line fill="none" stroke-width="2" stroke-miterlimit="10" x1="6" y1="12" x2="12" y2="12"/>
-    <polyline fill="none" stroke-width="2" stroke-miterlimit="10" points="5,18 12,18 12,19 6,25 6,26 13,26 "/>
+    <line fill="none" strokeWidth="2" strokeMiterlimit="10" x1="23" y1="26.1" x2="23" y2="5"/>
+    <polyline fill="none" strokeWidth="2" strokeMiterlimit="10" points="18.7,21.8 23,26.1 27.3,21.8 "/>
+    <polyline fill="none" strokeWidth="2" strokeMiterlimit="10" points="12,15 12,14 9.1,6 8.9,6 6,14 6,15 "/>
+    <line fill="none" strokeWidth="2" strokeMiterlimit="10" x1="6" y1="12" x2="12" y2="12"/>
+    <polyline fill="none" strokeWidth="2" strokeMiterlimit="10" points="5,18 12,18 12,19 6,25 6,26 13,26 "/>
   </svg>
 );
 

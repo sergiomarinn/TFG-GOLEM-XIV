@@ -50,7 +50,7 @@ export default function LoginPage() {
       <h1 className="font-extrabold text-center text-2xl mb-1">Inicia sessió</h1>
       <h2 className="text-center text-sm text-default-600 dark:text-default-400 mb-5">Hola, benvingut de nou👋</h2>
       <form action={action} noValidate className="flex flex-col">
-        <Tabs aria-label="Options" selectedKey={selected} onSelectionChange={setSelected} fullWidth classNames={{tab: "p-0"}}>
+        <Tabs aria-label="Options" selectedKey={selected} onSelectionChange={(key) => setSelected(key as string)} fullWidth classNames={{tab: "p-0"}}>
           <Tab key="niub" title="NIUB">
             <Input
               name="niub"
@@ -63,8 +63,12 @@ export default function LoginPage() {
                 <CardIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
               }
               description="Ha de començar amb 'niub' seguit de 8 dígits."
-              isInvalid={!!state?.errors?.niub}
-              errorMessage={state?.errors?.niub?.[0]}
+              isInvalid={selected === "niub" && !!state?.errors && "niub" in state.errors}
+              errorMessage={
+                selected === "niub" && state?.errors && "niub" in state.errors
+                  ? state.errors.niub?.[0]
+                  : undefined
+              }
             />
           </Tab>
           <Tab key="email" title="Email">
@@ -78,8 +82,12 @@ export default function LoginPage() {
               endContent={
                 <MailIcon className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
               }
-              isInvalid={!!state?.errors?.email}
-              errorMessage={state?.errors?.email?.[0]}
+              isInvalid={selected === "email" && !!state?.errors && "email" in state.errors}
+              errorMessage={
+                selected === "email" && state?.errors && "email" in state.errors
+                  ? state.errors.email?.[0]
+                  : undefined
+              }
             />
           </Tab>
         </Tabs>

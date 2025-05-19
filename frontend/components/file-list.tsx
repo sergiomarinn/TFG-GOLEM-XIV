@@ -18,7 +18,7 @@ export const FileList = ({ files, onDelete }: FileListProps) => {
     return (
       <div className="text-center px-2 py-2 text-default-500">
         <DocumentTextIcon className="size-12 mx-auto mb-3 opacity-60" />
-        <p>No s'ha afegit cap arxiu.</p>
+        <p>No s&apos;ha afegit cap arxiu.</p>
       </div>
     );
   }

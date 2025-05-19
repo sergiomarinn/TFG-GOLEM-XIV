@@ -12,10 +12,12 @@ import { DocumentIcon } from "@heroicons/react/24/solid";
 import { useNotifications, NotificationType } from "@/components/notification-context";
 import { formatDistanceToNow } from "date-fns";
 import { ca } from "date-fns/locale";
+import { useRouter } from "next/navigation";
 
 export const NotificationPopover = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
+	const router = useRouter();
 
   // Group notifications by type
   const unread = notifications.filter(n => !n.read);
@@ -65,8 +67,10 @@ export const NotificationPopover = () => {
     if (!notification.read) {
       markAsRead(notification.id);
     }
-    // Here you could add navigation to the practice
-    // router.push(`/practices/${notification.practiceId}`);
+		else {
+			setIsOpen(false);
+			router.push(`/practices/${notification.practiceId}`);
+		}
   };
 
   return (
@@ -131,21 +135,23 @@ export const NotificationPopover = () => {
 									) : (
 										<ul className="space-y-2 p-1">
 											{unread.map((notification) => (
-												<li 
-													key={notification.id}
-													className="p-2 rounded-lg hover:bg-default-100 cursor-pointer transition-colors"
-													onClick={() => handleNotificationClick(notification)}
-												>
-													<div className="flex gap-2">
-														<div className="flex-shrink-0">
-															{getNotificationIcon(notification.type)}
+												<li key={notification.id}>
+													<button
+														type="button"
+														className="p-2 rounded-lg hover:bg-default-100 transition-colors w-full text-left"
+														onClick={() => handleNotificationClick(notification)}
+													>
+														<div className="flex gap-2">
+															<div className="flex-shrink-0">
+																{getNotificationIcon(notification.type)}
+															</div>
+															<div className="flex-1 min-w-0">
+																<p className="text-sm font-semibold truncate">{notification.practiceName}</p>
+																<p className="text-xs text-default-500">{notification.message}</p>
+																<p className="text-xs text-default-400 mt-1">{formatTimeAgo(notification.timestamp)}</p>
+															</div>
 														</div>
-														<div className="flex-1 min-w-0">
-															<p className="text-sm font-semibold truncate">{notification.practiceName}</p>
-															<p className="text-xs text-default-500">{notification.message}</p>
-															<p className="text-xs text-default-400 mt-1">{formatTimeAgo(notification.timestamp)}</p>
-														</div>
-													</div>
+													</button>
 												</li>
 											))}
 										</ul>
@@ -161,21 +167,22 @@ export const NotificationPopover = () => {
 									) : (
 										<ul className="space-y-2 p-1">
 											{all.map((notification) => (
-												<li 
-													key={notification.id}
-													className={`p-2 rounded-lg ${!notification.read ? 'bg-default-100/80' : ''} hover:bg-default-100 cursor-pointer transition-colors`}
-													onClick={() => handleNotificationClick(notification)}
-												>
-													<div className="flex gap-2">
-														<div className="flex-shrink-0">
-															{getNotificationIcon(notification.type)}
+												<li key={notification.id}>
+													<button
+														className={`p-2 rounded-lg ${!notification.read ? 'bg-default-100/80' : ''} hover:bg-default-100 transition-colors w-full text-left`}
+														onClick={() => handleNotificationClick(notification)}
+													>
+														<div className="flex gap-2">
+															<div className="flex-shrink-0">
+																{getNotificationIcon(notification.type)}
+															</div>
+															<div className="flex-1 min-w-0">
+																<p className="text-sm font-semibold truncate">{notification.practiceName}</p>
+																<p className="text-xs text-default-500">{notification.message}</p>
+																<p className="text-xs text-default-400 mt-1">{formatTimeAgo(notification.timestamp)}</p>
+															</div>
 														</div>
-														<div className="flex-1 min-w-0">
-															<p className="text-sm font-semibold truncate">{notification.practiceName}</p>
-															<p className="text-xs text-default-500">{notification.message}</p>
-															<p className="text-xs text-default-400 mt-1">{formatTimeAgo(notification.timestamp)}</p>
-														</div>
-													</div>
+													</button>
 												</li>
 											))}
 										</ul>

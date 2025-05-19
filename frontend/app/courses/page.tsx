@@ -160,7 +160,7 @@ export default function CoursesPage() {
 			case "name": // Sort by course name (alphabetical)
 				return sorted.sort((a, b) => a.name.localeCompare(b.name));
 			case "recently_accessed": // Sort by recently accessed (example logic)
-				return sorted.sort((a, b) => b.students_count - a.students_count); // Example: sort by number of students
+				return sorted.sort((a, b) => (b.students_count ?? 0) - (a.students_count ?? 0)); // Example: sort by number of students
 			default:
 				return sorted;
 		}
@@ -319,7 +319,7 @@ export default function CoursesPage() {
         ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedData.map((course) => (
-              <div className="relative">
+              <div className="relative" key={course.id}>
                 <CourseCard
                   key={course.id}
                   course={course}
@@ -342,7 +342,7 @@ export default function CoursesPage() {
             <AcademicCapIcon className="size-16 mx-auto text-default-400 mb-4" />
             <h3 className="text-xl font-semibold text-default-700 mb-2">Cap curs trobat</h3>
             <p className="text-default-500">
-              No s'ha trobat cap curs amb els filtres aplicats. Prova de canviar els criteris de cerca.
+              No s&apos;ha trobat cap curs amb els filtres aplicats. Prova de canviar els criteris de cerca.
             </p>
           </div>
         )}

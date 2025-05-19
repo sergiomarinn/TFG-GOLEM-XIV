@@ -61,25 +61,25 @@ export const FileUploader = ({ files, setFiles, disabled = false, acceptedExtens
   };
 
   // Drag & drop handlers...
-  const handleDragEnter = useCallback((e) => {
+  const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (!disabled) setIsDragging(true);
   }, [disabled]);
 
-  const handleDragLeave = useCallback((e) => {
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   }, []);
 
-  const handleDragOver = useCallback((e) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     if (!disabled && !isDragging) setIsDragging(true);
   }, [isDragging, disabled]);
 
-  const handleDrop = useCallback((e) => {
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -100,7 +100,8 @@ export const FileUploader = ({ files, setFiles, disabled = false, acceptedExtens
 
   return (
     <div className="pt-1 px-1">
-      <div 
+      <div
+        role="button"
         className={`group border-1.5 border-dashed rounded-lg p-4 mb-1 text-center flex flex-col items-center justify-center transition-all ${
           isDragging 
             ? 'border-primary-500 bg-primary-50' 

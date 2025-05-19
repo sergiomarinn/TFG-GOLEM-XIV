@@ -34,7 +34,7 @@ export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        const teachers = await getCourseTeachers(course.id);
+        const teachers = await getCourseTeachers(course.id ?? "");
         setTeachers(teachers);
       } catch (error) {
         console.error("Error fetching course teachers:", error);
@@ -82,7 +82,7 @@ export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps
             {/* Category Tags */}
             <div className="flex items-center gap-2 mb-2">
               <Tag label={course.academic_year}></Tag>
-              {course.programming_languages.map((lang, index) => (
+              {course?.programming_languages?.map((lang, index) => (
                 <Tag key={index} label={lang}></Tag>
               ))}
             </div>
@@ -107,7 +107,7 @@ export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps
             <div className={clsx(expand ? "mb-4" : "ml-3")}>
               <AvatarGroup max={7}>
                 {teachers.map((teacher) => (
-                  <Tooltip showArrow crossOffset={-12} closeDelay={50} content={teacher.name + " " + teacher.surnames}>
+                  <Tooltip key={teacher?.niub} showArrow crossOffset={-12} closeDelay={50} content={teacher.name + " " + teacher.surnames}>
                     <Avatar 
                       showFallback
                       name={teacher.name[0]}

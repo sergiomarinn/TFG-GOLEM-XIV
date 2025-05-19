@@ -191,7 +191,7 @@ export const WeekCalendarDemo = ( { practices }: { practices: Practice[] } ) => 
 	// Determine month and year to display
   // If the week spans multiple months, show the month with more days in the current view
   const getDisplayMonthYear = () => {
-    const monthCounts = {};
+    const monthCounts: { [key: string]: number } = {};
     let maxMonth = daysOfWeek[0].month;
     let maxCount = 0;
     let yearToDisplay = daysOfWeek[0].year;
@@ -269,6 +269,7 @@ export const WeekCalendarDemo = ( { practices }: { practices: Practice[] } ) => 
 						return (
 							<div 
 								key={`${day}-${index}`}
+                role="button"
 								className={`p-4 mx-0.5 rounded-2xl flex flex-col items-center text-center cursor-pointer transition-colors ${
 									isSelectedDay ? 'bg-default-900 text-default' : 
 									isCurrentDay ? 'bg-default-100' : 'hover:bg-default-50'

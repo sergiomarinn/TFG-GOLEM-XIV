@@ -29,6 +29,7 @@ dependencies = [
     "alembic-postgresql-enum>=1.7.0",
     "zipstream-new>=1.1.8",
     "paramiko>=3.5.1",
+    "uvicorn[standard]>=0.30.6",
 ]
 
 [tool.uv]

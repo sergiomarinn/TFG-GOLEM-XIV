@@ -385,7 +385,7 @@ export const UserConfigModal = ({ isOpen, onClose }: { isOpen: boolean, onClose:
 						<ModalHeader className="flex flex-col gap-1">
 							<div className="flex items-center gap-2">
 								<Cog6ToothIcon className="size-6" />
-								<span>Configuració d'usuari</span>
+								<span>Configuració d&apos;usuari</span>
 							</div>
 						</ModalHeader>
 						
@@ -425,7 +425,7 @@ export const UserConfigModal = ({ isOpen, onClose }: { isOpen: boolean, onClose:
 												/>
 												{/* Display current user roles as non-editable */}
 												<div className="mt-2">
-													<p className="text-sm font-medium mb-2">Rols de l'usuari</p>
+													<p className="text-sm font-medium mb-2">Rols de l&apos;usuari</p>
 													<div className="flex flex-wrap gap-6">
 														<Switch
 															size="sm"
@@ -592,7 +592,7 @@ export const UserConfigModal = ({ isOpen, onClose }: { isOpen: boolean, onClose:
 														<div className="mt-4 space-y-4">
 															<div className="flex flex-col gap-4">
 																<div>
-																	<p className="text-sm font-medium mb-2">Rols d'usuari</p>
+																	<p className="text-sm font-medium mb-2">Rols d&apos;usuari</p>
 																	<div className="flex flex-wrap gap-6">
 																		<Switch
 																			size="sm"

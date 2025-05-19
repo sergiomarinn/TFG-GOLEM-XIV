@@ -49,6 +49,7 @@ export default function CourseDetailPage() {
   const [isPracticeDrawerOpen, setIsPracticeDrawerOpen] = React.useState(false);
   const [currentPractice, setCurrentPractice] = React.useState<Practice | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
 
   React.useEffect(() => {
     const fetchCourse = async () => {
@@ -67,6 +68,7 @@ export default function CourseDetailPage() {
         setCanEditCourse(isTeacherInCourse || user?.is_admin || false);
       } catch (error) {
         console.error(error);
+        setError(true);
       } finally {
         setIsLoading(false);
       }
@@ -111,14 +113,14 @@ export default function CourseDetailPage() {
 
     if (existingPracticeIndex !== undefined && existingPracticeIndex !== -1 && courseInfo) {
       // Actualizar práctica existente
-      const updatedPractices = [...courseInfo.practices];
+      const updatedPractices = [...(courseInfo.practices ?? [])];
       updatedPractices[existingPracticeIndex] = updatedPractice;
 
       setCourseInfo({ ...courseInfo, practices: updatedPractices });
       setCoursePractices(updatedPractices);
     } else if (courseInfo) {
       // Añadir nueva práctica
-      const newPractices = [...courseInfo.practices, updatedPractice];
+      const newPractices = [...(courseInfo.practices ?? []), updatedPractice];
       setCourseInfo({ ...courseInfo, practices: newPractices });
       setCoursePractices(newPractices);
     }
@@ -136,7 +138,7 @@ export default function CourseDetailPage() {
       practices: filteredPractices,
     });
     
-    setCoursePractices(filteredPractices);
+    setCoursePractices(filteredPractices ?? []);
   };
 
   const [filterValue, setFilterValue] = React.useState("");
@@ -159,7 +161,7 @@ export default function CourseDetailPage() {
     }
     if (statusFilter !== "all" && Array.from(statusFilter).length !== practiceStatusOptions.length) {
       filteredPractices = filteredPractices.filter((practice) =>
-        Array.from(statusFilter).includes(practice.status),
+        practice.status !== undefined && Array.from(statusFilter).includes(practice.status),
       );
     }
 
@@ -285,6 +287,16 @@ export default function CourseDetailPage() {
     canEditCourse
   ]);
 
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-center text-red-600 text-lg font-semibold bg-red-100 p-4 rounded-3xl shadow max-w-lg">
+          No tens accés a aquest curs o no s&apos;ha pogut carregar correctament.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="px-8 pb-8 min-h-screen">
       <Breadcrumbs>
@@ -373,7 +385,7 @@ export default function CourseDetailPage() {
             ) : sortedPractices.length !== 0 ? (
               <div className="flex flex-col gap-3">
                 {sortedPractices.map((practice) => (
-                  <div className="relative">
+                  <div className="relative" key={practice.id}>
                     <PracticeCourseCard 
                       key={practice.id}
                       practice={practice}
@@ -428,14 +440,16 @@ export default function CourseDetailPage() {
         onSave={handleUpdateCourse}
         onDelete={handleDeleteCourse}
       />
-      <PracticeDrawer 
-        isOpen={isPracticeDrawerOpen}
-        onOpenChange={setIsPracticeDrawerOpen}
-        initialPractice={currentPractice}
-        course={courseInfo}
-        onSave={handleSavePractice}
-        onDelete={handleDeletePractice}
-      />
+      {courseInfo && (
+        <PracticeDrawer 
+          isOpen={isPracticeDrawerOpen}
+          onOpenChange={setIsPracticeDrawerOpen}
+          initialPractice={currentPractice}
+          course={courseInfo}
+          onSave={handleSavePractice}
+          onDelete={handleDeletePractice}
+        />
+      )}
     </div>
   );
 }

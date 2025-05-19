@@ -1,41 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { deleteSession, getTokenFromSession } from '@/app/lib/session'
+import { jwtVerify } from 'jose'
+import { SessionPayload } from '@/app/lib/definitions'
  
-// 1. Specify protected and public routes
+const secretKey = process.env.SESSION_SECRET
+const encodedKey = new TextEncoder().encode(secretKey)
+
 const publicRoutes = ['/login', '/register']
+
+export async function decrypt(session: string | undefined = ''): Promise<SessionPayload | undefined> {
+  try {
+    const { payload } = await jwtVerify(session, encodedKey, {
+      algorithms: ['HS256'],
+    })
+    return payload as SessionPayload
+  } catch (error) {
+    console.log('Failed to verify session')
+    return undefined
+  }
+}
  
 export default async function middleware(req: NextRequest) {
-  // 2. Check if the current route is protected or public
   const path = req.nextUrl.pathname
   const isPublicRoute = publicRoutes.includes(path)
  
-  // 3. Decrypt the session from the cookie
-  const token = await getTokenFromSession()
+  const session = req.cookies.get('session')?.value
  
-  // 4. Redirect to /login if the user is not authenticated
-  if (!token) {
+  if (!session) {
     if (!isPublicRoute) {
       return NextResponse.redirect(new URL('/login', req.nextUrl))
     }
     return NextResponse.next()
   }
+
+  const payload = await decrypt(session)
+
+  if (!payload) {
+    const response = NextResponse.redirect(new URL('/login', req.nextUrl))
+    response.cookies.delete('session')
+    return response
+  }
  
-  // 5. Redirect to home page if the user is authenticated
-  if (isPublicRoute && token) {
+  if (isPublicRoute && payload.token) {
     return NextResponse.redirect(new URL('/', req.nextUrl))
   }
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/login/test-token`, {
+  const apiRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/login/test-token`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${payload.token}`,
       'Accept': 'application/json',
     }
   })
 
-  if (!res.ok) {
-    await deleteSession();
-    return NextResponse.redirect(new URL('/login', req.nextUrl))
+  if (!apiRes.ok) {
+    const res = NextResponse.redirect(new URL('/login', req.nextUrl))
+    res.cookies.delete('session')
+    return res
   }
  
   return NextResponse.next()

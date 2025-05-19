@@ -182,8 +182,8 @@ export default function PracticesGeneralPage() {
               selectionMode="multiple"
               onSelectionChange={setCourseFilter}
             >
-              {courseOptions.map((course) => (
-                <DropdownItem key={course.uid}>
+              {courseOptions.map((course, index) => (
+                <DropdownItem key={course.uid ?? index}>
                   {course.name}
                 </DropdownItem>
               ))}
@@ -231,7 +231,7 @@ export default function PracticesGeneralPage() {
       <div className="container px-2 pt-8 pb-5">
         <h1 className="text-4xl font-bold pl-0.5 mb-2">Les meves pràctiques</h1>
         <p className="text-default-600">
-          Consulta totes les pràctiques dels teus cursos i explora'n l'estat i els detalls
+          Consulta totes les pràctiques dels teus cursos i explora&apos;n l&apos;estat i els detalls
         </p>
       </div>
       <Divider className="mb-8" />
@@ -239,7 +239,7 @@ export default function PracticesGeneralPage() {
       {/* Tabs for practice status */}
       <Tabs 
         selectedKey={activeTab} 
-        onSelectionChange={setActiveTab}
+        onSelectionChange={(key) => setActiveTab(key as string)}
         aria-label="Estat de les pràctiques"
         variant="underlined"
         size="lg"
@@ -323,7 +323,7 @@ export default function PracticesGeneralPage() {
             <CodeBracketIcon className="size-16 mx-auto text-default-400 mb-4" />
             <h3 className="text-xl font-semibold text-default-700 mb-2">Cap pràctica trobada</h3>
             <p className="text-default-500">
-              No s'ha trobat cap pràctica amb els filtres aplicats. Prova de canviar els criteris de cerca.
+              No s&apos;ha trobat cap pràctica amb els filtres aplicats. Prova de canviar els criteris de cerca.
             </p>
           </div>
         )}

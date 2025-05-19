@@ -28,7 +28,7 @@ export const CourseCard = ({course}: CourseCardProps) => {
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        const teachers = await getCourseTeachers(course.id);
+        const teachers = await getCourseTeachers(course.id ?? "");
         setTeachers(teachers);
       } catch (error) {
         console.error("Error fetching course teachers:", error);
@@ -133,7 +133,7 @@ export const CourseCard = ({course}: CourseCardProps) => {
           <div className="absolute right-5 -top-[1.55rem]">
 						<AvatarGroup max={3}>
               {teachers.map((teacher) => (
-                <Tooltip showArrow crossOffset={-12} closeDelay={50} content={teacher.name + " " + teacher.surnames}>
+                <Tooltip key={teacher.niub} showArrow crossOffset={-12} closeDelay={50} content={teacher.name + " " + teacher.surnames}>
                   <Avatar 
                     showFallback
                     name={teacher.name[0]}

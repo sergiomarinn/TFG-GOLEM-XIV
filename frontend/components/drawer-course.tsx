@@ -20,8 +20,6 @@ import {
 import { useEffect, useState } from "react";
 import { ChevronDownIcon, EyeDropperIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { FileUploader } from "@/components/file-uploader";
-import Image from 'next/image'
-import XLSXIcon from "@/public/xlsx_icon.svg";
 import { createCourse, deleteCourse, downloadStudentsTemplateCSV, downloadStudentsTemplateXLSX, updateCourse } from "@/app/actions/course";
 import { addToast } from "@heroui/toast";
 
@@ -38,7 +36,9 @@ const gradients = {
   default: "bg-gradient-to-br from-gray-500 to-gray-700"
 };
 
-const ColorSelector = ({ selectedColor, onColorSelect }) => {
+export type GradientColor = keyof typeof gradients;
+
+const ColorSelector = ({ selectedColor, onColorSelect }: { selectedColor: string, onColorSelect: (color: string) => void }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -66,7 +66,7 @@ const ColorSelector = ({ selectedColor, onColorSelect }) => {
                   onColorSelect(color);
                   setIsOpen(false);
                 }}
-                className={`w-6 h-6 rounded-full ${color === selectedColor ? "ring-2 ring-offset-1" : ""} ${gradients[color]}`}
+                className={`w-6 h-6 rounded-full ${color === selectedColor ? "ring-2 ring-offset-1" : ""} ${gradients[color as GradientColor]}`}
                 aria-label={`Color ${color}`}
               />
             ))}
@@ -113,6 +113,8 @@ export const CourseDrawer = ({
   const [isOpenPopoverDelete, setIsOpenPopoverDelete] = useState(false);
   const [isDeletingCourse, setIsDeletingCourse] = useState(false);
 
+  type EditFormField = "name" | "academic_year" | "semester" | "description" | "color";
+
   const [editFormData, setEditFormData] = useState({
     name: course?.name || "",
     description: course?.description || "",
@@ -146,7 +148,7 @@ export const CourseDrawer = ({
     }
   }, [initialCourse, isOpen]);
 
-  const handleEditFormChange = (field, value) => {
+  const handleEditFormChange = (field: EditFormField, value: string) => {
     setEditFormData({
       ...editFormData,
       [field]: value
@@ -154,20 +156,19 @@ export const CourseDrawer = ({
   };
 
   const handleCourse = async () => {
-    const updatedData = { ...editFormData };
+    const updatedData = {
+      name: editFormData.name.trim(),
+      academic_year: editFormData.academic_year.trim(),
+      semester: editFormData.semester.trim() as "primavera" | "tardor",
+      description: editFormData.description.trim(),
+      color: editFormData.color.trim() as GradientColor,
+    };
 
     // Si ya existe un curso (modo edición)
     if (course?.id) {
       try {
         setIsCreatingOrUpdatingCourse(true);
-        const updatedCourseData = {
-          name: editFormData.name.trim(),
-          academic_year: editFormData.academic_year.trim(),
-          semester: editFormData.semester.trim(),
-          description: editFormData.description.trim(),
-          color: editFormData.color.trim(),
-        };
-        const updatedCourse = await updateCourse(course.id, updatedCourseData);
+        const updatedCourse = await updateCourse(course.id, updatedData);
         addToast({
           title: `Curs ${updatedCourse.name} actualizat correctament`,
           color: "success"
@@ -222,7 +223,7 @@ export const CourseDrawer = ({
       onOpenChange?.(false);
     } catch (error) {
       addToast({
-        title: `Error en eliminar el curs ${course.name}`,
+        title: `Error en eliminar el curs ${course?.name}`,
         color: "danger"
       })
       console.error(error);
@@ -254,12 +255,14 @@ export const CourseDrawer = ({
     csv: "Descarregar la plantilla en format CSV",
   };
 
-  const downloadLabelsMap = {
+  type DownloadOption = 'xlsx' | 'csv';
+
+  const downloadLabelsMap: Record<DownloadOption, string> = {
     xlsx: "Descarregar",
     csv: "Descarregar (CSV)",
   };
 
-  const selectedDownloadOptionValue = Array.from(selectedDownloadOption)[0];
+  const selectedDownloadOptionValue: DownloadOption = Array.from(selectedDownloadOption)[0] as DownloadOption;
 
 	return (
     <Drawer
@@ -392,12 +395,12 @@ export const CourseDrawer = ({
               </div>
               {!course && <div className="flex flex-col gap-3 pt-3 pb-4">
                 <h2 className="text-xl font-bold leading-5">
-                  Pujar llistat d'estudiants
+                  Pujar llistat d&apos;estudiants
                 </h2>
                 <div className="w-full flex flex-col gap-3 rounded-lg bg-default-200/60 p-5">
                   <div className="flex items-center gap-3 font-medium text-sm">
-                    <Image
-                      src={XLSXIcon}
+                    <img
+                      src="/xlsx_icon.svg"
                       alt="XLSX icon"
                       width={20}
                       className="block"
@@ -405,7 +408,7 @@ export const CourseDrawer = ({
                     Exemple de taula
                   </div>
                   <p className="text-default-500/80 text-sm font-light">
-                    Pots descarregar el fitxer d'exemple adjunt i utilitzar-lo com a punt de partida per afegir els estudiants al curs.
+                    Pots descarregar el fitxer d&apos;exemple adjunt i utilitzar-lo com a punt de partida per afegir els estudiants al curs.
                   </p>
                   {/* <Button
                       className="bg-default-50 border-small"
@@ -444,7 +447,7 @@ export const CourseDrawer = ({
                         aria-label="Download options"
                         selectedKeys={selectedDownloadOption}
                         selectionMode="single"
-                        onSelectionChange={setSelectedDownloadOption}
+                        onSelectionChange={(keys) => setSelectedDownloadOption(keys as Set<string>)}
                       >
                         <DropdownItem key="xlsx" description={downloadDescriptionsMap["xlsx"]}>
                           {downloadLabelsMap["xlsx"]}

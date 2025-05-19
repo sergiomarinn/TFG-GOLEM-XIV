@@ -372,7 +372,7 @@ export const Navbar = () => {
                           animate={{ opacity: 1 }}
                           transition={{ duration: 0.3 }}
                         >
-                          No s'han trobat cursos per a "{searchQuery}"
+                          No s&apos;han trobat cursos per a &quot;{searchQuery}&quot;
                         </motion.div>
                       )}
                     </>
@@ -406,7 +406,7 @@ export const Navbar = () => {
                           animate={{ opacity: 1 }}
                           transition={{ duration: 0.3 }}
                         >
-                          No s'han trobat pràctiques per a "{searchQuery}"
+                          No s&apos;han trobat pràctiques per a &quot;{searchQuery}&quot;
                         </motion.div>
                       )}
                     </>

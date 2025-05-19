@@ -15,12 +15,11 @@ import { DatePicker } from "@heroui/date-picker";
 import { useEffect, useState } from "react";
 import { TrashIcon } from "@heroicons/react/24/outline";
 import { FileUploader } from "@/components/file-uploader";
-import Image from 'next/image'
-import XLSXIcon from "@/public/xlsx_icon.svg";
 import { addToast } from "@heroui/toast";
 import { createPractice, deletePractice, updatePractice } from "@/app/actions/practice";
-import { DateValue, parseAbsoluteToLocal, parseZonedDateTime } from "@internationalized/date";
+import { DateValue, parseAbsoluteToLocal, parseZonedDateTime, ZonedDateTime } from "@internationalized/date";
 import { Course } from "@/types/course";
+import { downloadStudentsTemplateCSV } from "@/app/actions/course";
 
 interface PracticeDrawerProps {
   isOpen: boolean
@@ -45,6 +44,8 @@ export const PracticeDrawer = ({
   const [isCreatingOrUpdatingPractice, setIsCreatingOrUpdatingPractice] = useState(false);
   const [isOpenPopoverDelete, setIsOpenPopoverDelete] = useState(false);
   const [isDeletingCourse, setIsDeletingCourse] = useState(false);
+
+  type EditFormField = "name" | "description" | "programming_language" | "due_date" | "course_id";
 
   const [editFormData, setEditFormData] = useState({
     name: practice?.name || "",
@@ -83,7 +84,7 @@ export const PracticeDrawer = ({
     }
   }, [initialPractice, course, isOpen]);
 
-  const handleEditFormChange = (field, value) => {
+  const handleEditFormChange = (field: EditFormField, value: string | ZonedDateTime | null) => {
     setEditFormData({
       ...editFormData,
       [field]: value
@@ -157,7 +158,7 @@ export const PracticeDrawer = ({
       onOpenChange?.(false);
     } catch (error) {
       addToast({
-        title: `Error en eliminar la pràctica ${practice.name}`,
+        title: `Error en eliminar la pràctica ${practice?.name}`,
         color: "danger"
       })
       console.error(error);
@@ -168,7 +169,7 @@ export const PracticeDrawer = ({
 
   const isSaveCreateEnabled = (() => {
     // Comprueba que los campos del formulario esenciales NO estén vacíos
-    const hasRequiredFields = editFormData.name?.trim() !== "" && editFormData.description?.trim() !== "" && editFormData.semester?.trim() !== "" && editFormData.academic_year?.trim() !== "" && editFormData.color?.trim() !== "";
+    const hasRequiredFields = editFormData.name?.trim() !== "" && editFormData.description?.trim() !== "" && editFormData.programming_language?.trim() !== "" && editFormData.due_date && editFormData.course_id?.trim() !== "";
 
     if (practice?.id) {
       // Modo edición: basta con que los campos esenciales tengan datos
@@ -317,7 +318,7 @@ export const PracticeDrawer = ({
                     Exemple de fitxers
                   </div>
                   <p className="text-default-500/80 text-sm font-light">
-                    Pots descarregar els fitxers d'exemple adjunts i utilitzar-lo com a punt de partida per fer el teu fitxer de correcció
+                    Pots descarregar els fitxers d&apos;exemple adjunts i utilitzar-lo com a punt de partida per fer el teu fitxer de correcció
                   </p>
                   <Button
                     className="bg-default-50 border-small"

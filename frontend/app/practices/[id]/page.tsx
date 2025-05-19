@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -76,7 +75,7 @@ const PracticeStatus = ({ status }: {status: string}) => {
   );
 };
 
-const FeedbackSection = ({ feedback, grade }) => {
+const FeedbackSection = ({ feedback, grade }: {feedback: string, grade: number | undefined}) => {
   return (
     <Card>
       <CardHeader>
@@ -112,7 +111,7 @@ const FeedbackSection = ({ feedback, grade }) => {
   );
 };
 
-const StudentSidebar = ({ practiceStudents, onSelectStudent, selectedStudent }) => {
+const StudentSidebar = ({ practiceStudents, onSelectStudent, selectedStudent }: { practiceStudents: User[], onSelectStudent: (student: User | null) => void, selectedStudent: User | null }) => {
   const [students, setStudents] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -204,7 +203,7 @@ const StudentSidebar = ({ practiceStudents, onSelectStudent, selectedStudent }) 
   );
 };
 
-const StudentContentView = ({ practiceId, student, onBack }) => {
+const StudentContentView = ({ practiceId, student, onBack } : { practiceId: string, student: User, onBack: () => void }) => {
   const [studentPractice, setStudentPractice] = useState<Practice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [studentFiles, setStudentFiles] = useState<PracticeFileInfo[]>([]);
@@ -214,11 +213,11 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
     const fetchStudentDetail = async () => {
       try {
         setIsLoading(true);
-        const studentPractice = await getPracticeStudent(practiceId, student.niub);
+        const studentPractice = await getPracticeStudent(practiceId, student.niub ?? "");
         setStudentPractice(studentPractice);
         
         if (studentPractice.status !== "not_submitted") {
-          const fileInfo = await getPracticeFileInfoForUser(practiceId, student.niub);
+          const fileInfo = await getPracticeFileInfoForUser(practiceId, student.niub ?? "");
           setStudentFiles([fileInfo]);
         }
       } catch (error) {
@@ -284,7 +283,7 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
   if (!student) {
     return (
       <div className="text-center py-8">
-        <p className="text-default-500">No s'ha trobat la informació de l'estudiant</p>
+        <p className="text-default-500">No s&apos;ha trobat la informació de l&apos;estudiant</p>
         <Button 
           color="primary" 
           variant="light" 
@@ -305,9 +304,9 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
           <div className="w-full flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <InformationCircleIcon className="size-6 text-default-700" />
-              <h2 className="text-xl font-semibold">Informació de l'estudiant</h2>
+              <h2 className="text-xl font-semibold">Informació de l&apos;estudiant</h2>
             </div>
-            {student.grade !== undefined && (
+            {/* {student.grade !== undefined && (
               <Chip 
                 color={student.grade >= 5 ? "success" : "danger"} 
                 variant="flat" 
@@ -315,7 +314,7 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
               >
                 Nota: {student.grade.toFixed(1)}
               </Chip>
-            )}
+            )} */}
           </div>
         </CardHeader>
         <Divider />
@@ -332,16 +331,22 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
             <div>
               <p className="text-sm text-default-500">Estat</p>
               <Chip
-                color={statusColorMap[studentPractice.status] || "default"}
+                 color={
+                    studentPractice && studentPractice.status
+                      ? statusColorMap[studentPractice.status] || "default"
+                      : "default"
+                  }
                 variant="flat"
                 className="mt-1"
               >
-                {statusOptions.find(opt => opt.uid === studentPractice?.status)?.name || student.status || 'No entregada'}
+                {studentPractice && studentPractice.status
+                  ? (statusOptions.find(opt => opt.uid === studentPractice.status)?.name || studentPractice.status)
+                  : 'No entregada'}
               </Chip>
             </div>
-            {student.submission_date && (
+            {studentPractice && studentPractice.submission_date && (
               <div>
-                <p className="text-sm text-default-500">Data d'enviament</p>
+                <p className="text-sm text-default-500">Data d&apos;enviament</p>
                 <p>{formatDate(studentPractice.submission_date)}</p>
               </div>
             )}
@@ -364,7 +369,7 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
                 variant="flat"
                 startContent={!isDownloading && <ArrowDownTrayIcon className="size-4"/>}
                 isLoading={isDownloading}
-                onPress={() => handleDownloadSubmission(student.niub)}
+                onPress={() => handleDownloadSubmission(student.niub ?? "")}
               >
                 Descarregar
               </Button>
@@ -383,11 +388,11 @@ const StudentContentView = ({ practiceId, student, onBack }) => {
 
       {/* Sección de retroalimentación */}
       {studentPractice?.status === 'corrected' && (
-        <FeedbackSection feedback={student.feedback} grade={student.grade} />
+        <FeedbackSection feedback={studentPractice.correction ?? ""} grade={undefined} />
       )}
 
       {/* Botones de acción para corrección */}
-      {(student.status === 'submitted' || student.status === 'corrected' || student.status === 'rejected') && (
+      {(studentPractice?.status === 'submitted' || studentPractice?.status === 'corrected' || studentPractice?.status === 'rejected') && (
         <div className="flex justify-end">
           <Button
             color="primary"
@@ -414,6 +419,7 @@ export default function PracticeDetailPage() {
   const [isPracticeDrawerOpen, setIsPracticeDrawerOpen] = React.useState(false);
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
 
   useEffect(() => {
     const fetchUserAndPractice = async () => {
@@ -431,6 +437,7 @@ export default function PracticeDetailPage() {
         }
       } catch (error) {
         console.error("Error fetching practice:", error);
+        setError(true);
       } finally {
         setIsLoading(false);
       }
@@ -469,7 +476,7 @@ export default function PracticeDetailPage() {
     
     try {
       setIsSubmitting(true);
-      await uploadPractice(practice.id, files[0])
+      await uploadPractice(practice.id ?? "", files[0])
 
       setPractice({
         ...practice,
@@ -507,7 +514,7 @@ export default function PracticeDetailPage() {
     router.push(`/courses/${practice?.course_id}`);
   };
 
-  const handleSelectStudent = (student: User) => {
+  const handleSelectStudent = (student: User | null) => {
     setSelectedStudent(student);
   };
 
@@ -518,7 +525,7 @@ export default function PracticeDetailPage() {
   const handleDownloadSubmission = async () => {
     try {
       setIsDownloading(true);
-      await downloadMyPractice(practice.id)
+      await downloadMyPractice(practice?.id ?? "")
 
       addToast({
         title: "Descarrega realitzada amb èxit",
@@ -539,12 +546,22 @@ export default function PracticeDetailPage() {
   }
 
   const canSubmit = useMemo(() => {
-    return ['not_submitted', 'rejected'].includes(practice?.status) || showResubmit;
+    return ['not_submitted', 'rejected'].includes(practice?.status ?? "") || showResubmit;
   }, [practice?.status, showResubmit]);
 
   const isPastDue = useMemo(() => {
-    return new Date(practice?.due_date) < new Date();
+    return new Date(practice?.due_date ?? "") < new Date();
   }, [practice?.due_date]);
+
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-center text-red-600 text-lg font-semibold bg-red-100 p-4 rounded-3xl shadow max-w-lg">
+          No tens accés a aquesta pràctica o no s&apos;ha pogut carregar correctament.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="px-8 pb-12 min-h-screen">
@@ -626,7 +643,7 @@ export default function PracticeDetailPage() {
           <div className="flex flex-wrap gap-7 text-default-700">
             <div className="flex items-center gap-1">
               <CalendarIcon className="size-4" />
-              <span>Data límit: {formatDate(practice?.due_date)}</span>
+              <span>Data límit: {formatDate(practice?.due_date ?? "")}</span>
             </div>
             <div className="flex items-center gap-1">
               <CodeBracketIcon className="size-4" />
@@ -680,7 +697,7 @@ export default function PracticeDetailPage() {
               {/* Sección de retroalimentación, si existe */}
               {(practice?.status === 'corrected' && !isTeacher) && (
                 <div className="mt-6">
-                  <FeedbackSection feedback={practice.correction} grade={practice.grade} />
+                  <FeedbackSection feedback={practice.correction} grade={undefined} />
                 </div>
               )}
 
@@ -731,7 +748,7 @@ export default function PracticeDetailPage() {
               <Divider />
               <CardBody>
                 <StudentSidebar 
-                  practiceStudents={practice?.users} 
+                  practiceStudents={practice?.users ?? []} 
                   onSelectStudent={handleSelectStudent}
                   selectedStudent={selectedStudent}
                 />
@@ -776,7 +793,7 @@ export default function PracticeDetailPage() {
                   <FileUploader 
                     files={files} 
                     setFiles={setFiles} 
-                    disabled={!canSubmit || ['correcting', 'submitted'].includes(practice?.status)}
+                    disabled={!canSubmit || ['correcting', 'submitted'].includes(practice?.status ?? "")}
                     acceptedExtensions={['zip']}
                     multiple={false}
                   />
@@ -811,14 +828,14 @@ export default function PracticeDetailPage() {
           )}
         </div>
       </div>
-      <PracticeDrawer 
+      {practice?.course && <PracticeDrawer 
         isOpen={isPracticeDrawerOpen}
         onOpenChange={setIsPracticeDrawerOpen}
         initialPractice={practice || null}
         course={practice?.course}
         onSave={handleUpdatePractice}
         onDelete={handleDeletePractice}
-      />
+      />}
     </div>
   );
 }

@@ -1,10 +1,6 @@
 'use client'
 
 import Link from 'next/link';
-import Image from 'next/image';
-import LogoUB from "@/public/logo-ub.svg";
-import LogoUBExtended from "@/public/logo-ub-extended.svg";
-import LogoUBExtendedWhite from "@/public/logo-ub-extended-white.svg";
 import { Button } from "@heroui/button";
 import { redirect, usePathname } from 'next/navigation';
 import clsx from 'clsx';
@@ -69,8 +65,8 @@ export const SideNav = () => {
 								: "scale-x-100 opacity-100 duration-500"
 						)}
 					>
-						<Image
-							src={theme === "dark" ? LogoUBExtendedWhite : LogoUBExtended}
+						<img
+							src={theme === "dark" ? "/logo-ub-extended-white.svg" : "/logo-ub-extended.svg"}
 							alt="Logo UB Extended"
 							width={160}
 							height={32}
@@ -79,8 +75,8 @@ export const SideNav = () => {
 					</div>
 
 					{/* Logo pequeño */}
-					<Image
-						src={LogoUB}
+					<img
+						src="/logo-ub.svg"
 						alt="Logo UB"
 						width={32}
 						className={clsx(

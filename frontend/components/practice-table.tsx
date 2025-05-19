@@ -110,7 +110,7 @@ export const PracticeTable = ({ practices, isLoading }: { practices: Practice[],
     }
     if (statusFilter !== "all" && Array.from(statusFilter).length !== statusOptions.length) {
       filteredPractices = filteredPractices.filter((practice) =>
-        Array.from(statusFilter).includes(practice.status),
+        practice.status !== undefined && Array.from(statusFilter).includes(practice.status),
       );
     }
     const limitDate: Date | null = getLimitDate();
@@ -186,8 +186,8 @@ export const PracticeTable = ({ practices, isLoading }: { practices: Practice[],
         );
       case "status":
         return (
-          <Chip color={statusColorMap[practice.status]} size="sm" variant="flat">
-            {getStatusName(practice.status)}
+          <Chip color={statusColorMap[practice.status || "default"]} size="sm" variant="flat">
+            {getStatusName(practice.status || "default")}
           </Chip>
         );
       case "actions":

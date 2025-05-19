@@ -62,26 +62,26 @@ const UserCardSkeleton = ({ count = 5, showDeleteButton = true }) => {
   );
 };
 
-const getRelativeTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffTime = Math.abs(now - date);
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+// const getRelativeTime = (dateString: string) => {
+//   const date = new Date(dateString);
+//   const now = new Date();
+//   const diffTime = Math.abs(now - date);
+//   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   
-  if (diffDays === 0) {
-    return "Avui";
-  } else if (diffDays === 1) {
-    return "Ahir";
-  } else if (diffDays < 7) {
-    return `Fa ${diffDays} dies`;
-  } else if (diffDays < 30) {
-    const weeks = Math.floor(diffDays / 7);
-    return `Fa ${weeks} ${weeks === 1 ? 'setmana' : 'setmanes'}`;
-  } else {
-    const options = { day: 'numeric', month: 'short' };
-    return date.toLocaleDateString('ca-ES', options);
-  }
-};
+//   if (diffDays === 0) {
+//     return "Avui";
+//   } else if (diffDays === 1) {
+//     return "Ahir";
+//   } else if (diffDays < 7) {
+//     return `Fa ${diffDays} dies`;
+//   } else if (diffDays < 30) {
+//     const weeks = Math.floor(diffDays / 7);
+//     return `Fa ${weeks} ${weeks === 1 ? 'setmana' : 'setmanes'}`;
+//   } else {
+//     const options = { day: 'numeric', month: 'short' };
+//     return date.toLocaleDateString('ca-ES', options);
+//   }
+// };
 
 const getRoleName = (user: User) =>
   user.is_student ? 'Estudiant' : user.is_teacher ? 'Professor' : 'Admin';
@@ -93,7 +93,7 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
   const [users, setUsers] = React.useState<User[]>([]);
   const [filterValue, setFilterValue] = React.useState("");
   const [tabSelection, setTabSelection] = React.useState("all");
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
   const [isOpenPopoverDelete, setIsOpenPopoverDelete] = React.useState(false);
 
   // Estado de popover por niub
@@ -182,7 +182,7 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
     const failedStudents: string[] = [];
     
     try {
-      for (const niub of selectedStudents) {
+      for (const niub of Array.from(selectedStudents)) {
         try {
           await addStudentByNiub(courseId, niub);
           const student = searchResults.find(s => s.niub === niub);
@@ -216,7 +216,7 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
       
       // Si todos los estudiantes fueron añadidos con éxito, cerrar el modal
       if (failedStudents.length === 0) {
-        onOpenChange(false);
+        onClose();
       }
     } catch (error) {
       console.error("Error al añadir estudiantes:", error);
@@ -298,7 +298,7 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
     <div className="flex flex-col gap-3 p-4 rounded-3xl border-1.5 border-default-200 bg-content1">
       <Tabs 
         selectedKey={tabSelection} 
-        onSelectionChange={setTabSelection as any}
+        onSelectionChange={(key) => setTabSelection(key as string)}
         aria-label="Participants tabs"
         variant="underlined"
         classNames={{
@@ -376,8 +376,8 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
                       transition={{ duration: 0.3 }}
                     > 
                       <Popover 
-                        isOpen={!!openPopovers[user.niub]} 
-                        onOpenChange={(open) => handleOpenPopover(user.niub, open)}
+                        isOpen={!!openPopovers[user.niub ?? ""]} 
+                        onOpenChange={(open) => handleOpenPopover(user.niub ?? "", open)}
                         placement="bottom-end"
                         showArrow
                       >
@@ -396,13 +396,13 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
                               Estàs segur que vols esborrar el estudiant <strong>{user.niub}</strong>?
                             </p>
                             <div className="flex justify-end gap-2">
-                              <Button size="sm" variant="light" onPress={() => handleOpenPopover(user.niub, false)}>
+                              <Button size="sm" variant="light" onPress={() => handleOpenPopover(user.niub ?? "", false)}>
                                 Cancel·lar
                               </Button>
                               <Button
                                 size="sm"
                                 color="danger"
-                                onPress={() => handleDelete(user.niub)}
+                                onPress={() => handleDelete(user.niub ?? "")}
                                 isLoading={deletingUser === user.niub}
                               >
                                 Confirmar
@@ -481,12 +481,12 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
                                 </div>
                                 <Button
                                   isIconOnly
-                                  color={selectedStudents.has(student.niub) ? "success" : "default"}
-                                  variant={selectedStudents.has(student.niub) ? "solid" : "light"}
+                                  color={selectedStudents.has(student.niub ?? "") ? "success" : "default"}
+                                  variant={selectedStudents.has(student.niub ?? "") ? "solid" : "light"}
                                   size="sm"
-                                  onPress={() => toggleStudentSelection(student.niub)}
+                                  onPress={() => toggleStudentSelection(student.niub ?? "")}
                                 >
-                                  {selectedStudents.has(student.niub) ? (
+                                  {selectedStudents.has(student.niub ?? "") ? (
                                     <CheckIcon className="size-4" />
                                   ) : (
                                     <PlusIcon className="size-4" />

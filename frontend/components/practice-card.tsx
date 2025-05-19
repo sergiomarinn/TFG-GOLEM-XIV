@@ -52,8 +52,8 @@ export const PracticeCard = ({ practice }: { practice: Practice }) => {
 						<h2 className="text-default-800 text-wrap text-2xl font-semibold mb-4 line-clamp-2">{practice.name}</h2>
 					</div>
 					<div className="w-[35%] flex flex-col items-end gap-1">
-						<Progress aria-label={practice.status} color={statusColorMap[practice.status]} value={getStatusValue(practice.status)} maxValue={statusOptions.length-2} />
-						<span className="text-sm text-default-500 font-light mr-1">{getStatusName(practice.status)}</span>
+						<Progress aria-label={practice.status} color={statusColorMap[practice.status || "default"]} value={getStatusValue(practice.status || "default")} maxValue={statusOptions.length-2} />
+						<span className="text-sm text-default-500 font-light mr-1">{getStatusName(practice.status || "default")}</span>
 					</div>
 				</div>
         

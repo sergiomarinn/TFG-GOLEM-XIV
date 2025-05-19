@@ -623,7 +623,7 @@ async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, curr
         add_files_to_zip_from_sftp(z, sftp, user_path, "")
     
     # Create response with appropriate headers
-    filename = f"{practice.name}_{"teacher" if current_user.is_teacher else "student"}_{current_user.niub}.zip"
+    filename = f"{practice.name}_{'teacher' if current_user.is_teacher else 'student'}_{current_user.niub}.zip"
     return StreamingResponse(
         z,
         media_type="application/zip",
@@ -732,7 +732,7 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
         add_files_to_zip_from_sftp(z, sftp, user_path, "")
     
     # Create response with appropriate headers
-    filename = f"{practice.name}_{"teacher" if target_user.is_teacher else "student"}_{target_user.niub}.zip"
+    filename = f"{practice.name}_{'teacher' if target_user.is_teacher else 'student'}_{target_user.niub}.zip"
     return StreamingResponse(
         z,
         media_type="application/zip",

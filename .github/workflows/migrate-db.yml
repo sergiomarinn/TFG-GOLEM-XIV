@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'backend/alembic/**'
-      - '.github/workflows/db-migration.yml'
+      - '.github/workflows/migrate-db.yml'
 
 jobs:
   migrate-db:

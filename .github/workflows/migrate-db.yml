@@ -1,0 +1,45 @@
+name: Migrate DB
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/alembic/**'
+      - '.github/workflows/db-migration.yml'
+
+jobs:
+  migrate-db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.4.15"
+          enable-cache: true
+
+      - name: Install backend dependencies
+        run: uv sync
+        working-directory: backend
+
+      - name: Run Alembic migration
+        run: uv run alembic upgrade head
+        working-directory: backend
+        env:
+          PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+          FIRST_SUPERUSER: ${{ secrets.FIRST_SUPERUSER }}
+          FIRST_SUPERUSER_PASSWORD: ${{ secrets.FIRST_SUPERUSER_PASSWORD }}
+          DB_ENGINE: ${{ secrets.DB_ENGINE }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}

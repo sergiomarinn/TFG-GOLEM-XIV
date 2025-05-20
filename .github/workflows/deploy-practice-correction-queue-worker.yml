@@ -35,7 +35,7 @@ jobs:
         uses: azure/container-apps-deploy-action@v2
         with:
           appSourcePath: ./practice_correction_queue_worker
-          dockerfilePath: ./practice_correction_queue_worker/Dockerfile
+          dockerfilePath: Dockerfile
           registryUrl: golemxivbackend.azurecr.io
           registryUsername: ${{ secrets.PRACTICECORRECTIONWORKERAPP_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.PRACTICECORRECTIONWORKERAPP_REGISTRY_PASSWORD }}

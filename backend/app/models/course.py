@@ -1,4 +1,4 @@
-from sqlmodel import Field, Relationship, Enum, Column
+from sqlmodel import Field, Relationship, Enum, Column, String
 from pydantic import model_validator
 from sqlalchemy.ext.hybrid import hybrid_property
 from typing import ClassVar
@@ -37,6 +37,7 @@ class Course(CourseBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     users: list[User] = Relationship(back_populates="courses", link_model=CoursesUsersLink)
     practices: list["Practice"] = Relationship(back_populates="course", cascade_delete=True)
+    pending_niubs: str = Field(default="", sa_column=Column(String, nullable=False, server_default=""))
     students_count: ClassVar[hybrid_property]
     programming_languages: ClassVar[hybrid_property]
     

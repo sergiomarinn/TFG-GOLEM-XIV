@@ -2,7 +2,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
-from sqlmodel import col, delete, func, select
+from sqlmodel import col, delete, func, select, or_
 
 from app import crud
 from app.api.deps import (
@@ -23,6 +23,7 @@ from app.models import (
     UsersPublic,
     UserUpdate,
     UserUpdateMe,
+    Course
 )
 from app.utils import generate_new_account_email, send_email
 
@@ -199,6 +200,31 @@ def register_user(session: SessionDep, user_in: UserRegister) -> Any:
         )
     user_create = UserCreate.model_validate(user_in)
     user = crud.user.create_user(session=session, user_create=user_create)
+    
+    stmt = select(Course).where(
+        or_(
+            Course.pending_niubs == user.niub,
+            Course.pending_niubs.like(f"{user.niub},%"),
+            Course.pending_niubs.like(f"%,{user.niub},%"),
+            Course.pending_niubs.like(f"%,{user.niub}")
+        )
+    )
+    pending_courses = session.exec(stmt).all()
+
+    for course in pending_courses:
+        course.users.append(user)
+        for practice in course.practices:
+            if user not in practice.users:
+                practice.users.append(user)
+                session.add(practice)
+
+        pending_niubs_list = [niub for niub in course.pending_niubs.split(",") if niub != user.niub]
+        course.pending_niubs = ",".join(pending_niubs_list)
+
+        session.add(course)
+
+    session.commit()
+
     return user
 
 

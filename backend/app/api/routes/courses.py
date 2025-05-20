@@ -36,6 +36,8 @@ from app.models import (
 import pandas as pd
 import os
 import logging
+from app.services import sftp_service
+import posixpath
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -232,12 +234,6 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
     """
     Create new course.
     """
-    course = crud.course.get_course_by_name(session=session, name=course_in.name)
-    if course:
-        raise HTTPException(status_code=400, detail="The course already exists")
-    course = crud.course.create_course(session=session, course_create=course_in)
-    course.users.append(current_user) # Add teacher to course
-
     _, extension = os.path.splitext(file.filename)
     try:
         if extension.lower() == ".csv":
@@ -248,17 +244,33 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
             data = pd.read_excel(buffer)
             buffer.close()
         else:
-            raise HTTPException(500, "Solo se puede subir archivos csv o excel")
+            raise HTTPException(status_code=500, detail="Solo se puede subir archivos csv o excel")
+        
+        # Check if "niub" column exists in the uploaded file
+        if "niub" not in data.columns:
+            raise HTTPException(status_code=400, detail="El archivo debe contener una columna llamada 'niub'")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error procesando archivo: {str(e)}")
 
+    course = crud.course.get_course_by_name(session=session, name=course_in.name)
+    if course:
+        raise HTTPException(status_code=400, detail="The course already exists")
+    course = crud.course.create_course(session=session, course_create=course_in)
+    course.users.append(current_user) # Add teacher to course
+
     try:
-        p_path = os.path.join(settings.PROFESSOR_FILES_PATH, course.academic_year, course.name)
-        a_path = os.path.join(settings.STUDENT_FILES_PATH, course.academic_year, course.name)
-        os.makedirs(p_path, exist_ok=True)
-        os.makedirs(a_path, exist_ok=True)
+        with sftp_service.sftp_client() as sftp:
+            p_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course.academic_year, course.name)
+            a_path = posixpath.join(settings.STUDENT_FILES_PATH, course.academic_year, course.name)
+            try:
+                sftp_service.mkdir_p(sftp, p_path)
+                sftp_service.mkdir_p(sftp, a_path)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error creating directories on SFTP server: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error creating directories: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"SFTP connection error: {str(e)}")
     
     not_found_users = []
     for user_niub in data["niub"]:
@@ -268,23 +280,14 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
         else:
             not_found_users.append(user_niub)
         
-    logger.info("Students not found: ", not_found_users)
-    
+    if not_found_users:
+        course.pending_niubs = ",".join(not_found_users)
+        logger.warning(f"Users not found: {not_found_users}")
+
     session.add(course)
     session.commit()
-
-    if not_found_users:
-        logger.warning(f"Users not found: {not_found_users}")
     
     return course
-
-from fastapi import HTTPException, Depends
-from pydantic import BaseModel
-from typing import Any
-import uuid
-
-class UserNIUBRequest(BaseModel):
-    niub: str
     
 @router.post("/{course_id}/students/{niub}", dependencies=[Depends(get_current_teacher)], response_model=Message)
 def add_student_by_niub(course_id: uuid.UUID, niub: str, session: SessionDep, current_user: CurrentUser) -> Any:

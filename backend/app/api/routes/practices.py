@@ -351,9 +351,8 @@ async def create_practice(*, session: SessionDep, practice_in: PracticeCreate, f
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
-    practice = crud.practice.get_practice_by_name(session=session, name=practice_in.name)
-    if practice:
-        raise HTTPException(status_code=400, detail="The practice already exists")
+    if any(p.name == practice_in.name for p in course.practices):
+        raise HTTPException(status_code=400, detail="A practice with this name already exists in the course")
     
     try:
         with sftp_service.sftp_client() as sftp:

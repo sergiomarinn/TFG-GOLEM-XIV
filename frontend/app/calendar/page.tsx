@@ -62,6 +62,7 @@ export default function CalendariPage() {
         console.error("Error al cargar las prácticas:", error);
       } finally {
         setLoading(false);
+        setTimeout(scrollToCurrentTime, 1500);
       }
     };
     
@@ -224,6 +225,10 @@ export default function CalendariPage() {
   
   // Función para hacer scroll a la hora actual
   const scrollToCurrentTime = () => {
+    if (weekOffset !== 0) {
+      setWeekOffset(0);
+    }
+    
     if (timeGridRef.current) {
       const now = new Date();
       const currentHour = now.getHours();
@@ -261,10 +266,10 @@ export default function CalendariPage() {
               <Button
                 size="sm"
                 radius="full"
-                className="bg-default-200/70"
+                className="bg-default-200/70 min-w-0"
                 onPress={scrollToCurrentTime}
               >
-                Ara
+                Avui
               </Button>
               <div className="flex items-center gap-2">
                 <h2 className="text-2xl font-semibold">

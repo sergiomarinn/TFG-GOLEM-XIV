@@ -28,3 +28,7 @@ jobs:
       run: |
         docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/golemxiv-backend:latest ./backend
         docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/golemxiv-backend:latest
+
+    - name: Trigger Azure Web App Deployment Webhook
+      run: |
+        curl -X POST "${{ secrets.AZURE_WEBHOOK_URL_BACKEND }}"

@@ -1,0 +1,37 @@
+name: DB Migration
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend Docker image
+        run: |
+          docker build -t backend-migrate:latest ./backend
+
+      - name: Run Alembic migrations
+        run: |
+          docker run --rm \
+            -e PROJECT_NAME=${{ vars.PROJECT_NAME }} \
+            -e FIRST_SUPERUSER=${{ vars.FIRST_SUPERUSER }} \
+            -e FIRST_SUPERUSER_PASSWORD=${{ vars.FIRST_SUPERUSER_PASSWORD }} \
+            -e DB_ENGINE=${{ secrets.DB_ENGINE }} \
+            -e DB_NAME=${{ secrets.DB_NAME }} \
+            -e DB_USER=${{ secrets.DB_USER }} \
+            -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            -e DB_HOST=${{ secrets.DB_HOST }} \
+            -e DB_PORT=${{ secrets.DB_PORT }} \
+            backend-migrate:latest \
+            alembic upgrade head

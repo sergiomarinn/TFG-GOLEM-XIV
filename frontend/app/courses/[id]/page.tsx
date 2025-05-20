@@ -306,7 +306,7 @@ export default function CourseDetailPage() {
       </Breadcrumbs>
       
       {/* Header section */}
-      <div className="relative container px-2 pt-8 pb-5">
+      <div className="relative w-full px-2 pt-8 pb-5">
         {isLoading ? (
           <div>
             <div className="flex items-center mb-2">

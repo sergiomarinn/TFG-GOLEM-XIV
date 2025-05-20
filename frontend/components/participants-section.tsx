@@ -29,7 +29,7 @@ import { Skeleton } from '@heroui/skeleton';
 
 const UserCardSkeleton = ({ count = 5, showDeleteButton = true }) => {
   return (
-    <div>
+    <div className="flex flex-col gap-3">
       {Array(count).fill(0).map((_, index) => (
         <Card key={index} className="w-full">
           <CardBody className="flex flex-row items-center px-3.5 py-3">
@@ -343,8 +343,8 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
         ) : filteredUsers.map((user) => (
           <Card key={user.niub} className="w-full">
             <CardBody className="flex flex-row items-center px-3.5 py-3">
-              <Avatar showFallback className="mr-3" />
-              <div className="flex-grow">
+              <Avatar showFallback className="mr-3 flex-shrink-0" />
+              <div className="flex-grow min-w-0">
                 <div className="flex items-center">
                   <h3 className="font-semibold text-lg mr-2">{user.name}</h3>
                   <Chip 
@@ -355,7 +355,7 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
                     {getRoleName(user)}
                   </Chip>
                 </div>
-                <p className="text-default-500">{user.email}</p>
+                <p className="text-default-500 w-[70%] truncate">{user.email}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Tooltip content="Enviar missatge">

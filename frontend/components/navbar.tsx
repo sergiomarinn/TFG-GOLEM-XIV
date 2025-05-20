@@ -447,7 +447,7 @@ export const Navbar = () => {
           </button>
 
           {/* Área de búsqueda - Desktop */}
-          <div className="hidden sm:flex flex-1 max-w-lg">
+          <div className="hidden sm:flex w-[51%]">
             {searchInput}
           </div>
 

@@ -28,7 +28,7 @@ export const PracticeCard = ({ practice }: { practice: Practice }) => {
   };
 
   return (
-    <div className="flex rounded-3xl overflow-hidden shadow-lg bg-white dark:bg-neutral-800">
+    <div className="h-full 2xl:h-[240px] flex rounded-3xl overflow-hidden shadow-lg bg-white dark:bg-neutral-800">
       {/* Panel lateral izquierdo */}
       <div className="w-1/3 bg-primary-700 dark:bg-primary-100 p-7 flex flex-col justify-between">
         <div>

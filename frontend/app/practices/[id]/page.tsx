@@ -741,7 +741,7 @@ export default function PracticeDetailPage() {
                   <UserGroupIcon className="size-6 text-default-700" />
                   <div className="flex gap-1">
                     <h2 className="text-xl font-semibold mr-2">Estudiants</h2>
-                    <Chip color="primary" variant="flat" className="px-0">{practice?.users?.length}</Chip>
+                    <Chip color="primary" variant="flat" className="px-0">{practice?.users?.filter(user => !user.is_teacher).length}</Chip>
                   </div>
                 </div>
               </CardHeader>

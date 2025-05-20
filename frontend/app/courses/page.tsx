@@ -283,7 +283,7 @@ export default function CoursesPage() {
       </Breadcrumbs>
 
       {/* Header section */}
-      <div className="relative container px-2 pt-8 pb-5">
+      <div className="relative w-full px-2 pt-8 pb-5">
         <div className="flex items-start justify-between mb-2">
           <div>
             <h1 className="text-4xl font-bold">Els meus cursos</h1>
@@ -307,17 +307,17 @@ export default function CoursesPage() {
       </div>
       <Divider className="mb-8" />
 
-      <div className="container px-2">
+      <div className="w-full px-2">
         {topContent}
         
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <CourseCardSkeleton key={i} />
             ))}
           </div>
         ) : filteredCourses.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
             {sortedData.map((course) => (
               <div className="relative" key={course.id}>
                 <CourseCard

@@ -1,10 +1,12 @@
 name: DB Migration
 
 on:
-  workflow_dispatch:
   push:
     branches:
-      - master
+      - main
+    paths:
+      - 'backend/alembic/**'
+      - '.github/workflows/db-migration.yml'
 
 jobs:
   migrate:

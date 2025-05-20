@@ -1,7 +1,5 @@
 from sqlmodel import Field, Relationship, Enum, Column, String
 from pydantic import model_validator
-from sqlalchemy.ext.hybrid import hybrid_property
-from typing import ClassVar
 
 from .base import SQLModel
 from .CoursesUsersLink import CoursesUsersLink
@@ -38,14 +36,12 @@ class Course(CourseBase, table=True):
     users: list[User] = Relationship(back_populates="courses", link_model=CoursesUsersLink)
     practices: list["Practice"] = Relationship(back_populates="course", cascade_delete=True)
     pending_niubs: str = Field(default="", sa_column=Column(String, nullable=False, server_default=""))
-    students_count: ClassVar[hybrid_property]
-    programming_languages: ClassVar[hybrid_property]
     
-    @hybrid_property
+    @property
     def students_count(self) -> int:
         return sum(user.is_student for user in self.users if hasattr(user, "is_student"))
     
-    @hybrid_property
+    @property
     def programming_languages(self) -> list[str]:
         return list({p.programming_language for p in self.practices if hasattr(p, "programming_language")})
 

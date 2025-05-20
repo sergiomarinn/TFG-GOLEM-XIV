@@ -255,10 +255,8 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
         raise HTTPException(status_code=500, detail=f"Error procesando archivo: {str(e)}")
 
     course = crud.course.get_course_by_name(session=session, name=course_in.name)
-    if course:
+    if course and course.academic_year == course_in.academic_year:
         raise HTTPException(status_code=400, detail="The course already exists")
-    course = crud.course.create_course(session=session, course_create=course_in)
-    course.users.append(current_user) # Add teacher to course
 
     try:
         with sftp_service.sftp_client() as sftp:
@@ -271,6 +269,9 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
                 raise HTTPException(status_code=500, detail=f"Error creating directories on SFTP server: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"SFTP connection error: {str(e)}")
+    
+    course = crud.course.create_course(session=session, course_create=course_in)
+    course.users.append(current_user) # Add teacher to course
     
     not_found_users = []
     for user_niub in data["niub"]:

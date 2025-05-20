@@ -116,10 +116,12 @@ def read_my_courses(session: SessionDep, current_user: CurrentUser, skip: int = 
     """
     Retrieve courses of the current user.
     """
-    count_statement = select(func.count()).select_from(Course).where(Course.users.contains(current_user))
+    if current_user.is_admin: count_statement = select(func.count()).select_from(Course)
+    else: count_statement = select(func.count()).select_from(Course).where(Course.users.contains(current_user))
     count = session.exec(count_statement).one()
 
-    statement = select(Course).where(Course.users.contains(current_user)).offset(skip).limit(limit)
+    if current_user.is_admin: statement = select(Course).offset(skip).limit(limit)
+    else: statement = select(Course).where(Course.users.contains(current_user)).offset(skip).limit(limit)
     courses = session.exec(statement).all()
 
     enriched_courses = enrich_courses_with_practice_stats(session, current_user.niub, courses)
@@ -152,7 +154,7 @@ def read_course(course_id: uuid.UUID, session: SessionDep, current_user: Current
     Retrieve course by ID.
     """
     course = crud.course.get_course(session=session, id=course_id)
-    if current_user not in course.users:
+    if current_user not in course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
     
     if not course:
@@ -204,7 +206,7 @@ def read_course_teachers(course_id: uuid.UUID, session: SessionDep, current_user
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    if current_user not in course.users:
+    if current_user not in course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
     
     teachers = [user for user in course.users if user.is_teacher]
@@ -217,7 +219,7 @@ def read_course_practices(course_id: uuid.UUID, session: SessionDep, current_use
     Retrieve practices of the course by ID.
     """
     course = crud.course.get_course(session=session, id=course_id)
-    if current_user not in course.users:
+    if current_user not in course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
     
     if not course:
@@ -293,7 +295,7 @@ def add_student_by_niub(course_id: uuid.UUID, niub: str, session: SessionDep, cu
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
-    if current_user not in course.users:
+    if current_user not in course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="You are not authorized to modify this course")
     
     user = crud.user.get_user_by_niub(session=session, niub=niub)
@@ -328,7 +330,7 @@ def update_course(
     course = crud.course.get_course(session=session, id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    if current_user not in course.users:
+    if current_user not in course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
     course = crud.course.update_course(session=session, db_course=course, course_in=course_in)
     return course
@@ -363,7 +365,7 @@ def delete_course(course_id: uuid.UUID, session: SessionDep, current_user: Curre
     course = crud.course.get_course(session=session, id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    if current_user not in course.users:
+    if current_user not in course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
     crud.course.delete_course(session=session, course=course)
     return Message(message="Course deleted successfully")
@@ -377,7 +379,7 @@ def delete_student_from_course(course_id: uuid.UUID, niub: str, session: Session
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
-    if current_user not in course.users:
+    if current_user not in course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="You are not authorized to modify this course")
     
     student = crud.user.get_user_by_niub(session=session, niub=niub)

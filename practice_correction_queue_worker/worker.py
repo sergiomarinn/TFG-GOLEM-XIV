@@ -73,6 +73,7 @@ class PracticeCorrectionQueueWorker:
                         practice = practice.scalar_one_or_none()
 
                         if not practice:
+                            hasInvalidFields = True
                             raise Exception(f"Practice with ID {id_practice} not found")
 
                         practice_user = await db_session.execute(select(PracticesUsersLink)
@@ -84,6 +85,7 @@ class PracticeCorrectionQueueWorker:
                         practice_user = practice_user.scalar_one_or_none()
 
                         if not practice_user:
+                            hasInvalidFields = True
                             raise Exception(f"Practice for user with NIUB {niub} and practice ID {id_practice} not found")
                         
                         practice_user.status = StatusEnum.CORRECTING

@@ -174,7 +174,7 @@ def read_practice(practice_id: uuid.UUID, session: SessionDep, current_user: Cur
     if not practice:
         raise HTTPException(status_code=404, detail="Practice not found")
     
-    if current_user not in practice.course.users:
+    if current_user not in practice.course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the practice.")
     
     teacher = None
@@ -288,7 +288,7 @@ def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: S
     if not practice_user:
         raise HTTPException(status_code=403, detail="Access to this submission is not allowed")
 
-    if current_user not in practice.users:
+    if current_user not in practice.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Teacher can only access to their own practices")
 
     if not practice_user.submission_file_name:
@@ -330,7 +330,7 @@ def read_practice_student(practice_id: uuid.UUID, user_niub: str, session: Sessi
     if not practice:
         raise HTTPException(status_code=404, detail="Practice not found")
     
-    if current_user not in practice.course.users:
+    if current_user not in practice.course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the practice.")
 
     return PracticePublicWithCourse(
@@ -643,7 +643,7 @@ async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, cur
         raise HTTPException(status_code=404, detail="Practice not found")
     
     # Check if teacher has access to the practice
-    if current_user not in practice.users:
+    if current_user not in practice.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Access denied to this practice")
     
     # Base paths
@@ -685,7 +685,7 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
         raise HTTPException(status_code=404, detail="Practice not found")
     
     # Check if current user has access to the practice
-    if current_user not in practice.users:
+    if current_user not in practice.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Access denied to this practice")
     
     # Get target user
@@ -694,7 +694,7 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
         raise HTTPException(status_code=404, detail="User not found")
     
     # Security check: Students can only download their own files
-    if not current_user.is_teacher and current_user.niub != user_niub:
+    if not current_user.is_teacher and current_user.niub != user_niub and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Access denied to this user's files")
     
     # Check if target user has access to the practice

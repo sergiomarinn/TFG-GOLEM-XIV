@@ -21,7 +21,7 @@ ENV PYTHONPATH=/app
 
 COPY ./pyproject.toml ./uv.lock /app/
 
-COPY ./practice_correction_queue_worker /app/practice_correction_queue_worker
+COPY . /app/practice_correction_queue_worker
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync

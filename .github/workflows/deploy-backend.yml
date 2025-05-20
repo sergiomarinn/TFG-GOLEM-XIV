@@ -37,4 +37,4 @@ jobs:
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'golemxiv-api'
-        images: '${{ secrets.REGISTRY_LOGIN_SERVER }}/golemxiv-backend:${{ github.sha }}'
+        images: '${{ secrets.REGISTRY_LOGIN_SERVER }}/golemxiv-backend:latest'

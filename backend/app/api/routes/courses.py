@@ -347,6 +347,7 @@ def update_course_last_access(course_id: uuid.UUID, session: SessionDep, current
     course_user = session.exec(course_user).first()
 
     if not course_user:
+        if current_user.is_admin: return Message(message="Last access not updated because you are admin")
         raise HTTPException(status_code=404, detail="Course not found or you don't have access to it")
 
     course_user.last_access = datetime.now()

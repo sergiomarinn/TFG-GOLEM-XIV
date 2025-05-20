@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout to the branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Azure Login
         uses: azure/login@v1
@@ -41,6 +41,6 @@ jobs:
           registryPassword: ${{ secrets.PRACTICECORRECTIONWORKERAPP_REGISTRY_PASSWORD }}
           containerAppName: practice-correction-worker-app
           resourceGroup: GOLEM-XIV
-          imageToBuild: golemxivbackend.azurecr.io/practice-correction-worker-app:${{ github.sha }}
+          imageToBuild: golemxivbackend.azurecr.io/practice-correction-worker-app:latest
 
 

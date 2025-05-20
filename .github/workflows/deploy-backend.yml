@@ -3,11 +3,10 @@ name: Build and Deploy to Azure Web App (Container) Backend
 on:
   push:
     branches:
-      [ main ]
+      - main
     paths:
-    - 'backend/**'
-    - '.github/workflows/deploy-backend.yml'
-
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
 
 jobs:
   build-and-deploy:
@@ -16,6 +15,11 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
+
+    - name: Login via Azure CLI
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Login to Azure Container Registry
       uses: azure/docker-login@v1
@@ -29,6 +33,8 @@ jobs:
         docker build -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/golemxiv-backend:latest ./backend
         docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/golemxiv-backend:latest
 
-    - name: Trigger Azure Web App Deployment Webhook
-      run: |
-        curl -X POST "${{ secrets.AZURE_WEBHOOK_URL_BACKEND }}"
+    - name: Deploy to Azure Web App (Container)
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'golemxiv-api'
+        images: '${{ secrets.REGISTRY_LOGIN_SERVER }}/golemxiv-backend:${{ github.sha }}'

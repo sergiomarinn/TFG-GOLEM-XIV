@@ -5,7 +5,11 @@ from app import crud
 from app.core.config import settings
 from app.models import User, UserCreate
 
-engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI), poolclass=NullPool)
+engine = create_engine(
+    str(settings.SQLALCHEMY_DATABASE_URI), 
+    poolclass=NullPool,
+    connect_args={"prepare_threshold": None}
+)
 
 def init_db(session: Session) -> None:
     user = session.exec(

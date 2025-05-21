@@ -576,11 +576,11 @@ export const UserConfigModal = ({ isOpen, onClose }: { isOpen: boolean, onClose:
 														isLoading={loadingUsers}
 													>
 														{users.map((user) => (
-															<SelectItem key={user.niub} textValue={user.name}>
+															<SelectItem key={user.niub} textValue={user.name + " " + user.surnames}>
 																<div className="flex gap-2 items-center">
 																	<Avatar alt={user.name} className="flex-shrink-0" size="sm" showFallback name={user.name[0]} />
 																	<div className="flex flex-col">
-																		<span className="text-small">{user.name}</span>
+																		<span className="text-small">{user.name + " " + user.surnames}</span>
 																		<span className="text-tiny text-default-400">{user.niub} • {user.email}</span>
 																	</div>
 																</div>

@@ -84,7 +84,7 @@ export const CourseCard = ({course}: CourseCardProps) => {
 					</div>
 
           {/* Course Title */}
-          <h2 className="text-xl font-semibold text-white line-clamp-2 mb-1">{course.name}</h2>
+          <h2 className="text-xl font-semibold text-white truncate mb-1">{course.name}</h2>
 
           {/* Course Info */}
 					<div className="flex items-center justify-between w-full text-white text-[0.82rem] font-light mb-4">

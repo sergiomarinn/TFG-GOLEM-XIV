@@ -138,7 +138,7 @@ export default function Home() {
                 } ${
                   cardsPerRow >= 3 ? 'lg:grid-cols-3' : ''} gap-6`}>
                   <AnimatePresence initial={false} mode="popLayout">
-                    {remainingCourses.map((course, index) => (
+                    {remainingCourses.slice(0, cardsPerRow).map((course, index) => (
                       <motion.div
                         key={course.id}
                         layout

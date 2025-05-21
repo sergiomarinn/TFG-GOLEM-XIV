@@ -227,7 +227,7 @@ export default function CourseDetailPage() {
           </Dropdown>
 
           <Dropdown>
-            <DropdownTrigger className="sm:flex">
+            <DropdownTrigger className="hidden lg:flex">
               <Button
                 startContent={
                   Array.from(dateSort)[0] === "asc" 
@@ -366,9 +366,9 @@ export default function CourseDetailPage() {
       <Divider className="mb-8" />
 
       {/* Layout of 2 columns */}
-      <div className="flex flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* coursePractices */}
-        <div className="w-[63%]">
+        <div className="lg:w-[63%]">
           <div className="flex items-center mb-4 pl-4">
             <DocumentArrowUpIcon className="size-9 text-primary-600 mr-2" />
             <h2 className="text-3xl font-semibold text-default-900">Pràctiques</h2>
@@ -425,7 +425,7 @@ export default function CourseDetailPage() {
           </div>
         </div>
         {/* Columna derecha: Participantes */}
-        <div className="w-[37%]">
+        <div className="lg:w-[37%]">
           <div className="flex items-center mb-4 pl-4">
             <UsersIcon className="size-9 text-primary-600 mr-2" />
             <h2 className="text-3xl font-semibold text-default-900">Participants</h2>

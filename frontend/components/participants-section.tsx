@@ -344,10 +344,10 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
           <Card key={user.niub} className="w-full">
             <CardBody className="flex flex-row items-center px-3.5 py-3">
               <Avatar showFallback className="mr-3 flex-shrink-0" />
-              <div className="flex-grow min-w-0">
+              <div className="flex-grow min-w-0 mr-4">
                 <div className="flex items-center">
-                  <h3 className="font-semibold text-lg mr-2">{user.name}</h3>
-                  <Chip 
+                  <h3 className="font-semibold text-lg truncate mr-2">{user.name + " " + user.surnames}</h3>
+                  <Chip
                     color={getRoleColor(user)}
                     size="sm" 
                     variant="flat"
@@ -355,7 +355,7 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
                     {getRoleName(user)}
                   </Chip>
                 </div>
-                <p className="text-default-500 w-[70%] truncate">{user.email}</p>
+                <p className="text-default-500 truncate">{user.email}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Tooltip content="Enviar missatge">
@@ -473,9 +473,16 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
                             <CardBody className="py-2 px-3">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <Avatar showFallback name={student.name[0]} size="sm" />
+                                  <Avatar 
+                                    showFallback 
+                                    name={student.name[0]} 
+                                    size="sm"
+                                    classNames={{
+                                      base: "text-sm"
+                                    }}
+                                  />
                                   <div>
-                                    <p className="font-medium">{student.name}</p>
+                                    <p className="font-medium">{student.name + " " + student.surnames}</p>
                                     <p className="text-xs text-default-500">{student.niub} • {student.email}</p>
                                   </div>
                                 </div>

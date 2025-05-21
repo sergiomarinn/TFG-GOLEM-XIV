@@ -19,14 +19,18 @@ def sftp_client():
         sftp.close()
         transport.close()
 
-async def upload_file_sftp(sftp: paramiko.SFTPClient, file: UploadFile, remote_path: str):
-    content = await file.read()
-
+async def upload_file_sftp(sftp: paramiko.SFTPClient, file: UploadFile, remote_path: str, buffer_size: int = 1024 * 1024):
     def _upload():
-        with sftp.file(remote_path, 'wb') as f:
-            f.write(content)
+        file.file.seek(0)
+        with sftp.file(remote_path, 'wb') as remote_file:
+            while True:
+                chunk = file.file.read(buffer_size)
+                if not chunk:
+                    break
+                remote_file.write(chunk)
 
-    await asyncio.get_event_loop().run_in_executor(executor, _upload)
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(executor, _upload)
 
 
 def mkdir_p(sftp_client: paramiko.SFTPClient, remote_directory: str):

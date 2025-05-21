@@ -372,7 +372,63 @@ def delete_course(course_id: uuid.UUID, session: SessionDep, current_user: Curre
         raise HTTPException(status_code=404, detail="Course not found")
     if current_user not in course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
+    
+    # Delete remote directories
+    try:
+        with sftp_service.sftp_client() as sftp:
+            # Construct the path for the course directory
+            course_professor_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course.academic_year, course.name)
+            course_student_path = posixpath.join(settings.STUDENT_FILES_PATH, course.academic_year, course.name)
+            
+            # Helper function to recursively remove a directory and its contents
+            def rm_rf(sftp, path):
+                try:
+                    # Check if path exists
+                    try:
+                        sftp.stat(path)
+                    except IOError:
+                        # Path doesn't exist, nothing to do
+                        return
+                    
+                    # List all files and directories in the current path
+                    files = sftp.listdir(path)
+                    
+                    # First remove all files and subdirectories recursively
+                    for f in files:
+                        filepath = posixpath.join(path, f)
+                        try:
+                            # Check if it's a directory
+                            sftp.stat(filepath).st_mode
+                            # If we get here, it's a file or directory
+                            try:
+                                # Try to remove as file
+                                sftp.remove(filepath)
+                            except IOError:
+                                # If not a file, it's a directory - remove recursively
+                                rm_rf(sftp, filepath)
+                        except IOError:
+                            # Error stating the file, just try to remove it
+                            try:
+                                sftp.remove(filepath)
+                            except IOError:
+                                pass
+                    
+                    # Then remove the directory itself
+                    sftp.rmdir(path)
+                except Exception as e:
+                    # Log the error but continue with the database deletion
+                    logger.error(f"Error removing remote directory {path}: {str(e)}")
+            
+            # Remove professor and student directories
+            rm_rf(sftp, course_professor_path)
+            rm_rf(sftp, course_student_path)
+            
+    except Exception as e:
+        # Log the error but continue with the database deletion
+        logger.error(f"Error connecting to SFTP server: {str(e)}")
+    
     crud.course.delete_course(session=session, course=course)
+    
     return Message(message="Course deleted successfully")
 
 @router.delete("/{course_id}/students/{niub}", dependencies=[Depends(get_current_teacher)], response_model=Message)

@@ -156,7 +156,7 @@ export async function createCourse(data: Partial<Course>, file: File): Promise<C
 }
 
 export async function addStudentByNiub(id: string, niub: string): Promise<void> {
-	const res = await fetch(`${API_URL}/api/v1/courses/${id}/students/${niub}/`, {
+	const res = await fetch(`${API_URL}/api/v1/courses/${id}/students/${niub}`, {
 		method: "POST",
 		headers: {
 			"Authorization": `Bearer ${await getTokenFromClient()}`

@@ -1,13 +1,11 @@
 from datetime import datetime
-from io import BytesIO
 import posixpath
 import tempfile
 import uuid
-import aiofiles
-import zipfile
 from typing import Any
+import shutil
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, BackgroundTasks
 from fastapi.responses import StreamingResponse
 import paramiko
 import zipstream
@@ -413,6 +411,60 @@ def delete_practice(session: SessionDep, practice_id: uuid.UUID) -> Any:
     practice = crud.practice.get_practice(session=session, id=practice_id)
     if not practice:
         raise HTTPException(status_code=404, detail="Practice not found")
+
+    # Delete remote directories
+    try:
+        with sftp_service.sftp_client() as sftp:
+            # Construct the paths for professor and student directories
+            professor_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+            student_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+            
+            # Helper function to recursively remove a directory and its contents
+            def rm_rf(sftp, path):
+                try:
+                    # Check if path exists
+                    try:
+                        sftp.stat(path)
+                    except IOError:
+                        # Path doesn't exist, nothing to do
+                        return
+                    
+                    # List all files and directories in the current path
+                    files = sftp.listdir(path)
+                    
+                    # First remove all files and subdirectories recursively
+                    for f in files:
+                        filepath = posixpath.join(path, f)
+                        try:
+                            # Check if it's a directory
+                            sftp.stat(filepath).st_mode
+                            # If we get here, it's a file or directory
+                            try:
+                                # Try to remove as file
+                                sftp.remove(filepath)
+                            except IOError:
+                                # If not a file, it's a directory - remove recursively
+                                rm_rf(sftp, filepath)
+                        except IOError:
+                            # Error stating the file, just try to remove it
+                            try:
+                                sftp.remove(filepath)
+                            except IOError:
+                                pass
+                    
+                    # Then remove the directory itself
+                    sftp.rmdir(path)
+                except Exception as e:
+                    # Log the error but continue with the database deletion
+                    logger.error(f"Error removing remote directory {path}: {str(e)}")
+            
+            # Remove professor and student directories
+            rm_rf(sftp, professor_path)
+            rm_rf(sftp, student_path)
+            
+    except Exception as e:
+        # Log the error but continue with the database deletion
+        logger.error(f"Error connecting to SFTP server: {str(e)}")
     
     crud.practice.delete_practice(session=session, practice=practice)
 
@@ -433,8 +485,9 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
     if not file:
         raise HTTPException(status_code=400, detail="No file uploaded")
     
+    body = None
     try:
-        async with sftp_service.sftp_client() as sftp:
+        with sftp_service.sftp_client() as sftp:
             if current_user.is_student:
                 if not file.filename.lower().endswith(".zip"):
                     raise HTTPException(status_code=400, detail="Only ZIP files are allowed")
@@ -513,33 +566,19 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
         }
     }
 
-def get_single_zip_file_path_sftp(sftp: paramiko.SFTPClient, folder_path: str) -> str | None:
-    """
-    Check if the remote folder contains a single ZIP file and return its path.
-    """
-    try:
-        files = [f for f in sftp.listdir(folder_path) if not sftp.stat(posixpath.join(folder_path, f)).st_mode & 0o40000]
-        if len(files) == 1 and files[0].lower().endswith(".zip"):
-            return posixpath.join(folder_path, files[0])
-        return None
-    except FileNotFoundError:
-        return None
-
-def add_files_to_zip_from_sftp(zip_file: zipstream.ZipFile, sftp: paramiko.SFTPClient, remote_path: str, base_dir: str = "") -> None:
+def add_files_to_zip_from_sftp(zip_file: zipstream.ZipFile, sftp: paramiko.SFTPClient, remote_path: str, temp_dir: str, base_dir: str = "") -> None:
     """
     Add files from SFTP directory to a ZIP file with relative paths.
 
     :param zip_file: The ZIP file object.
     :param sftp: SFTP client.
     :param remote_path: The remote directory path on SFTP server.
+    :param temp_dir: The temporary directory to use.
     :param base_dir: The base directory inside the ZIP file (optional).
     """
     try:
-        # Create a temporary directory to store downloaded files
-        with tempfile.TemporaryDirectory() as temp_dir:
-            _walk_remote_dir_and_add_to_zip(zip_file, sftp, remote_path, temp_dir, base_dir)
+        _walk_remote_dir_and_add_to_zip(zip_file, sftp, remote_path, temp_dir, base_dir)
     except FileNotFoundError:
-        # Directory doesn't exist, nothing to add
         pass
 
 def _walk_remote_dir_and_add_to_zip(zip_file: zipstream.ZipFile, sftp: paramiko.SFTPClient, 
@@ -578,7 +617,7 @@ def _walk_remote_dir_and_add_to_zip(zip_file: zipstream.ZipFile, sftp: paramiko.
         pass
 
 @router.get("/{practice_id}/download/me", response_class=StreamingResponse)
-async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser) -> Any:
+async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser, background_tasks: BackgroundTasks) -> Any:
     """
     Download the current user's files for a specific practice from SFTP server.
     """
@@ -591,46 +630,40 @@ async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, curr
     if current_user not in practice.users:
         raise HTTPException(status_code=403, detail="Access denied to this practice")
     
-    # Determine the correct path based on user role
-    if current_user.is_teacher:
-        base_path = settings.PROFESSOR_FILES_PATH
-    else:
-        base_path = settings.STUDENT_FILES_PATH
-    
+    base_path = settings.PROFESSOR_FILES_PATH if current_user.is_teacher else settings.STUDENT_FILES_PATH
     file_path = posixpath.join(base_path, practice.course.academic_year, practice.course.name, practice.name)
     user_path = posixpath.join(file_path, current_user.niub) if not current_user.is_teacher else file_path
     
+    # Create a persistent temporary directory
+    temp_dir = tempfile.mkdtemp()
+
     # Create zipstream
     z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     
-    # Use SFTP to get files
-    with sftp_service.sftp_client() as sftp:
-        # Check for single zip file (commented out as in original code)
-        # single_zip = get_single_zip_file_path_sftp(sftp, user_path)
-        # if single_zip:
-        #     # Download the single zip file to a temporary file and return it
-        #     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-        #         sftp.get(single_zip, temp_file.name)
-        #         return StreamingResponse(
-        #             open(temp_file.name, "rb"),
-        #             media_type="application/zip",
-        #             headers={"Content-Disposition": f"attachment; filename={posixpath.basename(single_zip)}"},
-        #             background=lambda: os.unlink(temp_file.name)  # Delete temp file after response
-        #         )
-        
-        # Add files to zip
-        add_files_to_zip_from_sftp(z, sftp, user_path, "")
+    try:
+        # Use SFTP to get files
+        with sftp_service.sftp_client() as sftp:
+            # Add files to zip
+            add_files_to_zip_from_sftp(z, sftp, user_path, temp_dir, "")
+    
+    except Exception as e:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise HTTPException(status_code=500, detail=f"Error connecting or processing SFTP: {str(e)}")
+    
+    # Schedule temp_dir cleanup after streaming completes
+    background_tasks.add_task(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
     
     # Create response with appropriate headers
     filename = f"{practice.name}_{'teacher' if current_user.is_teacher else 'student'}_{current_user.niub}.zip"
     return StreamingResponse(
         z,
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        background=background_tasks
     )
 
 @router.get("/{practice_id}/download/all", dependencies=[Depends(get_current_teacher)], response_class=StreamingResponse)
-async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser) -> Any:
+async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser, background_tasks: BackgroundTasks) -> Any:
     """
     Download all files for a practice from SFTP server. Only available to teachers.
     Creates a ZIP with subdirectories for each user.
@@ -649,31 +682,43 @@ async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, cur
     prof_base_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
     student_base_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
     
+    # Create a persistent temporary directory
+    temp_dir = tempfile.mkdtemp()
+
     # Create zipstream
     z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     
     # Use SFTP to get files
-    with sftp_service.sftp_client() as sftp:
-        for user in practice.users:
-            if not user.is_teacher:
-                user_path = posixpath.join(student_base_path, user.niub)
-                base_dir = f"students/{user.niub}"
-                # Add student files to zip
-                add_files_to_zip_from_sftp(z, sftp, user_path, base_dir)
-            
-        # Add teachers files to zip
-        add_files_to_zip_from_sftp(z, sftp, prof_base_path, "teachers")
-    
+    try:
+        with sftp_service.sftp_client() as sftp:
+            for user in practice.users:
+                if not user.is_teacher:
+                    user_path = posixpath.join(student_base_path, user.niub)
+                    base_dir = f"students/{user.niub}"
+                    # Add student files to zip
+                    add_files_to_zip_from_sftp(z, sftp, user_path, temp_dir, base_dir)
+                
+            # Add teachers files to zip
+            add_files_to_zip_from_sftp(z, sftp, prof_base_path, temp_dir, "teachers")
+
+    except Exception as e:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise HTTPException(status_code=500, detail=f"Error connecting or processing SFTP: {str(e)}")
+
+    # Schedule temp_dir cleanup after streaming completes
+    background_tasks.add_task(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
+
     # Create response with appropriate headers
     filename = f"{practice.name}_all_submissions.zip"
     return StreamingResponse(
         z,
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        background=background_tasks
     )
 
 @router.get("/{practice_id}/download/{user_niub}", response_class=StreamingResponse)
-async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, user_niub: str, current_user: CurrentUser) -> Any:
+async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, user_niub: str, current_user: CurrentUser, background_tasks: BackgroundTasks) -> Any:
     """
     Download files for a specific user in a practice from SFTP server.
     Teachers can download any user's files. Students can only download their own.
@@ -700,42 +745,35 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
     if target_user not in practice.users:
         raise HTTPException(status_code=404, detail="This user is not enrolled in this practice")
     
-    # Determine the correct path
-    if target_user.is_teacher:
-        base_path = settings.PROFESSOR_FILES_PATH
-    else:
-        base_path = settings.STUDENT_FILES_PATH
-    
+    base_path = settings.PROFESSOR_FILES_PATH if target_user.is_teacher else settings.STUDENT_FILES_PATH
     file_path = posixpath.join(base_path, practice.course.academic_year, practice.course.name, practice.name)
     user_path = posixpath.join(file_path, target_user.niub) if not target_user.is_teacher else file_path
     
+    # Create a persistent temporary directory
+    temp_dir = tempfile.mkdtemp()
+
     # Create zipstream
     z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     
-    # Use SFTP to get files
-    with sftp_service.sftp_client() as sftp:
-        # Check for single zip file (commented out as in original code)
-        # single_zip = get_single_zip_file_path_sftp(sftp, user_path)
-        # if single_zip:
-        #     # Download the single zip file to a temporary file and return it
-        #     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-        #         sftp.get(single_zip, temp_file.name)
-        #         return StreamingResponse(
-        #             open(temp_file.name, "rb"),
-        #             media_type="application/zip",
-        #             headers={"Content-Disposition": f"attachment; filename={posixpath.basename(single_zip)}"},
-        #             background=lambda: os.unlink(temp_file.name)  # Delete temp file after response
-        #         )
-        
-        # Add files to zip
-        add_files_to_zip_from_sftp(z, sftp, user_path, "")
+    try:
+        # Use SFTP to get files
+        with sftp_service.sftp_client() as sftp:
+            # Add files to zip
+            add_files_to_zip_from_sftp(z, sftp, user_path, temp_dir, "")
+    
+    except Exception as e:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise HTTPException(status_code=500, detail=f"Error connecting or processing SFTP: {str(e)}")
+
+    background_tasks.add_task(lambda: shutil.rmtree(temp_dir, ignore_errors=True))
     
     # Create response with appropriate headers
     filename = f"{practice.name}_{'teacher' if target_user.is_teacher else 'student'}_{target_user.niub}.zip"
     return StreamingResponse(
         z,
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        background=background_tasks
     )
 
 @router.post("/test-send-practice-data/{practice_id}/{niub}", dependencies=[Depends(get_current_active_superuser)], response_model=Message)

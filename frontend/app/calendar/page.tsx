@@ -62,7 +62,7 @@ export default function CalendariPage() {
         console.error("Error al cargar las prácticas:", error);
       } finally {
         setLoading(false);
-        setTimeout(scrollToCurrentTime, 1500);
+        setTimeout(scrollToCurrentTime, 100);
       }
     };
     

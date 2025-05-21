@@ -257,11 +257,11 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
     course = crud.course.get_course_by_name(session=session, name=course_in.name)
     if course and course.academic_year == course_in.academic_year:
         raise HTTPException(status_code=400, detail="The course already exists")
-
+    
     try:
         with sftp_service.sftp_client() as sftp:
-            p_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course.academic_year, course.name)
-            a_path = posixpath.join(settings.STUDENT_FILES_PATH, course.academic_year, course.name)
+            p_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course_in.academic_year, course_in.name)
+            a_path = posixpath.join(settings.STUDENT_FILES_PATH, course_in.academic_year, course_in.name)
             try:
                 sftp_service.mkdir_p(sftp, p_path)
                 sftp_service.mkdir_p(sftp, a_path)

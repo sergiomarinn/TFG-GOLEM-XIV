@@ -29,28 +29,7 @@ export default function CalendariPage() {
   // Ref para el contenedor de scroll
   const timeGridRef = useRef<HTMLDivElement>(null);
   
-  // Estado para la altura disponible
-  const [availableHeight, setAvailableHeight] = useState(0);
-  
-  // Calcular el espacio disponible para el calendario
-  useEffect(() => {
-    const calculateHeight = () => {
-      // Calculamos la altura disponible para el contenido scrolleable
-      // Restamos el espacio ocupado por los elementos del encabezado
-      const headerHeight = 160; // Altura aproximada del encabezado con margen
-      const windowHeight = window.innerHeight;
-      const contentHeight = windowHeight - headerHeight;
-      setAvailableHeight(Math.max(400, contentHeight)); // Mínimo 400px
-    };
-
-    // Calcular al montar y cuando la ventana cambia de tamaño
-    calculateHeight();
-    window.addEventListener('resize', calculateHeight);
-    
-    return () => {
-      window.removeEventListener('resize', calculateHeight);
-    };
-  }, []);
+  const [pendingScrollToNow, setPendingScrollToNow] = useState(false);
   
   // Cargar las prácticas al iniciar
   useEffect(() => {
@@ -62,7 +41,6 @@ export default function CalendariPage() {
         console.error("Error al cargar las prácticas:", error);
       } finally {
         setLoading(false);
-        setTimeout(scrollToCurrentTime, 100);
       }
     };
     
@@ -80,22 +58,17 @@ export default function CalendariPage() {
   
   // Scroll a la hora actual cuando se carga el componente o cambia la semana
   useEffect(() => {
-    if (timeGridRef.current) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      
-      // Solo hacer scroll si la hora actual está en el rango visible (8-18)
-      if (currentHour >= 8 && currentHour <= 18) {
-        // Calcular la posición aproximada para el scroll
-        const hourHeight = 80; // Altura de cada celda de hora
-        const scrollPos = (currentHour - 8) * hourHeight - 100; // -100 para mostrar un poco del contexto anterior
-        
-        // Asegurar que no haga scroll negativo
-        const scrollPosition = Math.max(0, scrollPos);
-        timeGridRef.current.scrollTop = scrollPosition;
-      }
+    if (!loading && weekOffset === 0) {
+      scrollToCurrentTime();
     }
   }, [weekOffset, loading]);
+
+  useEffect(() => {
+    if (weekOffset === 0 && pendingScrollToNow) {
+      scrollToCurrentTime();
+      setPendingScrollToNow(false);
+    }
+  }, [weekOffset, pendingScrollToNow]);
   
   // Nombres de los meses en catalán
   const monthNames = [
@@ -225,10 +198,6 @@ export default function CalendariPage() {
   
   // Función para hacer scroll a la hora actual
   const scrollToCurrentTime = () => {
-    if (weekOffset !== 0) {
-      setWeekOffset(0);
-    }
-    
     if (timeGridRef.current) {
       const now = new Date();
       const currentHour = now.getHours();
@@ -245,6 +214,15 @@ export default function CalendariPage() {
         top: scrollPosition,
         behavior: 'smooth'
       });
+    }
+  };
+
+  const goToToday = () => {
+    if (weekOffset !== 0) {
+      setPendingScrollToNow(true);
+      setWeekOffset(0);
+    } else {
+      scrollToCurrentTime();
     }
   };
   
@@ -267,7 +245,7 @@ export default function CalendariPage() {
                 size="sm"
                 radius="full"
                 className="bg-default-200/70 min-w-0"
-                onPress={scrollToCurrentTime}
+                onPress={goToToday}
               >
                 Avui
               </Button>

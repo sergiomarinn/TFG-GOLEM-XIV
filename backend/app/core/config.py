@@ -1,6 +1,5 @@
 """ Application configuration module """
 import os
-import platform
 import posixpath
 import secrets
 import warnings
@@ -102,10 +101,7 @@ class Settings(BaseSettings):
     SFTP_HOST: str
     SFTP_PORT: int
     SFTP_USER: str
-    SFTP_PRIVATE_KEY_PATH: str = (
-        posixpath.join('app','services','secrets','sftp_golemxiv_key') if platform.system() != "Windows"
-        else os.path.join('app','services','secrets','sftp_golemxiv_key')
-    )
+    SFTP_PASSWORD: str
 
     @computed_field  # type: ignore[misc]
     @property

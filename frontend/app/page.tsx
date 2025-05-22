@@ -43,6 +43,7 @@ export default function Home() {
           setExpandFeaturedCourse(false);
         } else if (width < 860) {
           setCardsPerRow(2);
+          setExpandFeaturedCourse(true);
         } else {
           setCardsPerRow(3);
           setExpandFeaturedCourse(true);

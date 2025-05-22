@@ -10,8 +10,10 @@ executor = ThreadPoolExecutor(max_workers=5)
 
 @contextmanager
 def sftp_client():
+    key = paramiko.RSAKey.from_private_key_file(settings.SFTP_PRIVATE_KEY_PATH)
+
     transport = paramiko.Transport((settings.SFTP_HOST, settings.SFTP_PORT))
-    transport.connect(username=settings.SFTP_USER, password=settings.SFTP_PASSWORD)
+    transport.connect(username=settings.SFTP_USER, pkey=key)
     sftp = paramiko.SFTPClient.from_transport(transport)
     try:
         yield sftp

@@ -1,10 +1,12 @@
 """ Application configuration module """
+from io import StringIO
 import os
 import posixpath
 import secrets
 import warnings
 from typing import Annotated, Any, Literal
 
+import paramiko
 from pydantic import (
     AnyUrl,
     BeforeValidator,
@@ -102,6 +104,13 @@ class Settings(BaseSettings):
     SFTP_PORT: int
     SFTP_USER: str
     SFTP_PASSWORD: str
+    SFTP_KEY: str
+
+    @computed_field
+    @property
+    def sftp_pkey(self) -> paramiko.RSAKey:
+        key_file = StringIO(self.SFTP_KEY)
+        return paramiko.RSAKey.from_private_key(key_file)
 
     @computed_field  # type: ignore[misc]
     @property

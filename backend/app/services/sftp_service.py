@@ -11,7 +11,7 @@ executor = ThreadPoolExecutor(max_workers=5)
 @contextmanager
 def sftp_client():
     transport = paramiko.Transport((settings.SFTP_HOST, settings.SFTP_PORT))
-    transport.connect(username=settings.SFTP_USER, password=settings.SFTP_PASSWORD)
+    transport.connect(username=settings.SFTP_USER, pkey=settings.sftp_pkey)
     sftp = paramiko.SFTPClient.from_transport(transport)
     try:
         yield sftp

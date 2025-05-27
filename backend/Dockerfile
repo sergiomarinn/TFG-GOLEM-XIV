@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 ENV PYTHONPATH=/app
 
-COPY ./pyproject.toml ./uv.lock ./alembic.ini /app/
+COPY ./gunicorn.conf.py ./pyproject.toml ./uv.lock ./alembic.ini /app/
 
 COPY ./app /app/app
 

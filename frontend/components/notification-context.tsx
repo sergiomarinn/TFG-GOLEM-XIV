@@ -159,7 +159,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         title: `Pràctica ${notification.practiceName}`,
         description: notification.message,
         color: getToastVariant(data.status),
-				timeout: 6000,
+				timeout: 10000,
 				icon: (
 					getNotificationIcon(data.status)
 				),

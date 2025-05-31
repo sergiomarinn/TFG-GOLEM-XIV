@@ -297,7 +297,7 @@ export default function PracticesGeneralPage() {
           title={
             <div className="flex items-center gap-2">
               <XCircleIcon className="size-5 text-danger-500" />
-              <span>{`No entregades (${practiceCounts.rejected})`}</span>
+              <span>{`No entregades (${practiceCounts.not_submitted})`}</span>
             </div>
           }
         />

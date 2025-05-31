@@ -2,7 +2,9 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import re
 from typing import Any
+import unicodedata
 
 import emails  # type: ignore
 import jwt
@@ -121,3 +123,22 @@ def verify_password_reset_token(token: str) -> str | None:
         return str(decoded_token["sub"])
     except InvalidTokenError:
         return None
+
+
+def format_directory_name(name: str) -> str:
+    # Eliminar acentos
+    name = unicodedata.normalize("NFKD", name).encode("ASCII", "ignore").decode("utf-8")
+    # Reemplazar espacios por guiones bajos
+    name = name.replace(" ", "_")
+    # Permitir letras, números, guiones bajos, guiones, paréntesis y corchetes
+    name = re.sub(r"[^\w\-\[\]\(\)]", "", name)
+    return name
+
+
+def clean_filename(filename: str) -> str:
+    path = Path(filename)
+    stem = path.stem # nombre sin extensión
+    suffix = path.suffix # extensión con punto, ejemplo ".csv"
+
+    clean_stem = format_directory_name(stem)
+    return f"{clean_stem}{suffix}"

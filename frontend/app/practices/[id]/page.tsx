@@ -8,21 +8,22 @@ import {
   PaperClipIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ArrowLeftCircleIcon,
   UserGroupIcon,
   MagnifyingGlassIcon,
   PencilIcon,
   ArrowDownTrayIcon,
   InformationCircleIcon,
   PencilSquareIcon,
-  ArrowUpOnSquareIcon,
   CloudArrowUpIcon,
+  TrashIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@heroui/button';
 import { Card, CardHeader, CardBody, CardFooter } from '@heroui/card';
 import { Chip } from '@heroui/chip';
 import { Divider } from '@heroui/divider';
 import { Progress } from '@heroui/progress';
+import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
 import { 
   practiceStatusOptions as statusOptions, 
   practiceStatusColorMap as statusColorMap,
@@ -30,7 +31,7 @@ import {
 } from "@/types";
 import { addToast } from '@heroui/toast';
 import { useParams } from 'next/navigation';
-import { downloadMyPractice, downloadPracticeByNiub, getPracticeById, getPracticeFileInfo, getPracticeFileInfoForUser, getPracticeStudent, uploadPractice } from '@/app/actions/practice';
+import { deletePracticeSubmission, downloadMyPractice, downloadPracticeByNiub, getPracticeById, getPracticeFileInfo, getPracticeFileInfoForUser, getPracticeStudent, sendPracticeData, uploadPractice } from '@/app/actions/practice';
 import { Practice, PracticeFileInfo } from '@/types/practice';
 import { FileUploader } from '@/components/file-uploader';
 import { FileList } from '@/components/file-list';
@@ -75,7 +76,7 @@ const PracticeStatus = ({ status }: {status: string}) => {
   );
 };
 
-const FeedbackSection = ({ feedback, grade }: {feedback: string, grade: number | undefined}) => {
+const FeedbackSection = ({ feedback, grade, isLoading = false }: {feedback: string, grade: number | undefined, isLoading?: boolean}) => {
   return (
     <Card>
       <CardHeader>
@@ -90,14 +91,20 @@ const FeedbackSection = ({ feedback, grade }: {feedback: string, grade: number |
 							variant="flat" 
 							className="ml-auto"
 						>
-							Nota: {grade.toFixed(1)}
+							Nota: {grade.toFixed(2)}
 						</Chip>
 					)}
 				</div>
       </CardHeader>
       <Divider />
       <CardBody>
-        {feedback ? (
+        {isLoading ? (
+          <div className="flex flex-col gap-1">
+            <Skeleton className="h-4 w-full rounded-md" />
+            <Skeleton className="h-4 w-5/6 rounded-md" />
+            <Skeleton className="h-4 w-4/6 rounded-md" />
+          </div>
+        ) : feedback ? (
           <div className="text-default-700 whitespace-pre-line px-2">
             {feedback}
           </div>
@@ -208,6 +215,9 @@ const StudentContentView = ({ practiceId, student, onBack } : { practiceId: stri
   const [isLoading, setIsLoading] = useState(true);
   const [studentFiles, setStudentFiles] = useState<PracticeFileInfo[]>([]);
   const [isDownloading, setIsDownloading] = React.useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [isDeletingSubmission, setIsDeletingSubmission] = React.useState(false);
+  const [isOpenPopoverDelete, setIsOpenPopoverDelete] = useState(false);
 
   useEffect(() => {
     const fetchStudentDetail = async () => {
@@ -270,7 +280,71 @@ const StudentContentView = ({ practiceId, student, onBack } : { practiceId: stri
     } finally {
       setIsDownloading(false);
     }
-  }
+  };
+
+  const handleDeleteSubmission = async () => {
+    try {
+      setIsDeletingSubmission(true);
+      // Aquí deberías llamar a la función API para eliminar la submission
+      await deletePracticeSubmission(practiceId, student.niub ?? "");
+      
+      // Actualizar el estado local después de eliminar
+      setStudentPractice(prev => prev ? {
+        ...prev,
+        status: "not_submitted",
+        submission_date: undefined,
+        submission_file_name: undefined,
+        correction: undefined
+      } : null);
+      setStudentFiles([]);
+
+      addToast({
+        title: "Entrega eliminada amb èxit",
+        description: "L'entrega de l'estudiant ha estat eliminada correctament.",
+        color: "success",
+        timeout: 5000,
+        shouldShowTimeoutProgress: true,
+      });
+    } catch (error) {
+      console.error("Error deleting submission:", error);
+      addToast({
+        title: "Error en eliminar l'entrega",
+        description: "No s'ha pogut eliminar l'entrega. Torna-ho a intentar més tard.",
+        color: "danger"
+      });
+    } finally {
+      setIsDeletingSubmission(false);
+    }
+  };
+
+  const handleResendPracticeData = async () => {
+    try {
+      setIsResending(true);
+      await sendPracticeData(practiceId, student.niub ?? "");
+      setStudentPractice(prev => prev ? {
+        ...prev,
+        status: "submitted"
+      } : null);
+
+      addToast({
+        title: "Pràctica reenviada",
+        description: "La pràctica s'ha enviat novament per a la correcció.",
+        color: "success",
+        timeout: 5000,
+        shouldShowTimeoutProgress: true,
+      });
+    } catch (error) {
+      console.error("Error resending practice data:", error);
+      addToast({
+        title: "Error en reenviar la pràctica",
+        description: "No s'ha pogut reenviar la pràctica. Torna-ho a intentar més tard.",
+        color: "danger"
+      });
+    } finally {
+      setIsResending(false);
+    }
+};
+
 
   if (isLoading) {
     return (
@@ -306,15 +380,6 @@ const StudentContentView = ({ practiceId, student, onBack } : { practiceId: stri
               <InformationCircleIcon className="size-6 text-default-700" />
               <h2 className="text-xl font-semibold">Informació de l&apos;estudiant</h2>
             </div>
-            {/* {student.grade !== undefined && (
-              <Chip 
-                color={student.grade >= 5 ? "success" : "danger"} 
-                variant="flat" 
-                className="ml-auto"
-              >
-                Nota: {student.grade.toFixed(1)}
-              </Chip>
-            )} */}
           </div>
         </CardHeader>
         <Divider />
@@ -388,17 +453,50 @@ const StudentContentView = ({ practiceId, student, onBack } : { practiceId: stri
 
       {/* Sección de retroalimentación */}
       {studentPractice?.status === 'corrected' && (
-        <FeedbackSection feedback={studentPractice.correction ?? ""} grade={undefined} />
+        <FeedbackSection feedback={studentPractice.correction?.feedback_comments ?? ""} grade={studentPractice?.correction?.grade} />
       )}
 
-      {/* Botones de acción para corrección */}
+      {/* Botones de acción para corrección y eliminación */}
       {(studentPractice?.status === 'submitted' || studentPractice?.status === 'corrected' || studentPractice?.status === 'rejected') && (
-        <div className="flex justify-end">
+        <div className="flex flex-col sm:flex-row gap-3 justify-end">
+          <Popover isOpen={isOpenPopoverDelete} onOpenChange={(open) => setIsOpenPopoverDelete(open)}>
+            <PopoverTrigger>
+              <Button
+                color="danger"
+                variant="flat"
+                startContent={<TrashIcon className="size-4" />}
+              >
+                Esborrar entrega
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <div className="flex flex-col gap-3 p-2">
+                <p className="text-sm text-default-600">
+                  Estàs segur que vols esborrar l&apos;entrega de <strong>{student.name}</strong>?
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="light" onPress={() => setIsOpenPopoverDelete(false)}>
+                    Cancel·lar
+                  </Button>
+                  <Button
+                    size="sm"
+                    color="danger"
+                    onPress={handleDeleteSubmission}
+                    isLoading={isDeletingSubmission}
+                  >
+                    Confirmar
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button
             color="primary"
-            size="lg"
+            startContent={!isResending && <ArrowPathIcon className="size-4" />}
+            isLoading={isResending}
+            onPress={handleResendPracticeData}
           >
-            Corregir pràctica
+            Reenviar per corregir
           </Button>
         </div>
       )}
@@ -697,7 +795,7 @@ export default function PracticeDetailPage() {
               {/* Sección de retroalimentación, si existe */}
               {(practice?.status === 'corrected' && !isTeacher) && (
                 <div className="mt-6">
-                  <FeedbackSection feedback={practice.correction} grade={undefined} />
+                  <FeedbackSection feedback={practice?.correction?.feedback_comments} grade={practice?.correction?.grade} isLoading={isLoading} />
                 </div>
               )}
 
@@ -741,7 +839,7 @@ export default function PracticeDetailPage() {
                   <UserGroupIcon className="size-6 text-default-700" />
                   <div className="flex gap-1">
                     <h2 className="text-xl font-semibold mr-2">Estudiants</h2>
-                    <Chip color="primary" variant="flat" className="px-0">{practice?.users?.filter(user => !user.is_teacher).length}</Chip>
+                    <Chip color="primary" variant="flat" className="px-[1.4px] text-[15px]">{practice?.users?.filter(user => !user.is_teacher).length}</Chip>
                   </div>
                 </div>
               </CardHeader>

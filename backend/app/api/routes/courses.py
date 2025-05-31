@@ -37,6 +37,7 @@ import pandas as pd
 import os
 import logging
 from app.services import sftp_service
+from app.utils import format_directory_name
 import posixpath
 
 logging.basicConfig(level=logging.INFO)
@@ -260,8 +261,8 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
     
     try:
         with sftp_service.sftp_client() as sftp:
-            p_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course_in.academic_year, course_in.name)
-            a_path = posixpath.join(settings.STUDENT_FILES_PATH, course_in.academic_year, course_in.name)
+            p_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course_in.academic_year, format_directory_name(course_in.name))
+            a_path = posixpath.join(settings.STUDENT_FILES_PATH, course_in.academic_year, format_directory_name(course_in.name))
             try:
                 sftp_service.mkdir_p(sftp, p_path)
                 sftp_service.mkdir_p(sftp, a_path)
@@ -377,8 +378,8 @@ def delete_course(course_id: uuid.UUID, session: SessionDep, current_user: Curre
     try:
         with sftp_service.sftp_client() as sftp:
             # Construct the path for the course directory
-            course_professor_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course.academic_year, course.name)
-            course_student_path = posixpath.join(settings.STUDENT_FILES_PATH, course.academic_year, course.name)
+            course_professor_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course.academic_year, format_directory_name(course.name))
+            course_student_path = posixpath.join(settings.STUDENT_FILES_PATH, course.academic_year, format_directory_name(course.name))
             
             # Helper function to recursively remove a directory and its contents
             def rm_rf(sftp, path):

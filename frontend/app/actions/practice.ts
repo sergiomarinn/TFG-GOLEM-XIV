@@ -166,7 +166,7 @@ export async function getPracticeFileInfo(practiceId: string): Promise<PracticeF
 }
 
 export async function getPracticeFileInfoForUser(practiceId: string, niub: string): Promise<PracticeFileInfo> {
-	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/submission-file-info/${niub}`, {
+	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/users/${niub}/submission-file-info`, {
 		method: "GET",
 		headers: {
 			Authorization: `Bearer ${await getTokenFromClient()}`,
@@ -238,6 +238,35 @@ export async function uploadPractice(practiceId: string, file: File): Promise<vo
     const errorData = await res.json();
     throw new Error(errorData.detail || "Failed to upload practice");
   }
+}
+
+export async function sendPracticeData(practiceId: string, niub: string): Promise<void> {
+	const res = await fetch(`${API_URL}/api/v1/practices/send-practice-data/${practiceId}/${niub}`, {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${await getTokenFromClient()}`,
+			"Content-Type": "application/json",
+		},
+	});
+
+	if (!res.ok) {
+		const errorData = await res.json();
+		throw new Error(errorData.detail || "Failed to send practice data");
+	}
+}
+
+export async function deletePracticeSubmission(practiceId: string, niub: string): Promise<void> {
+	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/submission/${niub}`, {
+		method: "DELETE",
+		headers: {
+			Authorization: `Bearer ${await getTokenFromClient()}`,
+		},
+	});
+
+	if (!res.ok) {
+		const errorData = await res.json();
+		throw new Error(errorData.detail || "Failed to delete practice submission");
+	}
 }
 
 export async function deletePractice(practiceId: string): Promise<void> {

@@ -8,7 +8,7 @@ interface FileUploaderProps {
   files: File[];
   setFiles: (files: File[]) => void;
   disabled?: boolean;
-  acceptedExtensions: string[];
+  acceptedExtensions: string[] | '*';
 	multiple: boolean
 }
 
@@ -24,23 +24,35 @@ export const FileUploader = ({ files, setFiles, disabled = false, acceptedExtens
   };
 
   const processFiles = useCallback((newFiles: File[]) => {
+    if (!multiple && files.length > 0) {
+      addToast({
+        title: "Només pots pujar un arxiu. Elimina l'arxiu actual per pujar un de nou.",
+        color: "danger",
+      });
+      return;
+    }
+    
     const validFiles: File[] = [];
     let rejected = false;
 
     newFiles.forEach(file => {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "";
-      const isAccepted = acceptedExtensions.map(ext => ext.toLowerCase()).includes(ext)
-
-      if (!isAccepted) {
-        rejected = true;
-      } else {
+      if (acceptedExtensions === '*') {
         validFiles.push(file);
+      } else {
+        const ext = file.name.split(".").pop()?.toLowerCase() || "";
+        const isAccepted = (acceptedExtensions as string[]).map(ext => ext.toLowerCase()).includes(ext);
+
+        if (!isAccepted) {
+          rejected = true;
+        } else {
+          validFiles.push(file);
+        }
       }
     });
 
-    if (rejected) {
+    if (rejected && acceptedExtensions !== '*') {
       addToast({
-        title: `Només es permeten arxius ${acceptedExtensions.map(ext => ext.toUpperCase()).join(", ")}`,
+        title: `Només es permeten arxius ${(acceptedExtensions as string[]).map(ext => ext.toUpperCase()).join(", ")}`,
         color: "danger",
       });
     }
@@ -93,9 +105,23 @@ export const FileUploader = ({ files, setFiles, disabled = false, acceptedExtens
   }, [disabled, processFiles]);
 
   const openFileDialog = () => {
-    if (!disabled && fileInputRef.current) {
+    if (!disabled && fileInputRef.current && (multiple || files.length === 0)) {
       fileInputRef.current.click();
     }
+  };
+
+  const getAcceptAttribute = () => {
+    if (acceptedExtensions === '*') {
+      return undefined; // No especificar accept permite todos los archivos
+    }
+    return (acceptedExtensions as string[]).map(ext => "." + ext).join(",");
+  };
+
+  const getSupportedExtensionsText = () => {
+    if (acceptedExtensions === '*') {
+      return "Tots els tipus d'arxius";
+    }
+    return (acceptedExtensions as string[]).map(ext => ext.toUpperCase()).join(", ");
   };
 
   return (
@@ -105,7 +131,7 @@ export const FileUploader = ({ files, setFiles, disabled = false, acceptedExtens
         className={`group border-1.5 border-dashed rounded-lg p-4 mb-1 text-center flex flex-col items-center justify-center transition-all ${
           isDragging 
             ? 'border-primary-500 bg-primary-50' 
-            : disabled 
+            : disabled || (!multiple && files.length > 0) 
               ? 'border-default-200 bg-default-50 opacity-60' 
               : 'border-default-300 bg-default-50 hover:border-primary-300 hover:bg-primary-50/50'
         }`}
@@ -114,21 +140,25 @@ export const FileUploader = ({ files, setFiles, disabled = false, acceptedExtens
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={openFileDialog}
-        style={{ minHeight: '140px', cursor: disabled ? 'not-allowed' : 'pointer' }}
+        style={{ minHeight: '140px', cursor: disabled || (!multiple && files.length > 0)  ? 'not-allowed' : 'pointer' }}
       >
-        <DocumentArrowUpIcon className={`transition-colors size-12 text-default-400 mb-2 ${disabled ? '' : 'group-hover:text-primary-500'}`} />
+        <DocumentArrowUpIcon className={`transition-colors size-12 text-default-400 mb-2 ${disabled || (!multiple && files.length > 0) ? '' : 'group-hover:text-primary-500'}`} />
         
         <p className="text-sm text-default-600 mb-3">
           {disabled 
             ? "No es poden pujar arxius" 
-            : "Arrossega i deixa els teus arxius aquí o"}
+            : multiple 
+              ? "Arrossega i deixa els teus arxius aquí o"
+              : files.length > 0 
+                ? "Elimina l'arxiu actual per pujar un de nou"
+                : "Arrossega i deixa el teu arxiu aquí o"}
         </p>
         
         <Button
           variant="flat"
           color="primary"
           startContent={<ArrowUpTrayIcon className="size-4" />}
-          disabled={disabled}
+          disabled={disabled || (!multiple && files.length > 0)}
           onPress={() => {
             openFileDialog();
           }}
@@ -141,14 +171,14 @@ export const FileUploader = ({ files, setFiles, disabled = false, acceptedExtens
           ref={fileInputRef}
           onChange={handleFileChange}
           multiple={multiple}
-          accept={acceptedExtensions.map(ext => "." + ext).join(",")}
+          accept={getAcceptAttribute()}
           className="hidden"
           disabled={disabled}
         />
       </div>
       
       <span className="text-xs text-default-500 mb-4 px-1">
-        Arxius soportats: {acceptedExtensions.map(ext => ext.toUpperCase()).join(", ")}
+        Arxius soportats: {getSupportedExtensionsText()}
       </span>
 
       <div className="mt-4">

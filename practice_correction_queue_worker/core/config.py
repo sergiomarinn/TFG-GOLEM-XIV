@@ -59,7 +59,6 @@ class Settings(BaseSettings):
     DB_PASSWORD: str | None = None
     DB_NAME: str | None = None
     CLOUDAMQP_URL: str = "amqp://guest:guest@localhost:5672/%2f"
-    # CLOUDAMQP_URL: str = "amqp://guest:guest@localhost:5672/"
     RPC_URL: str = "amqp://guest:guest@localhost:5672/%2f"
 
     @computed_field  # type: ignore[misc]
@@ -72,7 +71,7 @@ class Settings(BaseSettings):
                 self.DB_NAME = 'golem_xiv_db'
             
             is_supabase = self.DB_HOST.endswith(".supabase.com")
-            query = "sslmode=require" if is_supabase else None
+            query = "ssl=require" if is_supabase else None
             
             database_uri = MultiHostUrl.build(
                 scheme="postgresql+asyncpg",

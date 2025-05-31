@@ -1,4 +1,6 @@
 """ Application configuration module """
+import base64
+import binascii
 from io import StringIO
 import os
 import posixpath
@@ -7,6 +9,7 @@ import warnings
 from typing import Annotated, Any, Literal
 
 import paramiko
+import paramiko.ssh_exception
 from pydantic import (
     AnyUrl,
     BeforeValidator,
@@ -109,8 +112,18 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def sftp_pkey(self) -> paramiko.RSAKey:
-        key_file = StringIO(self.SFTP_KEY)
-        return paramiko.RSAKey.from_private_key(key_file)
+        try:
+            key_content = base64.b64decode(self.SFTP_KEY).decode('utf-8')
+            
+            key_file = StringIO(key_content)
+            return paramiko.RSAKey.from_private_key(key_file)
+            
+        except binascii.Error as e:
+            raise ValueError(f"Error decoding base64 SSH key: {str(e)}")
+        except paramiko.ssh_exception.SSHException as e:
+            raise ValueError(f"Error parsing SSH key: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Error loading SSH key: {str(e)}")
 
     @computed_field  # type: ignore[misc]
     @property

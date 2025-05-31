@@ -308,7 +308,7 @@ def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: S
     except FileNotFoundError:
         raise HTTPException(status_code=410, detail="Submitted file not found on server")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error accessing SFTP: {str(e)}. KEY: {settings.sftp_pkey}")
+        raise HTTPException(status_code=500, detail=f"Error accessing SFTP: {str(e)}")
 
     return PracticeFileInfo(
         name=practice_user.submission_file_name,

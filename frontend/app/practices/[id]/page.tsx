@@ -472,7 +472,7 @@ const StudentContentView = ({ practiceId, student, onBack } : { practiceId: stri
             <PopoverContent>
               <div className="flex flex-col gap-3 p-2">
                 <p className="text-sm text-default-600">
-                  Estàs segur que vols esborrar l'entrega de <strong>{student.name}</strong>?
+                  Estàs segur que vols esborrar l&apos;entrega de <strong>{student.name}</strong>?
                 </p>
                 <div className="flex justify-end gap-2">
                   <Button size="sm" variant="light" onPress={() => setIsOpenPopoverDelete(false)}>

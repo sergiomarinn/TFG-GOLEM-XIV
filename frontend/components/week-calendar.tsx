@@ -24,9 +24,8 @@ export const WeekCalendarDemo = ( { practices }: { practices: Practice[] } ) => 
         day: dueDate.getDate(),
         month: dueDate.getMonth(),
         year: dueDate.getFullYear(),
-        type: 'delivery',
         description: practice.description,
-        status: practice.status || 'pending'
+        status: practice.status || 'not_submitted'
       };
     });
   }, [practices]);
@@ -110,38 +109,19 @@ export const WeekCalendarDemo = ( { practices }: { practices: Practice[] } ) => 
     return parseInt(timeString.split(':')[0]);
   };
 
-  // Get event type color class
-  const getEventColorClass = (type: string, status?: string) => {
-    // Si hay un status, usar eso para determinar el color
-    if (status) {
-      switch (status) {
-        case 'approved':
-          return 'bg-green-100 border-green-500 border-[1.5px] text-green-800';
-        case 'delivered':
-          return 'bg-yellow-100 border-yellow-500 border-[1.5px] text-yellow-800';
-        case 'rejected':
-          return 'bg-red-100 border-red-500 border-[1.5px] text-red-800';
-        case 'pending':
-          return 'bg-blue-100 border-blue-500 border-[1.5px] text-blue-800';
-        default:
-          return 'bg-blue-100 border-blue-500 border-[1.5px] text-blue-800';
-      }
-    }
-    
-    // Si no hay status, usar el tipo
-    switch (type) {
-      case 'seminar':
-        return 'bg-purple-100 border-purple-300 border-[1.5px] text-purple-800';
-      case 'workshop':
-        return 'bg-yellow-100 border-yellow-300 border-[1.5px] text-yellow-800';
-      case 'delivery':
+  // Get event status color class
+  const getEventColorClass = (status: string) => {
+    switch (status) {
+      case 'not_submitted':
+        return 'bg-red-100 border-red-500 border-[1.5px] text-red-800';
+      case 'submitted':
         return 'bg-blue-100 border-blue-500 border-[1.5px] text-blue-800';
-      case 'lab':
-        return 'bg-yellow-100 border-yellow-300 border-[1.5px] text-yellow-800';
-      case 'intensive':
-        return 'bg-purple-100 border-purple-300 border-[1.5px] text-purple-800';
-      case 'break':
-        return 'bg-orange-100 border-orange-300 border-[1.5px] text-orange-800';
+      case 'correcting':
+        return 'bg-yellow-100 border-yellow-500 border-[1.5px] text-yellow-800';
+      case 'corrected':
+        return 'bg-green-100 border-green-500 border-[1.5px] text-green-800';
+      case 'rejected':
+        return 'bg-red-100 border-red-500 border-[1.5px] text-red-800';
       default:
         return 'bg-gray-100 border-gray-300 border-[1.5px] text-gray-800';
     }
@@ -327,35 +307,23 @@ export const WeekCalendarDemo = ( { practices }: { practices: Practice[] } ) => 
 						// Get the color of the first event for the current time line
 						let timeLineColor = 'bg-gray-300';
 						if (isCurrentTimeSlot && eventsAtTime.length > 0) {
-							const eventType = eventsAtTime[0].type;
-							switch(eventType) {
-                case 'approved':
-                  timeLineColor = 'bg-green-500';
-                  break;
-                case 'delivered':
-                  timeLineColor = 'bg-yellow-500';
-                  break;
+							const eventStatus = eventsAtTime[0].status;
+							switch(eventStatus) {
+                case 'not_submitted':
                 case 'rejected':
                   timeLineColor = 'bg-red-500';
                   break;
-                case 'seminar':
-                  timeLineColor = 'bg-purple-500';
-                  break;
-                case 'workshop':
-                  timeLineColor = 'bg-yellow-500';
-                  break;
-                case 'delivery':
-                case 'pending':
+                case 'submitted':
                   timeLineColor = 'bg-blue-500';
                   break;
-                case 'lab':
+                case 'correcting':
                   timeLineColor = 'bg-yellow-500';
                   break;
-                case 'intensive':
-                  timeLineColor = 'bg-purple-500';
+                case 'corrected':
+                  timeLineColor = 'bg-green-500';
                   break;
-                case 'break':
-                  timeLineColor = 'bg-orange-500';
+                default:
+                  timeLineColor = 'bg-gray-500';
                   break;
               }
 						}
@@ -369,10 +337,10 @@ export const WeekCalendarDemo = ( { practices }: { practices: Practice[] } ) => 
 									{eventsAtTime.map(event => (
 										<div 
 											key={event.id}
-											className={`text-center px-4 py-2 z-10 rounded-xl border ${getEventColorClass(event.type)}`}
-											style={{minWidth: event.type === 'break' ? 'auto' : '180px'}}
+											className={`text-center px-4 py-2 z-10 rounded-xl border ${getEventColorClass(event.status)}`}
+											style={{minWidth: '180px'}}
 										>
-											{event.title} <span className="text-xs ml-1 text-blue-600">({event.time})</span>
+											{event.title} <span className="text-xs ml-1 opacity-70">({event.time})</span>
 										</div>
 									))}
 								</div>

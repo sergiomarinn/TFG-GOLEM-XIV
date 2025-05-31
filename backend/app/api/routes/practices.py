@@ -37,6 +37,7 @@ from app.models import (
     PracticeFileInfo,
     StatusEnum
 )
+from app.utils import clean_filename, format_directory_name
 import pandas as pd
 import os
 from app.services import practice_service
@@ -237,13 +238,13 @@ def read_practice_file_info(practice_id: uuid.UUID, session: SessionDep, current
     
     # Ruta base en SFTP
     if current_user.is_student:
-        base_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name, current_user.niub)
+        base_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name), current_user.niub)
     elif current_user.is_teacher:
-        base_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+        base_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
     else:
         raise HTTPException(status_code=403, detail="User role not allowed")
 
-    remote_file_path = f"{base_path}/{practice_user.submission_file_name}"
+    remote_file_path = f"{base_path}/{clean_filename(practice_user.submission_file_name)}"
 
     # Comprobación en SFTP
     try:
@@ -295,10 +296,10 @@ def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: S
     remote_path = posixpath.join(
         settings.STUDENT_FILES_PATH,
         practice.course.academic_year,
-        practice.course.name,
-        practice.name,
+        format_directory_name(practice.course.name),
+        format_directory_name(practice.name),
         niub,
-        practice_user.submission_file_name
+        clean_filename(practice_user.submission_file_name)
     )
 
     try:
@@ -314,7 +315,7 @@ def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: S
         size=file_stat.st_size
     )
 
-@router.get("/{practice_id}/{user_niub}", dependencies=[Depends(get_current_teacher)], response_model=PracticePublicWithCourse)
+@router.get("/{practice_id}/{user_niub}", dependencies=[Depends(get_current_teacher)], response_model=PracticePublic)
 def read_practice_student(practice_id: uuid.UUID, user_niub: str, session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Retrieve student practice by ID and NIUB.
@@ -331,13 +332,12 @@ def read_practice_student(practice_id: uuid.UUID, user_niub: str, session: Sessi
     if current_user not in practice.course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the practice.")
 
-    return PracticePublicWithCourse(
+    return PracticePublic(
         **practice.model_dump(),
         submission_date=link.submission_date,
         status=link.status,
         submission_file_name=link.submission_file_name,
-        correction=link.correction,
-        course=practice.course
+        correction=link.correction
     )
 
 @router.post("/", dependencies=[Depends(get_current_teacher)], response_model=PracticePublic)
@@ -354,8 +354,8 @@ async def create_practice(*, session: SessionDep, practice_in: PracticeCreate, f
     
     try:
         with sftp_service.sftp_client() as sftp:
-            p_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course.academic_year, course.name, practice_in.name)
-            a_path = posixpath.join(settings.STUDENT_FILES_PATH, course.academic_year, course.name, practice_in.name)
+            p_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course.academic_year, format_directory_name(course.name), format_directory_name(practice_in.name))
+            a_path = posixpath.join(settings.STUDENT_FILES_PATH, course.academic_year, format_directory_name(course.name), format_directory_name(practice_in.name))
 
             try:
                 sftp_service.mkdir_p(sftp, p_path)
@@ -373,7 +373,7 @@ async def create_practice(*, session: SessionDep, practice_in: PracticeCreate, f
 
             if files:
                 for file in files:
-                    remote_file_path = posixpath.join(p_path, file.filename)
+                    remote_file_path = posixpath.join(p_path, clean_filename(file.filename))
                     try:
                         await sftp_service.upload_file_sftp(sftp, file, remote_file_path)
                     except Exception as e:
@@ -416,8 +416,8 @@ def delete_practice(session: SessionDep, practice_id: uuid.UUID) -> Any:
     try:
         with sftp_service.sftp_client() as sftp:
             # Construct the paths for professor and student directories
-            professor_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
-            student_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+            professor_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
+            student_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
             
             # Helper function to recursively remove a directory and its contents
             def rm_rf(sftp, path):
@@ -492,7 +492,7 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
                 if not file.filename.lower().endswith(".zip"):
                     raise HTTPException(status_code=400, detail="Only ZIP files are allowed")
 
-                dir_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name, current_user.niub)
+                dir_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name), current_user.niub)
                 sftp_service.mkdir_p(sftp, dir_path)
 
                 practice_user = session.exec(
@@ -505,7 +505,7 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
 
                 # Si existe un archivo previo, eliminarlo antes de guardar el nuevo
                 if practice_user and practice_user.submission_file_name:
-                    previous_file_path = posixpath.join(dir_path, practice_user.submission_file_name)
+                    previous_file_path = posixpath.join(dir_path, clean_filename(practice_user.submission_file_name))
                     try:
                         sftp.remove(previous_file_path)
                     except FileNotFoundError:
@@ -523,21 +523,21 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
 
                 if settings.ENABLE_EXTERNAL_SERVICE:
                     body = {
-                        "subject": practice.course.name,
+                        "subject": format_directory_name(practice.course.name),
                         "year": practice.course.academic_year,
-                        "task": practice.name,
+                        "task": format_directory_name(practice.name),
                         "task_id": str(practice.id),
                         "student_id": current_user.niub,
                         "language": practice.programming_language,
-                        "student_dir": dir_path,
-                        "teacher_dir": f"{settings.PROFESSOR_FILES_PATH}/{practice.course.academic_year}/{practice.course.name}/{practice.name}"
+                        "student_dir": f"/{dir_path}",
+                        "teacher_dir": f"/{settings.PROFESSOR_FILES_PATH}/{practice.course.academic_year}/{format_directory_name(practice.course.name)}/{format_directory_name(practice.name)}"
                     }
 
             else:
-                dir_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+                dir_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
                 sftp_service.mkdir_p(sftp, dir_path)
 
-            remote_file_path = f"{dir_path}/{file.filename}"
+            remote_file_path = f"{dir_path}/{clean_filename(file.filename)}"
 
             try:
                 await sftp_service.upload_file_sftp(sftp, file, remote_file_path)
@@ -565,6 +565,53 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
             "submitted_at": datetime.now().isoformat()
         }
     }
+
+@router.delete("/{practice_id}/submission/{user_niub}", dependencies=[Depends(get_current_teacher)], response_model=Message)
+def delete_practice_submission(session: SessionDep, practice_id: uuid.UUID, user_niub: str) -> Any:
+    """
+    Delete a student's practice submission if the practice is in CORRECTING state.
+    """
+    result = session.exec(
+        select(Practice, PracticesUsersLink).join(PracticesUsersLink).where(
+            PracticesUsersLink.user_niub == user_niub,
+            PracticesUsersLink.practice_id == practice_id
+        )
+    ).first()
+
+    if not result:
+        raise HTTPException(status_code=400, detail="Practice or user not found")
+    
+    practice, practice_user = result
+    
+    if practice_user.status == StatusEnum.CORRECTING:
+        raise HTTPException(status_code=400, detail="Cannot delete submission that is in CORRECTING state")
+    
+    try:
+        with sftp_service.sftp_client() as sftp:
+            dir_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name), user_niub)
+
+            if practice_user and practice_user.submission_file_name:
+                previous_file_path = posixpath.join(dir_path, clean_filename(practice_user.submission_file_name))
+                try:
+                    sftp.remove(previous_file_path)
+                except FileNotFoundError:
+                    pass
+                except Exception as e:
+                    logger.warning(f"Error removing previous file: {str(e)}")
+
+            if practice_user:
+                practice_user.status = StatusEnum.NOT_SUBMITTED
+                practice_user.submission_date = None
+                practice_user.submission_file_name = None
+                practice_user.correction = None
+                session.add(practice_user)
+                session.commit()
+                session.refresh(practice_user)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error connecting or processing SFTP: {str(e)}")
+
+    return Message(message="Submission file deleted and status reset to NOT_SUBMITTED.")
 
 def add_files_to_zip_from_sftp(zip_file: zipstream.ZipFile, sftp: paramiko.SFTPClient, remote_path: str, temp_dir: str, base_dir: str = "") -> None:
     """
@@ -631,7 +678,7 @@ async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, curr
         raise HTTPException(status_code=403, detail="Access denied to this practice")
     
     base_path = settings.PROFESSOR_FILES_PATH if current_user.is_teacher else settings.STUDENT_FILES_PATH
-    file_path = posixpath.join(base_path, practice.course.academic_year, practice.course.name, practice.name)
+    file_path = posixpath.join(base_path, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
     user_path = posixpath.join(file_path, current_user.niub) if not current_user.is_teacher else file_path
     
     # Create a persistent temporary directory
@@ -679,8 +726,8 @@ async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, cur
         raise HTTPException(status_code=403, detail="Access denied to this practice")
     
     # Base paths
-    prof_base_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
-    student_base_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, practice.course.name, practice.name)
+    prof_base_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
+    student_base_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
     
     # Create a persistent temporary directory
     temp_dir = tempfile.mkdtemp()
@@ -746,7 +793,7 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
         raise HTTPException(status_code=404, detail="This user is not enrolled in this practice")
     
     base_path = settings.PROFESSOR_FILES_PATH if target_user.is_teacher else settings.STUDENT_FILES_PATH
-    file_path = posixpath.join(base_path, practice.course.academic_year, practice.course.name, practice.name)
+    file_path = posixpath.join(base_path, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
     user_path = posixpath.join(file_path, target_user.niub) if not target_user.is_teacher else file_path
     
     # Create a persistent temporary directory
@@ -776,10 +823,10 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
         background=background_tasks
     )
 
-@router.post("/test-send-practice-data/{practice_id}/{niub}", dependencies=[Depends(get_current_active_superuser)], response_model=Message)
-def test_send_practice_data(*, session: SessionDep, practice_id: str, niub: str) -> Any:
+@router.post("/send-practice-data/{practice_id}/{niub}", dependencies=[Depends(get_current_teacher)], response_model=Message)
+def send_practice_data(*, session: SessionDep, practice_id: str, niub: str) -> Any:
     """
-    Test practice service to send practice data with a specific practica and niub.
+    Send practice data for correction.
     """
     practice = crud.practice.get_practice(session=session, id=practice_id)
     if not practice:
@@ -794,21 +841,19 @@ def test_send_practice_data(*, session: SessionDep, practice_id: str, niub: str)
     
     if practice_user:
         practice_user.status = StatusEnum.SUBMITTED
-        practice_user.submission_date = datetime.now()
-        practice_user.submission_file_name = "test.zip"
         session.add(practice_user)
         session.commit()
         session.refresh(practice_user)
     
     body = {
-        "subject": practice.course.name,
+        "subject": format_directory_name(practice.course.name),
         "year": practice.course.academic_year,
-        "task": practice.name,
+        "task": format_directory_name(practice.name),
         "task_id": str(practice.id),
         "student_id": niub,
         "language": practice.programming_language,
-        "student_dir": f"{settings.STUDENT_FILES_PATH}/{practice.course.academic_year}/{practice.course.name}/{practice.name}/{niub}",
-        "teacher_dir": f"{settings.PROFESSOR_FILES_PATH}/{practice.course.academic_year}/{practice.course.name}/{practice.name}"
+        "student_dir": f"/{settings.STUDENT_FILES_PATH}/{practice.course.academic_year}/{format_directory_name(practice.course.name)}/{format_directory_name(practice.name)}/{niub}",
+        "teacher_dir": f"/{settings.PROFESSOR_FILES_PATH}/{practice.course.academic_year}/{format_directory_name(practice.course.name)}/{format_directory_name(practice.name)}"
     }
 
     practice_service.send_practice_data(body)

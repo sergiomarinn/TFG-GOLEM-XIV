@@ -12,6 +12,9 @@ from services.rpc_client import AsyncRpcClient
 from core.db import engine
 from core.config import settings
 from core.logging_config import configure_logging
+from io import StringIO
+import csv
+import re
 
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -101,27 +104,81 @@ class PracticeCorrectionQueueWorker:
                             raise ValueError("No response received from RPC server")
                         
                         result_str = result.decode('utf-8')
-                        logger.info(f"Response from RPC server: {result_str}")
                         
-                        result_str = result_str.strip()
-
                         if result_str.startswith("Error:"):
                             raise ValueError(f"Error from RPC server: {result_str}")
                         
-                        correction = result_str
+                        correction_raw = json.loads(result_str)
 
-                        if not correction:
+                        if not correction_raw:
                             raise ValueError(f"Empty correction result for practice {practice_name} of NIUB {niub}")
 
-                        # For logging purposes, create a dictionary with relevant information
-                        result_dict = {
-                            "niub": niub,
-                            "course_id": subject,
-                            "practice_id": id_practice,
-                            "name": practice_name,
-                            "correction": correction
+                        logger.info(f"Processed correction result: {correction_raw}")
+
+                        # Extract only relevant correction fields
+                        student_report = correction_raw.get('Student Report', {})
+
+                        # Extract grade and comments from Qualification Table Entry CSV
+                        qualification_table_raw = student_report.get('Qualification Table Entry', '')
+                        grade = None
+                        feedback_comments = None
+
+                        if qualification_table_raw:
+                            try:
+                                # Clean the CSV content (remove markdown code blocks)
+                                csv_content = qualification_table_raw.strip('```\n')
+                                
+                                csv_reader = csv.DictReader(StringIO(csv_content))
+                                
+                                # Get the first (and usually only) row of data
+                                for row in csv_reader:
+                                    # Extract grade from 'Qualificació' column
+                                    if 'Qualificació' in row and row['Qualificació']:
+                                        try:
+                                            grade = float(row['Qualificació'].replace(',', '.'))
+                                        except (ValueError, TypeError):
+                                            grade = None
+                                    
+                                    # Extract feedback comments from 'Comentaris de retroalimentació' column
+                                    if 'Comentaris de retroalimentació' in row and row['Comentaris de retroalimentació']:
+                                        feedback_comments = row['Comentaris de retroalimentació']
+                                        
+                                        # Clean HTML tags if present
+                                        feedback_comments = re.sub(r'<br>', '\n', feedback_comments)
+                                        feedback_comments = re.sub(r'<[^>]+>', '', feedback_comments)
+                                    
+                                    break  # Usually only one row of data
+                                    
+                            except Exception as e:
+                                logger.warning(f"Failed to parse Qualification Table Entry CSV: {e}")
+                                # Fallback to Global Grade parsing if CSV parsing fails
+                                global_grade_raw = student_report.get('Global Grade', '')
+                                if global_grade_raw:
+                                    lines = global_grade_raw.strip('```\n').split('\n')
+                                    for line in lines:
+                                        if line.strip() and not line.startswith('Número ID') and ',' in line:
+                                            parts = line.split(',')
+                                            if len(parts) > 0:
+                                                try:
+                                                    grade = float(parts[-1])
+                                                    break
+                                                except (ValueError, IndexError):
+                                                    continue
+
+                        # Create filtered correction object with only relevant fields
+                        correction = {
+                            'grade': grade,
+                            'feedback_comments': feedback_comments,
+                            'student_id': student_report.get('Student ID'),
+                            'report_date': student_report.get('Report Date'),
+                            'qualification_table_entry': student_report.get('Qualification Table Entry'),
+                            'filtered_grade_contributions': student_report.get('Filtered Grade Contributions'),
+                            'filtered_feedback_contributions': student_report.get('Filtered and Sorted Feedback Contributions'),
+                            'non_filtered_grade_contributions': student_report.get('Non-Filtered Grade Contributions'),
+                            'non_filtered_feedback_contributions': student_report.get('Non-Filtered Feedback Contributions'),
+                            'submission_build_output': student_report.get('Submission Build Output'),
+                            'checks_output': student_report.get('Additional Information', {}).get('Checks Output')
                         }
-                        logger.info(f"Processed correction result: {result_dict}")
 
                         # Update correction with the received information
                         practice_user.status = StatusEnum.CORRECTED

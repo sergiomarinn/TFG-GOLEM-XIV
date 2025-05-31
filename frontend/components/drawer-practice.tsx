@@ -325,6 +325,7 @@ export const PracticeDrawer = ({
                     radius="sm"
                     variant="bordered"
                     isLoading={isDownloadingTemplate}
+                    isDisabled={true}
                     onPress={async () => {
                       setIsDownloadingTemplate(true);
                       try {
@@ -345,8 +346,8 @@ export const PracticeDrawer = ({
                 <FileUploader 
                   files={files} 
                   setFiles={setFiles}
-                  acceptedExtensions={['csv', 'xlsx']}
-                  multiple={false}
+                  acceptedExtensions={"*"}
+                  multiple={true}
                 />
               </div>}
             </DrawerBody>

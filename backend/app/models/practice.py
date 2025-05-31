@@ -60,6 +60,7 @@ class PracticePublic(PracticeBase):
     status: StatusEnum | None = None
     submission_file_name: str | None = None
     teacher: UserPublic | None = None
+    correction: dict | None = None
 
 class PracticePublicWithUsers(PracticeBase):
     id: uuid.UUID
@@ -71,7 +72,6 @@ class PracticePublicWithCourse(PracticePublic):
 class PracticePublicWithUsersAndCourse(PracticePublic):
     users: list[UserPublic] = []
     course: CoursePublic | None
-    correction: dict | None = None
 
 class PracticePublicWithCorrection(PracticePublic):
     correction: dict | None

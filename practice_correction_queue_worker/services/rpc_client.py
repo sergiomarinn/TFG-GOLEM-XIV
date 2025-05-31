@@ -34,7 +34,7 @@ class AsyncRpcClient():
         """ Callback que maneja la respuesta del servidor RPC """
         async with message.process():
             correlation_id = message.correlation_id
-            logger.info(f"Response received in RPC Client: {message.body.decode('utf-8')}")
+            logger.info(f"Response received from RPC server")
             
             try:
                 if correlation_id in self.futures:

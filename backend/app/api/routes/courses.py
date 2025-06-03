@@ -163,22 +163,28 @@ def read_course(course_id: uuid.UUID, session: SessionDep, current_user: Current
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
     
-    statement = select(Practice, PracticesUsersLink).join(PracticesUsersLink).where(
-        PracticesUsersLink.user_niub == current_user.niub,
-        PracticesUsersLink.practice_id == Practice.id,
-        Practice.course_id == course_id
-    )
-    practices = session.exec(statement).all()
-
     practices_public = []
-    for practice, link in practices:
-        practice_data = PracticePublic(
-            **practice.model_dump(),
-            submission_date=link.submission_date,
-            status=link.status,
-            submission_file_name=link.submission_file_name
+
+    if current_user.is_admin and not current_user in course.practices.users:
+        practices = session.exec(select(Practice).where(Practice.course_id == course_id))
+        practices_public = practices
+
+    else:
+        statement = select(Practice, PracticesUsersLink).join(PracticesUsersLink).where(
+            PracticesUsersLink.user_niub == current_user.niub,
+            PracticesUsersLink.practice_id == Practice.id,
+            Practice.course_id == course_id
         )
-        practices_public.append(practice_data)
+        practices = session.exec(statement).all()
+
+        for practice, link in practices:
+            practice_data = PracticePublic(
+                **practice.model_dump(),
+                submission_date=link.submission_date,
+                status=link.status,
+                submission_file_name=link.submission_file_name
+            )
+            practices_public.append(practice_data)
 
     return CoursePublicWithUsersAndPractices(
         **course.model_dump(),

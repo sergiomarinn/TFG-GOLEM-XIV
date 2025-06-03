@@ -96,7 +96,7 @@ export const PracticeDrawer = ({
       name: editFormData.name.trim(),
       description: editFormData.description.trim(),
       programming_language: editFormData.programming_language.trim(),
-      due_date: editFormData.due_date.toAbsoluteString(),
+      due_date: editFormData.due_date.add({ hours: 2 }).toAbsoluteString(),
       course_id: editFormData.course_id.trim(),
     };
 
@@ -121,7 +121,7 @@ export const PracticeDrawer = ({
         setIsCreatingOrUpdatingPractice(false);
       }
     } 
-    // Si es un curso nuevo (modo creación)
+    // Si es una práctica nueva (modo creación)
     else {
       try {
         setIsCreatingOrUpdatingPractice(true);

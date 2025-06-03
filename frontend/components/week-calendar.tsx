@@ -3,15 +3,6 @@
 import { Practice } from '@/types/practice';
 import { useState, useEffect, useMemo } from 'react';
 
-// Mock data for events
-const mockEvents = [
-  { id: '1', title: 'Entrega Práctica 1', time: '10:00', day: 7, type: 'delivery' },
-  { id: '2', title: 'Entrega Práctica 2', time: '13:30', day: 5, type: 'delivery' },
-  { id: '3', title: 'Entrega Práctica 3', time: '14:15', day: 5, type: 'delivery' },
-  { id: '4', title: 'Entrega Práctica 4', time: '16:45', day: 8, type: 'delivery' },
-  { id: '5', title: 'Entrega Práctica 5', time: '18:20', day: 10, type: 'delivery' },
-];
-
 export const WeekCalendarDemo = ( { practices }: { practices: Practice[] } ) => {
   const events = useMemo(() => {
     return practices.map(practice => {
@@ -124,6 +115,24 @@ export const WeekCalendarDemo = ( { practices }: { practices: Practice[] } ) => 
         return 'bg-red-100 border-red-500 border-[1.5px] text-red-800';
       default:
         return 'bg-gray-100 border-gray-300 border-[1.5px] text-gray-800';
+    }
+  };
+
+  // Get status badge color (small version)
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'not_submitted':
+        return 'bg-red-500';
+      case 'submitted':
+        return 'bg-blue-500';
+      case 'correcting':
+        return 'bg-yellow-500';
+      case 'corrected':
+        return 'bg-green-500';
+      case 'rejected':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
     }
   };
 
@@ -328,30 +337,73 @@ export const WeekCalendarDemo = ( { practices }: { practices: Practice[] } ) => 
               }
 						}
 						
-						return (
-							<div key={time} className="flex items-center relative py-[7px]">
-								<div className={`w-20 ${isCurrentTimeSlot ? 'text-black font-bold' : 'text-default-300'}`}>
-									{formattedTime}
-								</div>
-								<div className="flex-1 flex flex-wrap gap-2">
-									{eventsAtTime.map(event => (
-										<div 
-											key={event.id}
-											className={`text-center px-4 py-2 z-10 rounded-xl border ${getEventColorClass(event.status)}`}
-											style={{minWidth: '180px'}}
-										>
-											{event.title} <span className="text-xs ml-1 opacity-70">({event.time})</span>
-										</div>
-									))}
-								</div>
-								{isCurrentTimeSlot && (
-									<div>
-										<div className={`absolute left-16 right-4 rounded-full w-[3px] h-[10px] ${timeLineColor} top-1/2 transform -translate-y-1/2`}></div>
-										<div className={`absolute left-16 right-4 h-[1.5px] ${timeLineColor} top-1/2 transform -translate-y-1/2`}></div>
-									</div>
-								)}
-							</div>
-						);
+						// Handle multiple events display
+            if (eventsAtTime.length === 1) {
+              // Single event - display normally
+              const event = eventsAtTime[0];
+              return (
+                <div key={time} className="flex items-center relative py-[7px]">
+                  <div className={`w-20 ${isCurrentTimeSlot ? 'text-black font-bold' : 'text-default-300'}`}>
+                    {formattedTime}
+                  </div>
+                  <div className="flex-1 flex">
+                    <div 
+                      key={event.id}
+                      className={`inline-flex items-center gap-1.5 px-4 py-2 z-10 rounded-xl border ${getEventColorClass(event.status)}`}
+                    >
+                      <div className="max-w-[280px] truncate">{event.title}</div>
+                      <span className="text-xs opacity-70">({event.time})</span>
+                    </div>
+                  </div>
+                  {isCurrentTimeSlot && (
+                    <div>
+                      <div className={`absolute left-16 right-4 rounded-full w-[3px] h-[10px] ${timeLineColor} top-1/2 transform -translate-y-1/2`}></div>
+                      <div className={`absolute left-16 right-4 h-[1.5px] ${timeLineColor} top-1/2 transform -translate-y-1/2`}></div>
+                    </div>
+                  )}
+                </div>
+              );
+            } else {
+              // Multiple events - show compact version with count
+              return (
+                <div key={time} className="flex items-start relative py-[5px]">
+                  <div className={`w-20 ${isCurrentTimeSlot ? 'text-black font-bold' : 'text-default-300'} pt-1.5`}>
+                    {formattedTime}
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    {/* First event shown compactly */}
+                    <div 
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 z-10 rounded-lg border text-sm mr-2 ${getEventColorClass(eventsAtTime[0].status)}`}
+                    >
+                      <div className="max-w-[280px] truncate">{eventsAtTime[0].title}</div>
+                      <span className="text-xs opacity-70">({eventsAtTime[0].time})</span>
+                    </div>
+                    
+                    {/* Show additional events in a compact way */}
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-default-500 whitespace-nowrap">
+                        +{eventsAtTime.length - 1} més
+                      </div>
+                      <div className="flex gap-1">
+                        {eventsAtTime.slice(1).map((event, index) => (
+                          <div 
+                            key={event.id}
+                            className={`w-2 h-2 rounded-full ${getStatusBadgeClass(event.status)}`}
+                            title={`${event.title} (${event.time})`}
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {isCurrentTimeSlot && (
+                    <div>
+                      <div className={`absolute left-16 right-4 rounded-full w-[3px] h-[10px] ${timeLineColor} top-1/2 transform -translate-y-1/2`}></div>
+                      <div className={`absolute left-16 right-4 h-[1.5px] ${timeLineColor} top-1/2 transform -translate-y-1/2`}></div>
+                    </div>
+                  )}
+                </div>
+              );
+            }
 					})}
 				</div>
 			</div>

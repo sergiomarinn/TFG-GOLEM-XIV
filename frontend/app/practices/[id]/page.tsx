@@ -185,7 +185,7 @@ const StudentSidebar = ({ practiceStudents, onSelectStudent, selectedStudent }: 
                       <Avatar 
                         name={student.name[0]}
                         classNames={{
-                          base: "text-large"
+                          base: "text-large flex-shrink-0"
                         }}  
                       />
                       <div>

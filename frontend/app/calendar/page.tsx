@@ -201,10 +201,11 @@ export default function CalendariPage() {
     if (timeGridRef.current) {
       const now = new Date();
       const currentHour = now.getHours();
-      
+      const currentMinute = now.getMinutes();
+
       // Calcular la posición de scroll basada en la hora actual
       const hourHeight = 80;
-      const scrollPos = currentHour * hourHeight - 100; // -100 para mostrar contexto
+      const scrollPos = (currentHour * hourHeight) + (currentMinute / 60 * hourHeight) - 200; // -200 para mostrar más contexto
       
       // Asegurar que no se hace scroll negativo
       const scrollPosition = Math.max(0, scrollPos);
@@ -298,7 +299,7 @@ export default function CalendariPage() {
                         <div className="text-xs text-default-400 mb-1">{dayNames[index]}</div>
                         {hasEvents && (
                           <div className="flex justify-center gap-1 mt-1">
-                            {events.map((evt, idx) => (
+                            {events.slice(0, 12).map((evt, idx) => (
                               <div 
                                 key={idx}
                                 className={`h-1 w-1 rounded-full ${
@@ -420,22 +421,28 @@ export default function CalendariPage() {
                                     textColorChip = 'text-default-600';
                                     borderColor = 'border-default-400';
                                 }
+
+                                const dueDate = new Date(practice.due_date);
+                                const minute = dueDate.getMinutes();
+                                let topOffset = (minute / 60) * 80;
+                                if (parseInt(hour.split(':')[0]) === 23) topOffset = 0 
                                 
                                 return (
                                   <Popover placement="right-start" key={practiceIndex}>
                                     <PopoverTrigger>
                                       <button 
-                                        className={`absolute inset-x-1 top-1 p-3 rounded-xl ${bgColor} ${textColor} active:scale-95 transition-transform text-sm text-left shadow-sm`}
+                                        style={{ top: `${topOffset}px` }}
+                                        className={`absolute inset-x-1 p-3 rounded-xl ${bgColor} ${textColor} active:scale-95 transition-transform text-sm text-left shadow-sm`}
                                       >
                                         <div className="font-semibold line-clamp-2 leading-tight">{practice.name}</div>
                                         <div className="mt-1 text-xs">{getFormattedTime(practice.due_date)}</div>
                                       </button>
                                     </PopoverTrigger>
                                     <PopoverContent>
-                                      <div className="p-4">
-                                        <div className="flex items-center gap-1 mb-4">
-                                          <div className={`border-l-3 h-6 rounded-full ${borderColor}`}></div>
-                                          <h3 className="pl-1 font-bold text-xl">{practice.name}</h3>
+                                      <div className="p-4 max-w-[380px]">
+                                        <div className="flex items-start gap-1 mb-4">
+                                          <div className={`mt-[0.5px] border-l-3 h-6 rounded-full ${borderColor}`}></div>
+                                          <h3 className="pl-1 font-bold text-xl leading-tight">{practice.name}</h3>
                                         </div>
                                         
                                         <p className="text-sm text-default-500 mb-1">Descripció</p>
@@ -477,7 +484,7 @@ export default function CalendariPage() {
                 
                 {/* Indicador de hora actual */}
                 {timePosition && (
-                  <div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: timePosition.top }}>
+                  <div className="absolute inset-x-0 z-10 pointer-events-none" style={{ top: timePosition.top }}>
                     {weekDays.map((dayInfo, index) => {
                       const isToday = dayInfo.number === currentDate.getDate() && 
                                     dayInfo.month === currentDate.getMonth() && 

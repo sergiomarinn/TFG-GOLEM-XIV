@@ -97,8 +97,12 @@ class PracticeCorrectionQueueWorker:
                         await db_session.refresh(practice_user)
 
                         # Llamada al cliente RPC
-                        result: bytes = await asyncio.wait_for(rpc_client.call(language, body_json), timeout=1200)
-                        await rpc_client.close()
+                        try:
+                            result: bytes = await asyncio.wait_for(rpc_client.call(language, body_json), timeout=900) # Timeout en 15 minutos
+                        except TimeoutError:
+                            raise Exception(f"RPC call timed out after 15 minutes for user with NIUB {niub} and practice ID {id_practice}")
+                        finally:
+                            await rpc_client.close()
 
                         if not result:
                             raise ValueError("No response received from RPC server")

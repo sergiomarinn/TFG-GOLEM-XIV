@@ -165,7 +165,7 @@ def read_course(course_id: uuid.UUID, session: SessionDep, current_user: Current
     
     practices_public = []
 
-    if current_user.is_admin and not current_user in course.practices.users:
+    if current_user.is_admin and not current_user in course.users:
         practices = session.exec(select(Practice).where(Practice.course_id == course_id))
         practices_public = practices
 

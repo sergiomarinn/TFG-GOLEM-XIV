@@ -194,10 +194,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     }
   };
 
-  const getToastVariant = (status: string): 'default' | 'success' | 'primary' | 'danger' => {
+  const getToastVariant = (status: string): 'default' | 'success' | 'warning' | 'danger' => {
     switch (status) {
       case 'CORRECTING':
-        return 'primary';
+        return 'warning';
       case 'CORRECTED':
         return 'success';
       case 'REJECTED':

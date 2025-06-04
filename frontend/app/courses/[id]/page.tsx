@@ -350,7 +350,7 @@ export default function CourseDetailPage() {
               <span>{courseTeacher}</span>
             </div>
             <p className="text-default-600 pl-0.5">{courseInfo?.description}</p>
-            <Button
+            {canEditCourse && <Button
               className="absolute top-10 right-2"
               color="secondary"
               variant="flat"
@@ -359,7 +359,7 @@ export default function CourseDetailPage() {
               onPress={() => setIsCourseDrawerOpen(true)}
             >
               Editar curs
-            </Button>
+            </Button>}
           </div>
         )}
       </div>

@@ -28,8 +28,8 @@ export const NotificationPopover = () => {
     switch (type) {
       case 'CORRECTING':
 				return (
-					<div className="mt-0.5 rounded-full bg-primary-100 p-2">
-						<DocumentIcon className="size-5 text-primary-500"/>
+					<div className="mt-0.5 rounded-full bg-warning-100 p-2">
+						<DocumentIcon className="size-5 text-warning-500"/>
 					</div>
 				)
       case 'CORRECTED':

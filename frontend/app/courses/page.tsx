@@ -35,6 +35,7 @@ const sortOptions = [
 
 export default function CoursesPage() {
   const [courses, setCourses] = React.useState<Course[]>([]);
+  const [hasAnyCourse, setHasAnyCourse] = React.useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [currentCourse, setCurrentCourse] = React.useState<Course | null>(null);
   const [isTeacher, setIsTeacher] = React.useState(false);
@@ -77,6 +78,7 @@ export default function CoursesPage() {
         setIsTeacher(user?.is_teacher || user?.is_admin || false);
         const { data: courses } = await getMyCourses();
         setCourses(courses);
+        setHasAnyCourse(courses.length > 0);
       } catch (error) {
         console.error("Error fetching courses:", error);
       } finally {
@@ -315,6 +317,25 @@ export default function CoursesPage() {
             {Array.from({ length: 8 }).map((_, i) => (
               <CourseCardSkeleton key={i} />
             ))}
+          </div>
+        ) : !hasAnyCourse ? (
+          <div className="bg-content1 border border-default-200 rounded-lg p-8 text-center">
+            <AcademicCapIcon className="size-16 mx-auto text-default-400 mb-4" />
+            <h3 className="text-xl font-semibold text-default-700 mb-2">Encara no estàs inscrit a cap curs</h3>
+            <p className="text-default-500">
+              Quan t&apos;inscriguis a algun curs, apareixerà aquí.
+            </p>
+            {isTeacher && (
+              <Button
+                className="mt-4"
+                color="secondary"
+                radius="lg"
+                startContent={<PlusIcon className="size-5" />}
+                onPress={handleNewCourse}
+              >
+                Crear un nou curs
+              </Button>
+            )}
           </div>
         ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">

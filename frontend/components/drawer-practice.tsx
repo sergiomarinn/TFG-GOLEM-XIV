@@ -43,7 +43,7 @@ export const PracticeDrawer = ({
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [isCreatingOrUpdatingPractice, setIsCreatingOrUpdatingPractice] = useState(false);
   const [isOpenPopoverDelete, setIsOpenPopoverDelete] = useState(false);
-  const [isDeletingCourse, setIsDeletingCourse] = useState(false);
+  const [isDeletingPractice, setIsDeletingPractice] = useState(false);
 
   type EditFormField = "name" | "description" | "programming_language" | "due_date" | "course_id";
 
@@ -148,7 +148,7 @@ export const PracticeDrawer = ({
   const handleDelete = async () => {
     try {
       if (!practice?.id) return;
-      setIsDeletingCourse(true);
+      setIsDeletingPractice(true);
       await deletePractice(practice.id);
       addToast({
         title: `Pràctica ${practice.name} eliminada correctament`,
@@ -163,7 +163,7 @@ export const PracticeDrawer = ({
       })
       console.error(error);
     } finally {
-      setIsDeletingCourse(false);
+      setIsDeletingPractice(false);
     }
   };
 
@@ -248,7 +248,7 @@ export const PracticeDrawer = ({
                           size="sm"
                           color="danger"
                           onPress={handleDelete}
-                          isLoading={isDeletingCourse}
+                          isLoading={isDeletingPractice}
                         >
                           Confirmar
                         </Button>

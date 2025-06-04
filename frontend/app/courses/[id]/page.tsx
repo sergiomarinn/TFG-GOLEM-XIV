@@ -88,7 +88,10 @@ export default function CourseDetailPage() {
   }, [courseInfo]);
 
   const handleUpdateCourse = (updatedCourse: Course) => {
-    setCourseInfo(updatedCourse);
+    setCourseInfo(prev => ({
+      ...prev,
+      ...updatedCourse,
+    }));
   };
 
   const handleDeleteCourse = (courseId: string) => {

@@ -29,6 +29,8 @@ import { SearchIcon, ChevronDownIcon, EyeIcon } from '@/components/icons'
 import { practiceStatusOptions as statusOptions, practiceStatusColorMap as statusColorMap } from "@/types";
 import { Practice } from "@/types/practice";
 import { redirect } from "next/navigation";
+import { PencilIcon } from "@heroicons/react/24/outline";
+import { PracticeDrawer } from '@/components/drawer-practice';
 
 export const columns = [
   {name: "PRÀCTICA", uid: "name", sortable: true},
@@ -46,7 +48,17 @@ export const dueDateRangesOptions = [
   { name: "Propers 6 mesos", uid: "next_6_months" },
 ];
 
-export const PracticeTable = ({ practices, isLoading }: { practices: Practice[], isLoading: boolean }) => {
+interface PracticeTableProps {
+  practices: Practice[]
+  isLoading: boolean
+  isTeacher?: boolean
+  onSave: (updatedPractice: Practice) => void
+  onDelete: (practiceId: string) => void
+}
+
+export const PracticeTable = ({ practices, isLoading, isTeacher = false, onSave, onDelete }: PracticeTableProps) => {
+  const [isPracticeDrawerOpen, setIsPracticeDrawerOpen] = React.useState(false);
+  const [currentPractice, setCurrentPractice] = React.useState<Practice | null>(null);
   const [filterValue, setFilterValue] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
   const [selectedDueRangeFilter, setSelectedDueRangeFilter] = React.useState<Selection>(new Set(["next_7_days"]));
@@ -68,6 +80,12 @@ export const PracticeTable = ({ practices, isLoading }: { practices: Practice[],
       minute: '2-digit'
     });
   };
+
+  const filteredColumns = React.useMemo(() => {
+    return isTeacher
+      ? columns.filter(column => column.uid !== "status")
+      : columns;
+  }, [isTeacher])
 
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({
@@ -203,12 +221,22 @@ export const PracticeTable = ({ practices, isLoading }: { practices: Practice[],
                 <EyeIcon />
               </button>
             </Tooltip>
+            {isTeacher && <Tooltip content="Editar pràctica">
+              <button
+                type="button"
+                onClick={() => {setIsPracticeDrawerOpen(true); setCurrentPractice(practice);}}
+                className="text-lg text-default-400 hover:text-primary transition-transform duration-150 active:scale-95 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary"
+                aria-label="Editar pràctica"
+              >
+                <PencilIcon className="size-4" />
+              </button>
+            </Tooltip>}
           </div>
         );
       default:
         return cellValue;
     }
-  }, []);
+  }, [isTeacher]);
 
   const onRowsPerPageChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setRowsPerPage(Number(e.target.value));
@@ -264,7 +292,7 @@ export const PracticeTable = ({ practices, isLoading }: { practices: Practice[],
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Dropdown>
+            {!isTeacher && <Dropdown>
               <DropdownTrigger className="hidden sm:flex">
                 <Button endContent={<ChevronDownIcon className="text-small" />} variant="flat">
                   Estat
@@ -284,7 +312,7 @@ export const PracticeTable = ({ practices, isLoading }: { practices: Practice[],
                   </DropdownItem>
                 ))}
               </DropdownMenu>
-            </Dropdown>
+            </Dropdown>}
           </div>
         </div>
       </div>
@@ -298,6 +326,7 @@ export const PracticeTable = ({ practices, isLoading }: { practices: Practice[],
     onRowsPerPageChange,
     practices.length,
     hasSearchFilter,
+    isTeacher
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -317,36 +346,46 @@ export const PracticeTable = ({ practices, isLoading }: { practices: Practice[],
   }, [page, pages, hasSearchFilter]);
 
   return (
-    <Table
-      isHeaderSticky
-      aria-label="Practices table"
-      bottomContent={bottomContent}
-      bottomContentPlacement="outside"
-      classNames={{
-        wrapper: "max-h-[400px]",
-      }}
-      sortDescriptor={sortDescriptor}
-      topContent={topContent}
-      topContentPlacement="outside"
-      onSortChange={setSortDescriptor}
-    >
-      <TableHeader columns={columns}>
-        {(column) => (
-          <TableColumn
-            key={column.uid}
-            allowsSorting={column.sortable}
-          >
-            {column.name}
-          </TableColumn>
-        )}
-      </TableHeader>
-      <TableBody loadingContent={isLoading} emptyContent={"No hi ha cap pràctica que requereixi una acció"} items={items}>
-        {(item) => (
-          <TableRow key={item.id}>
-            {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+    <div>
+      <Table
+        isHeaderSticky
+        aria-label="Practices table"
+        bottomContent={bottomContent}
+        bottomContentPlacement="outside"
+        classNames={{
+          wrapper: "max-h-[400px]",
+        }}
+        sortDescriptor={sortDescriptor}
+        topContent={topContent}
+        topContentPlacement="outside"
+        onSortChange={setSortDescriptor}
+      >
+        <TableHeader columns={filteredColumns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              allowsSorting={column.sortable}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody isLoading={isLoading} emptyContent={"No hi ha cap pràctica que requereixi una acció"} items={items}>
+          {(item) => (
+            <TableRow key={item.id}>
+              {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+      {currentPractice?.course && <PracticeDrawer 
+        isOpen={isPracticeDrawerOpen}
+        onOpenChange={setIsPracticeDrawerOpen}
+        initialPractice={currentPractice || null}
+        course={currentPractice?.course}
+        onSave={onSave}
+        onDelete={onDelete}
+      />}
+    </div>
   );
 }

@@ -26,6 +26,7 @@ import { addToast } from '@heroui/toast';
 import { addStudentByNiub, deleteStudentFromCourse } from '@/app/actions/course';
 import { getStudentsUsers } from '@/app/actions/user';
 import { Skeleton } from '@heroui/skeleton';
+import { Link } from '@heroui/link';
 
 const UserCardSkeleton = ({ count = 5, showDeleteButton = true }) => {
   return (
@@ -360,6 +361,8 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
               <div className="flex items-center gap-2">
                 <Tooltip content="Enviar missatge">
                   <Button
+                    as={Link}
+                    href={`mailto:${user.email}`}
                     aria-label={`Enviar missatge a ${user.name}`}
                     color="primary"
                     isIconOnly

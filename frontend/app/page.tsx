@@ -15,6 +15,7 @@ import { Link } from "@heroui/link";
 import { AcademicCapIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
 import { CourseCardSkeleton, HorizontalCourseCardSkeleton } from "@/components/course-cards-skeleton";
+import { getUserFromClient } from '@/app/lib/client-session';
 
 export default function Home() {
   const [recentCourses, setRecentCourses] = useState<Course[]>([]);
@@ -23,6 +24,7 @@ export default function Home() {
   const [cardsPerRow, setCardsPerRow] = useState(3);
   const [expandFeaturedCourse, setExpandFeaturedCourse] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTeacher, setIsTeacher] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -64,6 +66,9 @@ export default function Home() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        const user = await getUserFromClient();
+        setIsTeacher(user?.is_teacher || user?.is_admin || false);
+
         const { data: courses } = await getMyRecentCourses(cardsPerRow+1);
         setRecentCourses(courses);
 
@@ -83,6 +88,46 @@ export default function Home() {
   const remainingCourses = recentCourses.length > 1 
     ? recentCourses.slice(1)
     : [];
+
+  const handleSavePractice = (updatedPractice: Practice) => {
+    const existingPracticeIndex = practices?.findIndex(
+      practice => practice.id === updatedPractice.id
+    );
+
+    if (existingPracticeIndex !== undefined && existingPracticeIndex !== -1 && practices) {
+      // Actualizar práctica existente, conservando atributos anteriores
+      const existingPractice = practices[existingPracticeIndex];
+
+      // Eliminar propiedades null o undefined del updatedPractice
+      const filteredUpdate = Object.fromEntries(
+        Object.entries(updatedPractice).filter(([_, value]) => value !== null && value !== undefined)
+      ) as Practice;
+      
+      const mergedPractice = {
+        ...existingPractice,
+        ...filteredUpdate,
+      };
+
+      const updatedPractices = [...practices];
+      updatedPractices[existingPracticeIndex] = mergedPractice;
+
+      setPractices(updatedPractices);
+    } else if (practices) {
+      // Añadir nueva práctica
+      const newPractices = [...(practices ?? []), updatedPractice];
+      setPractices(newPractices);
+    }
+  };
+
+  const handleDeletePractice = (practiceId: string) => {
+    if (!practices) return;
+
+    const filteredPractices = practices?.filter(
+      practice => practice.id !== practiceId
+    );
+    
+    setPractices(filteredPractices ?? []);
+  };
 
   return (
     <section className="px-8 pb-4 flex flex-col min-h-screen gap-16">
@@ -172,7 +217,7 @@ export default function Home() {
       <div className="hidden lg:block">
         <h2 className={title({ size: "sm" })}>Properes entregues</h2>
         <div className="mt-4 p-4 rounded-3xl border-1.5 border-default-200 bg-content1">
-          <PracticeTable practices={practices} isLoading={isLoading} />
+          <PracticeTable practices={practices} isLoading={isLoading} isTeacher={isTeacher} onSave={handleSavePractice} onDelete={handleDeletePractice} />
         </div>
       </div>
     </section>

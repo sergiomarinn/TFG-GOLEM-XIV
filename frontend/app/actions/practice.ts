@@ -147,7 +147,23 @@ export async function getPracticeStudent(id: string, niub: string): Promise<Prac
 	}
 
 	return res.json()
-}	
+}
+
+export async function getPracticeCorrectionFilesInfo(practiceId: string): Promise<PracticeFileInfo[]> {
+	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/correction-files-info`, {
+		method: "GET",
+		headers: {
+			Authorization: `Bearer ${await getTokenFromClient()}`,
+		},
+	});
+
+	if (!res.ok) {
+		const errorData = await res.json();
+		throw new Error(errorData.detail || "Failed to get practice correction files info");
+	}
+
+	return await res.json();
+}
 
 export async function getPracticeFileInfo(practiceId: string): Promise<PracticeFileInfo> {
 	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}/submission-file-info`, {
@@ -204,14 +220,22 @@ export async function createPractice(data: Partial<Practice>, files: File[]): Pr
   return await res.json();
 }
 
-export async function updatePractice(practiceId: string, data: Partial<Practice>): Promise<Practice> {
+export async function updatePractice(practiceId: string, data: Partial<Practice>, files?: File[]): Promise<Practice> {
+	const formData = new FormData();
+	formData.append("practice_in", JSON.stringify(data));
+
+	if (files) {
+		for (const file of files) {
+			formData.append("files", file);
+		}
+	}
+	
 	const res = await fetch(`${API_URL}/api/v1/practices/${practiceId}`, {
 		method: "PUT",
 		headers: {
-			"Content-Type": "application/json",
 			"Authorization": `Bearer ${await getTokenFromClient()}`,
 		},
-		body: JSON.stringify(data),
+		body: formData,
 	});
 
 	if (!res.ok) {

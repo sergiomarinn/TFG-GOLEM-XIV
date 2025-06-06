@@ -4,6 +4,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Response, UploadFile, logger
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from sqlmodel import col, delete, func, select, desc, update
 
@@ -237,7 +238,7 @@ def read_course_practices(course_id: uuid.UUID, session: SessionDep, current_use
     return course
 
 @router.post("/", dependencies=[Depends(get_current_teacher)], response_model=CoursePublic)
-def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadFile, current_user: CurrentUser) -> Any:
+async def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadFile, current_user: CurrentUser) -> Any:
     """
     Create new course.
     """
@@ -265,7 +266,7 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
     if course and course.academic_year == course_in.academic_year:
         raise HTTPException(status_code=400, detail="The course already exists")
     
-    try:
+    def _mk_course_dir():
         with sftp_service.sftp_client() as sftp:
             p_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course_in.academic_year, format_directory_name(course_in.name))
             a_path = posixpath.join(settings.STUDENT_FILES_PATH, course_in.academic_year, format_directory_name(course_in.name))
@@ -274,6 +275,9 @@ def create_course(*, session: SessionDep, course_in: CourseCreate, file: UploadF
                 sftp_service.mkdir_p(sftp, a_path)
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Error creating directories on SFTP server: {str(e)}")
+            
+    try:
+        await run_in_threadpool(_mk_course_dir)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"SFTP connection error: {str(e)}")
     
@@ -332,17 +336,37 @@ def add_student_by_niub(course_id: uuid.UUID, niub: str, session: SessionDep, cu
     return Message(message=f"Student with NIUB {niub} successfully added to the course")
 
 @router.put("/{course_id}", dependencies=[Depends(get_current_teacher)], response_model=CoursePublic)
-def update_course(
-    course_id: uuid.UUID, course_in: CourseUpdate, session: SessionDep, current_user: CurrentUser
-) -> Any:
+async def update_course(course_id: uuid.UUID, course_in: CourseUpdate, session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Update course.
     """
     course = crud.course.get_course(session=session, id=course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
+    
     if current_user not in course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the course.")
+    
+    # Check if name or academic year is being changed
+    name_changed = course_in.name and course_in.name != course.name
+    academic_year_changed = course_in.academic_year and course_in.academic_year != course.academic_year
+    
+    old_course_name = course.name if name_changed else None
+    old_academic_year = course.academic_year if academic_year_changed else None
+
+    # If name or academic year changed, rename directories
+    if name_changed or academic_year_changed:
+        try:
+            await sftp_service.rename_course_directories(
+                old_course_name or course.name,
+                course_in.name,
+                course_in.academic_year,
+                old_academic_year
+            )
+        except Exception as e:
+            logger.error(f"Failed to rename course directories: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to rename course directories: {str(e)}")
+
     course = crud.course.update_course(session=session, db_course=course, course_in=course_in)
     return course
 
@@ -370,7 +394,7 @@ def update_course_last_access(course_id: uuid.UUID, session: SessionDep, current
     return Message(message="Last access updated successfully")
 
 @router.delete("/{course_id}", dependencies=[Depends(get_current_teacher)], response_model=Message)
-def delete_course(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
+async def delete_course(course_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Delete course.
     """
@@ -382,54 +406,14 @@ def delete_course(course_id: uuid.UUID, session: SessionDep, current_user: Curre
     
     # Delete remote directories
     try:
-        with sftp_service.sftp_client() as sftp:
-            # Construct the path for the course directory
-            course_professor_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course.academic_year, format_directory_name(course.name))
-            course_student_path = posixpath.join(settings.STUDENT_FILES_PATH, course.academic_year, format_directory_name(course.name))
-            
-            # Helper function to recursively remove a directory and its contents
-            def rm_rf(sftp, path):
-                try:
-                    # Check if path exists
-                    try:
-                        sftp.stat(path)
-                    except IOError:
-                        # Path doesn't exist, nothing to do
-                        return
-                    
-                    # List all files and directories in the current path
-                    files = sftp.listdir(path)
-                    
-                    # First remove all files and subdirectories recursively
-                    for f in files:
-                        filepath = posixpath.join(path, f)
-                        try:
-                            # Check if it's a directory
-                            sftp.stat(filepath).st_mode
-                            # If we get here, it's a file or directory
-                            try:
-                                # Try to remove as file
-                                sftp.remove(filepath)
-                            except IOError:
-                                # If not a file, it's a directory - remove recursively
-                                rm_rf(sftp, filepath)
-                        except IOError:
-                            # Error stating the file, just try to remove it
-                            try:
-                                sftp.remove(filepath)
-                            except IOError:
-                                pass
-                    
-                    # Then remove the directory itself
-                    sftp.rmdir(path)
-                except Exception as e:
-                    # Log the error but continue with the database deletion
-                    logger.error(f"Error removing remote directory {path}: {str(e)}")
-            
-            # Remove professor and student directories
-            rm_rf(sftp, course_professor_path)
-            rm_rf(sftp, course_student_path)
-            
+        # Construct the paths for professor and student directories
+        course_professor_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course.academic_year, format_directory_name(course.name))
+        course_student_path = posixpath.join(settings.STUDENT_FILES_PATH, course.academic_year, format_directory_name(course.name))
+        
+        # Remove professor and student directories
+        await sftp_service.remove_recursive_diretory(course_professor_path)
+        await sftp_service.remove_recursive_diretory(course_student_path)
+
     except Exception as e:
         # Log the error but continue with the database deletion
         logger.error(f"Error connecting to SFTP server: {str(e)}")

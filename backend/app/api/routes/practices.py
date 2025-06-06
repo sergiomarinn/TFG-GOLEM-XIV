@@ -5,7 +5,8 @@ import uuid
 from typing import Any
 import shutil
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, BackgroundTasks
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, BackgroundTasks
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 import paramiko
 import zipstream
@@ -18,7 +19,8 @@ from app.api.deps import (
     CurrentUser,
     SessionDep,
     get_current_active_superuser,
-    get_current_teacher
+    get_current_teacher,
+    get_current_user
 )
 from app.core.config import settings
 from app.models import (
@@ -38,7 +40,6 @@ from app.models import (
     StatusEnum
 )
 from app.utils import clean_filename, format_directory_name
-import pandas as pd
 import os
 from app.services import practice_service
 from app.services import sftp_service
@@ -164,36 +165,36 @@ def read_practice(practice_id: uuid.UUID, session: SessionDep, current_user: Cur
     """
     Retrieve practice by ID.
     """
-    statement = select(Practice, PracticesUsersLink).join(PracticesUsersLink).where(
-        PracticesUsersLink.user_niub == current_user.niub,
-        PracticesUsersLink.practice_id == practice_id
-    )
-    practice, link = session.exec(statement).first()
+    practice = session.get(Practice, practice_id)
 
     if not practice:
         raise HTTPException(status_code=404, detail="Practice not found")
-    
+
     if current_user not in practice.course.users and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="The user is not enrolled in the practice.")
-    
-    teacher = None
-    for user in practice.users:
-        if user.is_teacher:
-            teacher = user
-            break
+
+    link = None
+    if not current_user.is_admin:
+        statement = select(PracticesUsersLink).where(
+            PracticesUsersLink.user_niub == current_user.niub,
+            PracticesUsersLink.practice_id == practice_id
+        )
+        link = session.exec(statement).first()
+
+    teacher = next((user for user in practice.users if user.is_teacher), None)
 
     return PracticePublicWithUsersAndCourse(
         **practice.model_dump(),
-        submission_date=link.submission_date,
-        status=link.status,
-        submission_file_name=link.submission_file_name,
-        correction=link.correction,
+        submission_date=link.submission_date if link else None,
+        status=link.status if link else None,
+        submission_file_name=link.submission_file_name if link else None,
+        correction=link.correction if link else None,
         users=practice.users,
         course=practice.course,
         teacher=teacher
     )
 
-@router.get("/{practice_id}/users", response_model=PracticePublicWithUsers)
+@router.get("/{practice_id}/users", dependencies=[Depends(get_current_user)], response_model=PracticePublicWithUsers)
 def read_practice_users(practice_id: uuid.UUID, session: SessionDep) -> Any:
     """
     Retrieve practice users.
@@ -204,7 +205,7 @@ def read_practice_users(practice_id: uuid.UUID, session: SessionDep) -> Any:
     
     return practice
 
-@router.get("/{practice_id}/course", response_model=PracticePublicWithCourse)
+@router.get("/{practice_id}/course", dependencies=[Depends(get_current_user)], response_model=PracticePublicWithCourse)
 def read_practice_course(practice_id: uuid.UUID, session: SessionDep) -> Any:
     """
     Retrieve practice course.
@@ -215,8 +216,29 @@ def read_practice_course(practice_id: uuid.UUID, session: SessionDep) -> Any:
     
     return practice
 
+@router.get("/{practice_id}/correction-files-info", dependencies=[Depends(get_current_teacher)], response_model=list[PracticeFileInfo])
+async def read_practice_correction_files_info(practice_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Retrieve uploaded correction files for a specific practice.
+    """
+    practice = crud.practice.get_practice(session=session, id=practice_id)
+    if not practice:
+        raise HTTPException(status_code=404, detail="Practice not found")
+    
+    course = practice.course
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found for practice")
+    
+    if current_user not in course.users and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to access practice correction files")
+    
+    try:
+        return await sftp_service.get_practice_correction_files_info(practice)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve correction files information: {str(e)}")
+
 @router.get("/{practice_id}/submission-file-info", response_model=PracticeFileInfo)
-def read_practice_file_info(practice_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
+async def read_practice_file_info(practice_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Retrieve uploaded file info for a given practice.
     """
@@ -238,20 +260,18 @@ def read_practice_file_info(practice_id: uuid.UUID, session: SessionDep, current
     
     # Ruta base en SFTP
     if current_user.is_student:
-        base_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name), current_user.niub)
-    elif current_user.is_teacher:
-        base_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
+        remote_file_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name), current_user.niub, clean_filename(practice_user.submission_file_name))
     else:
         raise HTTPException(status_code=403, detail="User role not allowed")
-
-    remote_file_path = f"{base_path}/{clean_filename(practice_user.submission_file_name)}"
-
-    # Comprobación en SFTP
-    try:
+    
+    def _stat_file():
         with sftp_service.sftp_client() as sftp:
-            file_stat = sftp.stat(remote_file_path)
+            return sftp.stat(remote_file_path)
+
+    try:
+        file_stat = await run_in_threadpool(_stat_file)
     except FileNotFoundError:
-        raise HTTPException(status_code=204, detail="Submitted file not found on server")
+        raise HTTPException(status_code=404, detail="Submitted file not found on server")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error accessing SFTP: {str(e)}")
 
@@ -260,8 +280,8 @@ def read_practice_file_info(practice_id: uuid.UUID, session: SessionDep, current
         size=file_stat.st_size,
     )
 
-@router.get("/{practice_id}/users/{niub}/submission-file-info", response_model=PracticeFileInfo)
-def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: SessionDep, current_user: CurrentUser) -> Any:
+@router.get("/{practice_id}/users/{niub}/submission-file-info", dependencies=[Depends(get_current_teacher)], response_model=PracticeFileInfo)
+async def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Retrieve uploaded file info for a specific user's submission to a given practice.
     """
@@ -291,7 +311,7 @@ def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: S
         raise HTTPException(status_code=403, detail="Teacher can only access to their own practices")
 
     if not practice_user.submission_file_name:
-        raise HTTPException(status_code=204, detail="No file submitted for this practice")
+        raise HTTPException(status_code=404, detail="No file submitted for this practice")
 
     remote_path = posixpath.join(
         settings.STUDENT_FILES_PATH,
@@ -302,9 +322,12 @@ def read_user_submission_file_info(practice_id: uuid.UUID, niub: str, session: S
         clean_filename(practice_user.submission_file_name)
     )
 
-    try:
+    def _stat_file():
         with sftp_service.sftp_client() as sftp:
-            file_stat = sftp.stat(remote_path)
+            return sftp.stat(remote_path)
+
+    try:
+        file_stat = await run_in_threadpool(_stat_file)
     except FileNotFoundError:
         raise HTTPException(status_code=410, detail="Submitted file not found on server")
     except Exception as e:
@@ -353,31 +376,15 @@ async def create_practice(*, session: SessionDep, practice_in: PracticeCreate, f
         raise HTTPException(status_code=400, detail="A practice with this name already exists in the course")
     
     try:
-        with sftp_service.sftp_client() as sftp:
-            p_path = posixpath.join(settings.PROFESSOR_FILES_PATH, course.academic_year, format_directory_name(course.name), format_directory_name(practice_in.name))
-            a_path = posixpath.join(settings.STUDENT_FILES_PATH, course.academic_year, format_directory_name(course.name), format_directory_name(practice_in.name))
+        await sftp_service.create_practice_directories_and_upload_files(course, practice_in.name, files)
+        
+        practice = crud.practice.create_practice(session=session, practice_create=practice_in, course=course)
 
-            try:
-                sftp_service.mkdir_p(sftp, p_path)
-                sftp_service.mkdir_p(sftp, a_path)
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Error creating directories: {str(e)}")
-            
-            practice = crud.practice.create_practice(session=session, practice_create=practice_in, course=course)
+        for user in course.users:
+            practice.users.append(user)
 
-            for user in course.users:
-                practice.users.append(user)
-
-            session.add(practice)
-            session.commit()
-
-            if files:
-                for file in files:
-                    remote_file_path = posixpath.join(p_path, clean_filename(file.filename))
-                    try:
-                        await sftp_service.upload_file_sftp(sftp, file, remote_file_path)
-                    except Exception as e:
-                        raise HTTPException(status_code=500, detail=f"Error uploading file {file.filename}: {str(e)}")
+        session.add(practice)
+        session.commit()
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"SFTP connection error or operation failed: {str(e)}")
@@ -385,7 +392,7 @@ async def create_practice(*, session: SessionDep, practice_in: PracticeCreate, f
     return practice
 
 @router.put("/{practice_id}", dependencies=[Depends(get_current_teacher)], response_model=PracticePublic)
-def update_practice(session: SessionDep, practice_id: uuid.UUID, practice_in: PracticeUpdate) -> Any:
+async def update_practice(session: SessionDep, practice_id: uuid.UUID, practice_in: PracticeUpdate, files: list[UploadFile] | None = File(None)) -> Any:
     """
     Update practice.
     """
@@ -399,12 +406,29 @@ def update_practice(session: SessionDep, practice_id: uuid.UUID, practice_in: Pr
     if not practice:
         raise HTTPException(status_code=404, detail="Practice not found")
     
-    practice = crud.practice.update_practice(session=session, db_practice=practice, practice_in=practice_in, course=course)
+    # Check if name is being changed
+    name_changed = practice_in.name and practice_in.name != practice.name
+    old_practice_name = practice.name if name_changed else None
 
+    # If name changed, rename directories
+    if name_changed and course:
+        try:
+            await sftp_service.rename_practice_directories(old_practice_name, practice_in.name, course)
+        except Exception as e:
+            logger.error(f"Failed to rename practice directories: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to rename practice directories: {str(e)}")
+        
+    if files:
+        try:
+            await sftp_service.replace_practice_files(course, practice.name, files)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"SFTP connection error or operation failed: {str(e)}")
+    
+    practice = crud.practice.update_practice(session=session, db_practice=practice, practice_in=practice_in, course=course)
     return practice
 
 @router.delete("/{practice_id}", dependencies=[Depends(get_current_teacher)], response_model=Message)
-def delete_practice(session: SessionDep, practice_id: uuid.UUID) -> Any:
+async def delete_practice(session: SessionDep, practice_id: uuid.UUID) -> Any:
     """
     Delete practice.
     """
@@ -414,57 +438,17 @@ def delete_practice(session: SessionDep, practice_id: uuid.UUID) -> Any:
 
     # Delete remote directories
     try:
-        with sftp_service.sftp_client() as sftp:
-            # Construct the paths for professor and student directories
-            professor_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
-            student_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
-            
-            # Helper function to recursively remove a directory and its contents
-            def rm_rf(sftp, path):
-                try:
-                    # Check if path exists
-                    try:
-                        sftp.stat(path)
-                    except IOError:
-                        # Path doesn't exist, nothing to do
-                        return
-                    
-                    # List all files and directories in the current path
-                    files = sftp.listdir(path)
-                    
-                    # First remove all files and subdirectories recursively
-                    for f in files:
-                        filepath = posixpath.join(path, f)
-                        try:
-                            # Check if it's a directory
-                            sftp.stat(filepath).st_mode
-                            # If we get here, it's a file or directory
-                            try:
-                                # Try to remove as file
-                                sftp.remove(filepath)
-                            except IOError:
-                                # If not a file, it's a directory - remove recursively
-                                rm_rf(sftp, filepath)
-                        except IOError:
-                            # Error stating the file, just try to remove it
-                            try:
-                                sftp.remove(filepath)
-                            except IOError:
-                                pass
-                    
-                    # Then remove the directory itself
-                    sftp.rmdir(path)
-                except Exception as e:
-                    # Log the error but continue with the database deletion
-                    logger.error(f"Error removing remote directory {path}: {str(e)}")
-            
-            # Remove professor and student directories
-            rm_rf(sftp, professor_path)
-            rm_rf(sftp, student_path)
+        # Construct the paths for professor and student directories
+        professor_path = posixpath.join(settings.PROFESSOR_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
+        student_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name))
+        
+        # Remove professor and student directories
+        await sftp_service.remove_recursive_diretory(professor_path)
+        await sftp_service.remove_recursive_diretory(student_path)
             
     except Exception as e:
         # Log the error but continue with the database deletion
-        logger.error(f"Error connecting to SFTP server: {str(e)}")
+        logger.error(f"SFTP connection error or operation failed: {str(e)}")
     
     crud.practice.delete_practice(session=session, practice=practice)
 
@@ -486,7 +470,11 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
         raise HTTPException(status_code=400, detail="No file uploaded")
     
     body = None
-    try:
+    remote_file_path = ""
+
+    def _upload():
+        nonlocal body, remote_file_path
+
         with sftp_service.sftp_client() as sftp:
             if current_user.is_student:
                 if not file.filename.lower().endswith(".zip"):
@@ -540,9 +528,12 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
             remote_file_path = f"{dir_path}/{clean_filename(file.filename)}"
 
             try:
-                await sftp_service.upload_file_sftp(sftp, file, remote_file_path)
+                sftp_service.upload_file(sftp, file, remote_file_path)
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
+
+    try:
+        await run_in_threadpool(_upload)
 
     except HTTPException:
         # Re-lanzar HTTPExceptions para que no se oculten
@@ -567,7 +558,7 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
     }
 
 @router.delete("/{practice_id}/submission/{user_niub}", dependencies=[Depends(get_current_teacher)], response_model=Message)
-def delete_practice_submission(session: SessionDep, practice_id: uuid.UUID, user_niub: str) -> Any:
+async def delete_practice_submission(session: SessionDep, practice_id: uuid.UUID, user_niub: str) -> Any:
     """
     Delete a student's practice submission if the practice is in CORRECTING state.
     """
@@ -586,7 +577,7 @@ def delete_practice_submission(session: SessionDep, practice_id: uuid.UUID, user
     if practice_user.status == StatusEnum.CORRECTING:
         raise HTTPException(status_code=400, detail="Cannot delete submission that is in CORRECTING state")
     
-    try:
+    def _delete():
         with sftp_service.sftp_client() as sftp:
             dir_path = posixpath.join(settings.STUDENT_FILES_PATH, practice.course.academic_year, format_directory_name(practice.course.name), format_directory_name(practice.name), user_niub)
 
@@ -599,14 +590,17 @@ def delete_practice_submission(session: SessionDep, practice_id: uuid.UUID, user
                 except Exception as e:
                     logger.warning(f"Error removing previous file: {str(e)}")
 
-            if practice_user:
-                practice_user.status = StatusEnum.NOT_SUBMITTED
-                practice_user.submission_date = None
-                practice_user.submission_file_name = None
-                practice_user.correction = None
-                session.add(practice_user)
-                session.commit()
-                session.refresh(practice_user)
+    try:
+        await run_in_threadpool(_delete)
+
+        if practice_user:
+            practice_user.status = StatusEnum.NOT_SUBMITTED
+            practice_user.submission_date = None
+            practice_user.submission_file_name = None
+            practice_user.correction = None
+            session.add(practice_user)
+            session.commit()
+            session.refresh(practice_user)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error connecting or processing SFTP: {str(e)}")
@@ -686,13 +680,15 @@ async def download_my_files(*, session: SessionDep, practice_id: uuid.UUID, curr
 
     # Create zipstream
     z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-    
-    try:
-        # Use SFTP to get files
+
+    def _sftp_zip():
         with sftp_service.sftp_client() as sftp:
             # Add files to zip
             add_files_to_zip_from_sftp(z, sftp, user_path, temp_dir, "")
     
+    try:
+        await run_in_threadpool(_sftp_zip)
+
     except Exception as e:
         shutil.rmtree(temp_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=f"Error connecting or processing SFTP: {str(e)}")
@@ -735,8 +731,7 @@ async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, cur
     # Create zipstream
     z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     
-    # Use SFTP to get files
-    try:
+    def _sftp_zip():
         with sftp_service.sftp_client() as sftp:
             for user in practice.users:
                 if not user.is_teacher:
@@ -747,6 +742,9 @@ async def download_all_files(*, session: SessionDep, practice_id: uuid.UUID, cur
                 
             # Add teachers files to zip
             add_files_to_zip_from_sftp(z, sftp, prof_base_path, temp_dir, "teachers")
+
+    try:
+        await run_in_threadpool(_sftp_zip)
 
     except Exception as e:
         shutil.rmtree(temp_dir, ignore_errors=True)
@@ -802,11 +800,13 @@ async def download_user_files(*, session: SessionDep, practice_id: uuid.UUID, us
     # Create zipstream
     z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
     
-    try:
-        # Use SFTP to get files
+    def _sftp_zip():
         with sftp_service.sftp_client() as sftp:
             # Add files to zip
             add_files_to_zip_from_sftp(z, sftp, user_path, temp_dir, "")
+    
+    try:
+        await run_in_threadpool(_sftp_zip)
     
     except Exception as e:
         shutil.rmtree(temp_dir, ignore_errors=True)

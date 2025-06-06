@@ -1,4 +1,4 @@
-import { Practice } from "@/types/practice";
+import { Practice, PracticeFileInfo } from "@/types/practice";
 import { Button } from "@heroui/button";
 import {
   Drawer,
@@ -13,13 +13,16 @@ import { Select, SelectItem } from "@heroui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
 import { DatePicker } from "@heroui/date-picker";
 import { useEffect, useState } from "react";
-import { TrashIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { FileUploader } from "@/components/file-uploader";
 import { addToast } from "@heroui/toast";
-import { createPractice, deletePractice, updatePractice } from "@/app/actions/practice";
-import { DateValue, parseAbsoluteToLocal, parseZonedDateTime, ZonedDateTime } from "@internationalized/date";
+import { createPractice, deletePractice, getPracticeCorrectionFilesInfo, updatePractice } from "@/app/actions/practice";
+import { parseAbsoluteToLocal, parseZonedDateTime, ZonedDateTime } from "@internationalized/date";
 import { Course } from "@/types/course";
 import { downloadStudentsTemplateCSV } from "@/app/actions/course";
+import { Switch } from "@heroui/switch";
+import { FileList } from '@/components/file-list';
+import { Spinner } from "@heroui/spinner";
 
 interface PracticeDrawerProps {
   isOpen: boolean
@@ -40,10 +43,13 @@ export const PracticeDrawer = ({
 }: PracticeDrawerProps) => {
   const [practice, setPractice] = useState<Practice | null>(initialPractice);
   const [files, setFiles] = useState<File[]>([]);
+  const [currentCorrectionFiles, setCurrentCorrectionFiles] = useState<PracticeFileInfo[]>([]);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [isCreatingOrUpdatingPractice, setIsCreatingOrUpdatingPractice] = useState(false);
   const [isOpenPopoverDelete, setIsOpenPopoverDelete] = useState(false);
   const [isDeletingPractice, setIsDeletingPractice] = useState(false);
+  const [isSelectedUpdateFiles, setIsSelectedUpdateFiles] = useState(false);
+  const [isLoadingCorrectionFiles, setIsLoadingCorrectionFiles] = useState(false);
 
   type EditFormField = "name" | "description" | "programming_language" | "due_date" | "course_id";
 
@@ -58,7 +64,26 @@ export const PracticeDrawer = ({
   });
 
   useEffect(() => {
-    if (initialPractice) {
+    const fetchPracticeCorrectionFiles = async (practiceId: string) => {
+      try {
+        setIsLoadingCorrectionFiles(true);
+        setIsSelectedUpdateFiles(false);
+        const files = await getPracticeCorrectionFilesInfo(practiceId);
+        setCurrentCorrectionFiles(files);
+        
+      } catch (error) {
+        console.error("Error fetching practice:", error);
+        addToast({
+          title: "Error en carregar els fitxers d'autocorreció",
+          description: "No s'han pogut carregar els fitxers d'autocorreció de la pràctica.",
+          color: "danger"
+        });
+        setIsSelectedUpdateFiles(true);
+      } finally {
+        setIsLoadingCorrectionFiles(false);
+      }
+    }
+    if (isOpen && initialPractice) {
       setEditFormData({
         name: initialPractice?.name || "",
         description: initialPractice?.description || "",
@@ -70,7 +95,9 @@ export const PracticeDrawer = ({
       });
       setPractice(initialPractice);
       setFiles([]);
+      fetchPracticeCorrectionFiles(initialPractice.id ?? "");
     } else {
+      setIsSelectedUpdateFiles(true);
       // Reseteamos el formulario para creación
       setEditFormData({
         name: "",
@@ -100,48 +127,40 @@ export const PracticeDrawer = ({
       course_id: editFormData.course_id.trim(),
     };
 
-    if (practice?.id) {
-      try {
-        setIsCreatingOrUpdatingPractice(true);
-        const updatedPractice = await updatePractice(practice.id, practiceData);
-        addToast({
-          title: `Pràctica ${updatedPractice.name} actualizada correctament`,
-          color: "success"
-        })
-        setPractice(updatedPractice);
-        onSave?.(updatedPractice);
-        onOpenChange?.(false);
-      } catch (error) {
-        console.error("Error updating practice:", error);
-        addToast({
-          title: `Error en actualizar la pràctica ${editFormData.name.trim()}`,
-          color: "danger"
-        })
-      } finally {
-        setIsCreatingOrUpdatingPractice(false);
+    const isUpdate = Boolean(practice?.id);
+    const actionLabel = isUpdate ? "actualitzar" : "crear";
+
+    try {
+      setIsCreatingOrUpdatingPractice(true);
+      
+      let savedPractice;
+      if (isUpdate) {
+        savedPractice = await updatePractice(
+          practice?.id ?? "",
+          practiceData,
+          files && files.length > 0 && isSelectedUpdateFiles ? files : undefined
+        );
+      } else {
+        savedPractice = await createPractice(practiceData, files);
       }
-    } 
-    // Si es una práctica nueva (modo creación)
-    else {
-      try {
-        setIsCreatingOrUpdatingPractice(true);
-        const createdPractice = await createPractice(practiceData, files);
-        addToast({
-          title: `Pràctica ${createdPractice.name} creada correctament`,
-          color: "success"
-        })
-        setPractice(createdPractice);
-        onSave?.(createdPractice);
-        onOpenChange?.(false);
-      } catch (error) {
-        console.error("Error creating practice:", error);
-        addToast({
-          title: `Error en crear la pràctica ${editFormData.name.trim()}`,
-          color: "danger"
-        })
-      } finally {
-        setIsCreatingOrUpdatingPractice(false);
-      }
+
+      addToast({
+        title: `Pràctica ${savedPractice.name} ${isUpdate ? "actualitzada" : "creada"} correctament`,
+        color: "success",
+      });
+
+      setPractice(savedPractice);
+      onSave?.(savedPractice);
+      onOpenChange?.(false);
+
+    } catch (error) {
+      console.error(`Error en ${actionLabel} la pràctica:`, error);
+      addToast({
+        title: `Error en ${actionLabel} la pràctica ${editFormData.name.trim()}`,
+        color: "danger",
+      });
+    } finally {
+      setIsCreatingOrUpdatingPractice(false);
     }
   };
 
@@ -195,6 +214,7 @@ export const PracticeDrawer = ({
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       isDismissable={false}
+      size={initialPractice ? "lg" : "md"}
     >
       <DrawerContent>
         {(onClose) => (
@@ -309,47 +329,80 @@ export const PracticeDrawer = ({
                   onChange={(value) => handleEditFormChange("due_date", value)}
                 />
               </div>
-              {!practice && <div className="flex flex-col gap-3 pt-3 pb-4">
-                <h2 className="text-xl font-bold leading-5">
-                  Pujar els fitxers de correcció
-                </h2>
-                <div className="w-full flex flex-col gap-3 rounded-lg bg-default-200/60 p-5">
-                  <div className="flex items-center gap-3 font-medium text-sm">
-                    Exemple de fitxers
+              <div className="flex flex-col gap-3 pt-3 pb-4">
+                {practice ? ( 
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold leading-5">
+                      {isSelectedUpdateFiles ? "Actualitzar els fitxers d'autocorreció" : "Fitxers actuals d'autocorreció"}
+                    </h2>
+                    <Tooltip content={isSelectedUpdateFiles ? "Cancel·lar actualització" : "Actualitzar fitxers"} delay={700} placement="top-end">
+                      <Switch
+                        thumbIcon={<ArrowPathIcon className="size-1" />}
+                        isSelected={isSelectedUpdateFiles} 
+                        onValueChange={setIsSelectedUpdateFiles} 
+                        aria-label="Actualitzar fitxers correció" />
+                    </Tooltip>
+                    
                   </div>
-                  <p className="text-default-500/80 text-sm font-light">
-                    Pots descarregar els fitxers d&apos;exemple adjunts i utilitzar-lo com a punt de partida per fer el teu fitxer de correcció
-                  </p>
-                  <Button
-                    className="bg-default-50 border-small"
-                    radius="sm"
-                    variant="bordered"
-                    isLoading={isDownloadingTemplate}
-                    isDisabled={true}
-                    onPress={async () => {
-                      setIsDownloadingTemplate(true);
-                      try {
-                        await downloadStudentsTemplateCSV();
-                      } catch (e) {
-                        addToast({
-                          title: "Error en descarregar el fitxers d'exemple",
-                          color: "danger"
-                        })
-                      } finally {
-                        setIsDownloadingTemplate(false);
-                      }
-                    }}
-                  >
-                    Descarregar
-                  </Button>
+                ) : (
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold leading-5">
+                    Pujar els fitxers d&apos;autocorrecció
+                  </h2>
                 </div>
-                <FileUploader 
-                  files={files} 
-                  setFiles={setFiles}
-                  acceptedExtensions={"*"}
-                  multiple={true}
-                />
-              </div>}
+                )}
+                {isSelectedUpdateFiles ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="w-full flex flex-col gap-3 rounded-lg bg-default-200/60 p-5">
+                      <div className="flex items-center gap-3 font-medium text-sm">
+                        Exemple de fitxers
+                      </div>
+                      <p className="text-default-500/80 text-sm font-light">
+                        Pots descarregar els fitxers d&apos;exemple adjunts i utilitzar-lo com a punt de partida per fer el teu fitxer de correcció
+                      </p>
+                      <Button
+                        className="bg-default-50 border-small"
+                        radius="sm"
+                        variant="bordered"
+                        isLoading={isDownloadingTemplate}
+                        isDisabled={true}
+                        onPress={async () => {
+                          setIsDownloadingTemplate(true);
+                          try {
+                            await downloadStudentsTemplateCSV();
+                          } catch (e) {
+                            addToast({
+                              title: "Error en descarregar el fitxers d'exemple",
+                              color: "danger"
+                            })
+                          } finally {
+                            setIsDownloadingTemplate(false);
+                          }
+                        }}
+                      >
+                        Descarregar
+                      </Button>
+                    </div>
+                    <FileUploader
+                      files={files} 
+                      setFiles={setFiles}
+                      acceptedExtensions={"*"}
+                      multiple={true}
+                      disabled={!isSelectedUpdateFiles}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    {isLoadingCorrectionFiles ? (
+                      <div className="flex justify-center items-center h-40">
+                        <Spinner size="lg" />
+                      </div>
+                    ) : (
+                      <FileList files={currentCorrectionFiles} />
+                    )}
+                  </div>
+                )}
+              </div>
             </DrawerBody>
             <DrawerFooter className="flex gap-1">
               <Button variant="flat" onPress={onClose}>Cancel·lar</Button>

@@ -54,6 +54,14 @@ class PracticeUpdate(SQLModel):
     programming_language: ProgrammingLanguageEnum | None
     due_date: datetime | None
 
+    @model_validator(mode='before')
+    @classmethod
+    def validate_to_json(cls, value):
+        # If the input is a string, try to load it as a JSON object
+        if isinstance(value, str):
+            return cls(**json.loads(value)) # Convert the JSON string to a dict and assign it to the model
+        return value
+
 class PracticePublic(PracticeBase):
     id: uuid.UUID
     submission_date: datetime | None = None

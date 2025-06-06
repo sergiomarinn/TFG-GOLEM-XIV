@@ -125,8 +125,11 @@ const StudentSidebar = ({ practiceStudents, onSelectStudent, selectedStudent }: 
 
   useEffect(() => {
     if (practiceStudents) {
-      setStudents(practiceStudents.filter((student) => student.is_student));
-      setIsLoading(false)
+      const sortedStudents = practiceStudents
+        .filter((student) => student.is_student)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      setStudents(sortedStudents);
+      setIsLoading(false);
     }
   }, [practiceStudents]);
 
@@ -165,7 +168,7 @@ const StudentSidebar = ({ practiceStudents, onSelectStudent, selectedStudent }: 
       <div className="overflow-y-auto max-h-auto">
         {isLoading ? (
           <div className="flex justify-center items-center h-40">
-            <Spinner />
+            <Spinner size="lg" />
           </div>
         ) : filteredStudents.length > 0 ? (
           <ul className="space-y-1">
@@ -529,7 +532,7 @@ export default function PracticeDetailPage() {
         const practice = await getPracticeById(practiceId);
         setPractice(practice);
         
-        if (practice.status !== "not_submitted") {
+        if (practice.status !== "not_submitted" && !(user?.is_teacher || user?.is_admin)) {
           const submissionFileInfo = await getPracticeFileInfo(practiceId);
           setSubmissionFilesInfo([submissionFileInfo]);
         }

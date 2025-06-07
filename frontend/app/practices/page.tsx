@@ -35,7 +35,6 @@ import { PracticeCardSkeleton } from '@/components/practice-cards-skeleton';
 
 const sortOptions = [
   { name: "Més recents", uid: "recent" },
-  { name: "Millor qualificació", uid: "best_grade" },
   { name: "Data de venciment", uid: "due_date" }
 ];
 
@@ -59,12 +58,23 @@ export default function PracticesGeneralPage() {
     fetchPracticesData();
   }, []);
 
+  const [filterValue, setFilterValue] = React.useState("");
+  const [courseFilter, setCourseFilter] = React.useState<Selection>("all");
+  const [sortOption, setSortOption] = React.useState<Selection>(new Set(["recent"]));
+  const [activeTab, setActiveTab] = React.useState("corrected");
+
   const courseOptions = React.useMemo(() => {
-    if (!practices || practices.length === 0) return [{ uid: 'all', name: 'Tots els cursos' }];
+    let filtered = [...practices];
+
+    if (activeTab !== "all") {
+      filtered = filtered.filter(practice => practice.status === activeTab);
+    }
+    
+    if (!filtered || filtered.length === 0) return [{ uid: 'all', name: 'Tots els cursos' }];
 
     const uniqueCourses = new Map<string, Course>();
     
-    practices.forEach(practice => {
+    filtered.forEach(practice => {
       if (practice.course && practice.course.id) {
         uniqueCourses.set(practice.course.id, practice.course);
       }
@@ -76,12 +86,7 @@ export default function PracticesGeneralPage() {
     }));
 
     return options
-  }, [practices]);
-
-  const [filterValue, setFilterValue] = React.useState("");
-  const [courseFilter, setCourseFilter] = React.useState<Selection>("all");
-  const [sortOption, setSortOption] = React.useState<Selection>(new Set(["recent"]));
-  const [activeTab, setActiveTab] = React.useState("corrected");
+  }, [practices, activeTab]);
   
   const hasSearchFilter = Boolean(filterValue);
 
@@ -107,11 +112,11 @@ export default function PracticesGeneralPage() {
         practice.course?.name.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
-    
+
     // Filtro por curso
-    if (courseFilter !== "all" && Array.from(courseFilter)[0] !== "all") {
-      filtered = filtered.filter(practice => 
-        practice.course?.id === Array.from(courseFilter)[0]
+    if (courseFilter !== "all" && Array.from(courseFilter).length !== courseOptions.length) {
+      filtered = filtered.filter(practice =>
+        Array.from(courseFilter).includes(practice.course?.id ?? "")
       );
     }
     
@@ -119,8 +124,16 @@ export default function PracticesGeneralPage() {
     const sortBy = Array.from(sortOption)[0];
     switch(sortBy) {
       case 'recent':
-        // Ordenar por fecha de corrección (más reciente primero), luego por fecha de entrega
+        // Ordenar poniendo primero las que tienen submission_date, luego las que no
         filtered.sort((a, b) => {
+          const hasSubmissionA = !!a.submission_date;
+          const hasSubmissionB = !!b.submission_date;
+          
+          // Si una tiene submission_date y la otra no, priorizar la que tiene
+          if (hasSubmissionA && !hasSubmissionB) return -1;
+          if (!hasSubmissionA && hasSubmissionB) return 1;
+          
+          // Si ambas tienen o ambas no tienen submission_date, ordenar por fecha
           const dateA = a.submission_date || a.due_date;
           const dateB = b.submission_date || b.due_date;
           return new Date(dateB).getTime() - new Date(dateA).getTime();
@@ -218,7 +231,7 @@ export default function PracticesGeneralPage() {
         </div>
       </div>
     );
-  }, [filterValue, courseFilter, sortOption, sortOptionName]);
+  }, [filterValue, courseFilter, sortOption, sortOptionName, filteredPractices]);
 
   return (
     <div className="px-8 pb-8 min-h-screen">

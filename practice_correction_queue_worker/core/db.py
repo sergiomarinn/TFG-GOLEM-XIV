@@ -4,6 +4,5 @@ from sqlalchemy.pool import NullPool
 
 engine = create_async_engine(
     str(settings.SQLALCHEMY_DATABASE_URI), 
-    poolclass=NullPool,
-    connect_args={"statement_cache_size": 0}
+    poolclass=NullPool
 )

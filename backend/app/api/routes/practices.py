@@ -454,7 +454,7 @@ async def delete_practice(session: SessionDep, practice_id: uuid.UUID) -> Any:
 
     return Message(message="Practice deleted")
 
-@router.post("/{practice_id}/upload")
+@router.post("/{practice_id}/upload", response_model=PracticeFileInfo)
 async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, current_user: CurrentUser, file: UploadFile) -> Any:
     """
     Upload practice files.
@@ -547,15 +547,7 @@ async def upload_practice_file(session: SessionDep, practice_id: uuid.UUID, curr
         except Exception as e:
             logger.error(f"Error sending practice data to external service: {str(e)}")
 
-    return {
-        "status": "success",
-        "file": {
-            "filename": file.filename,
-            "content_type": file.content_type,
-            "remote_path": remote_file_path,
-            "submitted_at": datetime.now().isoformat()
-        }
-    }
+    return PracticeFileInfo(name=file.filename, size=file.size)
 
 @router.delete("/{practice_id}/submission/{user_niub}", dependencies=[Depends(get_current_teacher)], response_model=Message)
 async def delete_practice_submission(session: SessionDep, practice_id: uuid.UUID, user_niub: str) -> Any:

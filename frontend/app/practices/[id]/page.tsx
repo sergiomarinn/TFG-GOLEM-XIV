@@ -577,13 +577,15 @@ export default function PracticeDetailPage() {
     
     try {
       setIsSubmitting(true);
-      await uploadPractice(practice.id ?? "", files[0])
+      const uploadedFileInfo = await uploadPractice(practice.id ?? "", files[0])
 
       setPractice({
         ...practice,
         status: "submitted",
         submission_date: new Date().toISOString()
       });
+
+      setSubmissionFilesInfo([uploadedFileInfo]);
 
       addToast({
         title: "Pràctica enviada amb èxit",
@@ -874,7 +876,7 @@ export default function PracticeDetailPage() {
                     <p className="mb-4 px-1.5">Aquesta pràctica ja ha estat corregida i avaluada.</p>
                     
                     {/* Prepare for resubmit_available boolean condition for future*/}
-                    {true && (
+                    {true && !isPastDue && (
                       <Button 
                         color="primary" 
                         variant="flat" 

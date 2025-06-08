@@ -246,7 +246,7 @@ export async function updatePractice(practiceId: string, data: Partial<Practice>
 	return await res.json();
 }
 
-export async function uploadPractice(practiceId: string, file: File): Promise<void> {
+export async function uploadPractice(practiceId: string, file: File): Promise<PracticeFileInfo> {
 	const formData = new FormData();
   formData.append("file", file);
 
@@ -262,6 +262,8 @@ export async function uploadPractice(practiceId: string, file: File): Promise<vo
     const errorData = await res.json();
     throw new Error(errorData.detail || "Failed to upload practice");
   }
+
+	return await res.json();
 }
 
 export async function sendPracticeData(practiceId: string, niub: string): Promise<void> {

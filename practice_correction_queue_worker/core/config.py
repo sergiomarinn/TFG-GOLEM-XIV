@@ -1,22 +1,14 @@
 """ Application configuration module """
 import os
-import secrets
-import warnings
-from typing import Annotated, Any, Literal
+from typing import Annotated
 
 from pydantic import (
-    AnyUrl,
-    BeforeValidator,
-    EmailStr,
-    HttpUrl,
     PostgresDsn,
     UrlConstraints,
-    computed_field,
-    model_validator,
+    computed_field
 )
 from pydantic_core import MultiHostUrl, Url
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing_extensions import Self
 
 # Define a Pydantic definition for SQLite
 SQLiteDsn = Annotated[

@@ -1,0 +1,10 @@
+[project]
+name = "dummy-practices-correction-server"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.10"
+dependencies = [
+    "aio-pika>=9.5.5",
+    "pydantic>=2.11.5",
+    "pydantic-settings>=2.9.1",
+]

@@ -4,7 +4,6 @@ import platform
 import os
 import logging
 from aio_pika import connect_robust, IncomingMessage, Message
-from aiohttp import ClientSession
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlmodel import select
 from models import Practice, PracticesUsersLink, StatusEnum

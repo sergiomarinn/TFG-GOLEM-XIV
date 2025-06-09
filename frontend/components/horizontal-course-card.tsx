@@ -169,7 +169,7 @@ export const HorizontalCourseCard = ({course, expand}: HorizontalCourseCardProps
                 endContent={<ArrowRightIcon className="size-5"/>}
                 href={`/courses/${course.id}`}
               >
-                Ves al curs
+                Anar al curs
               </Button>
             </div>
           </div>

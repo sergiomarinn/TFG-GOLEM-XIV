@@ -79,7 +79,7 @@ export const PracticeCourseCard = ({ practice, isTeacher }: PracticeCardProps) =
 							endContent={<ArrowRightIcon className="size-5"/>}
               href={`/practices/${practice.id}`}
 						>
-							Ves
+							Anar
 						</Button>
 					</div>
         </div>

@@ -126,7 +126,7 @@ export const CourseCard = ({course}: CourseCardProps) => {
 						}
             href={`/courses/${course.id}`}
 					>
-						Ves al curs
+						Anar al curs
 					</Button>
 
           {/* Teachers Avatars */}

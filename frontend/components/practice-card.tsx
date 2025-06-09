@@ -71,7 +71,7 @@ export const PracticeCard = ({ practice }: { practice: Practice }) => {
 						}
             href={`/practices/${practice.id}`}
 					>
-						Ves a la pràctica
+						Anar a la pràctica
 					</Button>
         </div>
       </div>

@@ -20,10 +20,13 @@ export const SideNav = () => {
   const [isUserConfigModalOpen, setUserConfigModalOpen] = useState(false);
   const { theme } = useTheme();
   const { hasNewCorrected } = useNotifications();
+  const [mounted, setMounted] = useState(false);
+  const { clearNotifications } = useNotifications();
 
 	useEffect(() => {
     const saved = localStorage.getItem("sidenav-collapsed");
     if (saved) setIsCollapsed(saved === "true");
+    setMounted(true);
   }, []);
 	
 	useEffect(() => {
@@ -65,13 +68,13 @@ export const SideNav = () => {
 								: "scale-x-100 opacity-100 duration-500"
 						)}
 					>
-						<img
+						{mounted && <img
 							src={theme === "dark" ? "/logo-ub-extended-white.svg" : "/logo-ub-extended.svg"}
 							alt="Logo UB Extended"
 							width={160}
 							height={32}
 							className="block"
-						/>
+						/>}
 					</div>
 
 					{/* Logo pequeño */}
@@ -181,7 +184,7 @@ export const SideNav = () => {
             variant="light"
             startContent={<ArrowLeftStartOnRectangleIcon className="size-6" />}
             aria-label="Tancar sessió"
-            onPress={async () => {await logout(); redirect('/login');}}
+            onPress={async () => {clearNotifications(); await logout(); redirect('/login');}}
           >
 						<span className={clsx(
               "origin-left transition-all duration-150 ease-in-out whitespace-nowrap",

@@ -250,11 +250,11 @@ Un cop el backend estigui executant-se, pots accedir a la documentació interact
 - **Backend:** Segueix l'arquitectura de FastAPI amb separació clara entre models, rutes, CRUD i endpoints
 - **Frontend:** Utilitza l'App Router de Next.js 15+ amb components de React
 - **Worker:** Implementa el patró producer-consumer amb cues de missatges
-- **Dummy RPC Server:** Simulador senzill per a testing i desenvolupament del servidor RPC
+- **Dummy RPC Server:** Simulador senzill per a testing i desenvolupament
 
 ### Eines de desenvolupament recomanades
-- **Backend:** VS Code amb extensions de Python, FastAPI i SQLAlchemy
-- **Frontend:** VS Code amb extensions de TypeScript, React i Tailwind CSS
+- **Backend i Worker:** VS Code amb extensions de Python
+- **Frontend:** VS Code amb extensions de TypeScript i Tailwind CSS
 
 ## 📄 Llicència
 
@@ -263,7 +263,7 @@ Aquest projecte ha estat desenvolupat per a finalitats acadèmiques dins el marc
 ## 👨‍💻 Autor
 
 **Sergio Marín Herrera** - Treball Final de Grau  
-**Universitat:** Facultat de Matemàtiques i Informàtica - UB
+**Universitat:** Facultat de Matemàtiques i Informàtica - UB  
 **Any:** 2024-2025
 
 ## 🙏 Agraïments
@@ -271,7 +271,3 @@ Aquest projecte ha estat desenvolupat per a finalitats acadèmiques dins el marc
 - Director/a del TFG: Daniel Ortiz Martinez
 - Departament de Matemàtiques i Informàtica
 - Universitat de Barcelona
-
----
-
-*Desenvolupat amb ❤️ per al TFG 2024-2025*

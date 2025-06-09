@@ -106,7 +106,6 @@ class Settings(BaseSettings):
     SFTP_HOST: str
     SFTP_PORT: int
     SFTP_USER: str
-    SFTP_PASSWORD: str
     SFTP_KEY: str
 
     @computed_field

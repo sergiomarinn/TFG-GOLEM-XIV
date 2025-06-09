@@ -51,11 +51,11 @@ export const PracticeCourseCard = ({ practice, isTeacher }: PracticeCardProps) =
         </div>
         
         {/* Content */}
-        <div className="relative z-10 h-full flex justify-between">
+        <div className="relative z-10 h-full flex gap-5 justify-between">
 					<div className="h-full flex flex-col items-start justify-between">
 						<div className="space-y-1">
 							<span className="text-xs text-gray-400 font-light leading-none block">PRÀCTICA</span>
-							<h2 className="text-[1.35rem] font-semibold leading-tight">{practice.name}</h2>
+							<h2 className="text-[1.35rem] font-semibold line-clamp-2 leading-tight">{practice.name}</h2>
 
 							{/* Programming Language Badge */}
               <div className="flex items-center mt-2">

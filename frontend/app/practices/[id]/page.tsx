@@ -872,7 +872,7 @@ export default function PracticeDetailPage() {
               <CardBody>
                 {practice?.status === 'corrected' && !showResubmit ? (
                   <div className="text-center py-4">
-                    <CheckCircleIcon className="size-12 mx-auto mb-3 text-success-500" />
+                    <CheckCircleIcon className="size-14 mx-auto mb-3 text-success-500" />
                     <p className="mb-4 px-1.5">Aquesta pràctica ja ha estat corregida i avaluada.</p>
                     
                     {/* Prepare for resubmit_available boolean condition for future*/}

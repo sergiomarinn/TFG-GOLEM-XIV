@@ -7,6 +7,7 @@ from .user import User, UserPublic
 import uuid
 import json
 import enum
+from datetime import datetime
 
 class ColorEnum(str, enum.Enum):
     DEFAULT = "default"
@@ -69,6 +70,7 @@ class CoursePublic(CourseBase):
     total_practices: int = 0
     students_count: int
     programming_languages: list[str] = []
+    last_access: datetime | None = None
 
 class CoursePublicWithUsersAndPractices(CourseBase):
     id: uuid.UUID

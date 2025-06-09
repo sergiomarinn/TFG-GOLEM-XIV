@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/app/lib/supabase/client';
 import { addToast } from "@heroui/toast";
 import { getUserFromClient } from "@/app/lib/client-session";
@@ -8,6 +8,7 @@ import { getPracticeById } from '@/app/actions/practice';
 import { Button } from '@heroui/button';
 import { DocumentIcon } from '@heroicons/react/24/solid';
 import { Link } from '@heroui/link';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 export type NotificationType = {
   id: string;
@@ -43,6 +44,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   const [unreadCount, setUnreadCount] = useState(0);
   const [hasNewCorrected, setHasNewCorrected] = useState(false);
   const [userNiub, setUserNiub] = useState<string | null>(null);
+  const subscriptionRef = useRef<RealtimeChannel | null>(null);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -94,11 +96,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
   // Set up real-time subscription when userNiub is available
   useEffect(() => {
-    if (!userNiub) return;
+    if (!userNiub || subscriptionRef.current) return;
 
     // Subscribe to changes in practiceuserslink where userNiub matches
-    const subscription = supabase
-      .channel('practicesuserslink-changes')
+    const channel = supabase
+      .channel(`practicesuserslink-changes-${userNiub}`)
       .on(
         'postgres_changes',
         {
@@ -116,10 +118,16 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
           }
         }
       )
-      .subscribe();
+
+    subscriptionRef.current = channel;
+
+    channel.subscribe();
 
     return () => {
-      supabase.removeChannel(subscription);
+      if (subscriptionRef.current) {
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+      }
     };
   }, [userNiub]);
 

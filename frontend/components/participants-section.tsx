@@ -110,7 +110,8 @@ export function ParticipantsSection({courseId, courseUsers, canEditCourse, isLoa
   const [hasSearched, setHasSearched] = React.useState(false);
   
   useEffect(() => {
-    setUsers(courseUsers)
+    const sortedCourseUsers = courseUsers.sort((a, b) => a.name.localeCompare(b.name));
+    setUsers(sortedCourseUsers)
   }, [courseUsers]);
 
   const handleOpenPopover = (niub: string, isOpen: boolean) => {

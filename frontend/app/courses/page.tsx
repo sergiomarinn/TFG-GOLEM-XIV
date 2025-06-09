@@ -161,8 +161,13 @@ export default function CoursesPage() {
 		switch(sortKey) {
 			case "name": // Sort by course name (alphabetical)
 				return sorted.sort((a, b) => a.name.localeCompare(b.name));
-			case "recently_accessed": // Sort by recently accessed (example logic)
-				return sorted.sort((a, b) => (b.students_count ?? 0) - (a.students_count ?? 0)); // Example: sort by number of students
+			case "recently_accessed": // Sort by recently accessed
+				return sorted.sort((a, b) => {
+          if (!a.last_access && !b.last_access) return 0;
+          if (!a.last_access) return 1;
+          if (!b.last_access) return -1;
+          return new Date(b.last_access).getTime() - new Date(a.last_access).getTime();
+        });
 			default:
 				return sorted;
 		}

@@ -107,9 +107,15 @@ def enrich_courses_with_practice_stats(session: SessionDep, user_niub: str, cour
             )
         ).one()
 
+        course_user = session.exec(select(CoursesUsersLink).where(
+            CoursesUsersLink.user_niub == user_niub,
+            CoursesUsersLink.course_id == course.id
+        )).first()
+
         course_response = CoursePublic.model_validate(course)
         course_response.total_practices = total_practices_count
         course_response.corrected_practices = corrected_practices_count
+        course_response.last_access = course_user.last_access if course_user else None
 
         result.append(course_response)
 
@@ -124,10 +130,12 @@ def read_my_courses(session: SessionDep, current_user: CurrentUser, skip: int = 
     else: count_statement = select(func.count()).select_from(Course).where(Course.users.contains(current_user))
     count = session.exec(count_statement).one()
 
-    if current_user.is_admin: statement = select(Course).offset(skip).limit(limit)
-    else: statement = select(Course).where(Course.users.contains(current_user)).offset(skip).limit(limit)
+    if current_user.is_admin: 
+        statement = select(Course).offset(skip).limit(limit)
+    else: 
+        statement = select(Course).where(Course.users.contains(current_user)).offset(skip).limit(limit)
+    
     courses = session.exec(statement).all()
-
     enriched_courses = enrich_courses_with_practice_stats(session, current_user.niub, courses)
 
     return CoursesPublic(data=enriched_courses, count=count)

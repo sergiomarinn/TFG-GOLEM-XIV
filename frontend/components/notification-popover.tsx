@@ -99,7 +99,7 @@ export const NotificationPopover = () => {
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent>
-					<div className="px-1 py-2">
+					<div className="px-1 py-2 w-[400px]">
 						<div className="flex justify-between items-center mb-2 gap-3">
 							<h3 className="text-lg font-medium">Notificacions</h3>
 							<div className="flex gap-1">

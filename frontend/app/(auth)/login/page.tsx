@@ -15,6 +15,7 @@ import {
   ArrowUpRightIcon
 } from '@/components/icons'
 import { redirect } from 'next/navigation';
+import { useNotifications } from '@/components/notification-context';
 
 export default function LoginPage() {
   const [state, action, pending] = useActionState(login, undefined)
@@ -23,9 +24,11 @@ export default function LoginPage() {
   const toggleVisibility = () => {
     setIsVisible((prev) => !prev);
   };
-
+  const { fetchUser } = useNotifications();
+  
   useEffect(() => {
     if (state?.success) {
+      fetchUser();
       addToast({
         title: "Inici de sessió correcte",
         description: state?.message,

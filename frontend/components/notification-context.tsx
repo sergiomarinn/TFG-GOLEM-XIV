@@ -27,6 +27,7 @@ type NotificationContextType = {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
+  fetchUser: () => void;
 };
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -67,36 +68,83 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     }
   };
 
-  // Get stored notifications from localStorage
-  useEffect(() => {
-    const storedNotifications = localStorage.getItem('notifications');
+  const getNotificationStorageKey = (niub: string) => `notifications_${niub}`;
+
+  const loadUserNotifications = (niub: string) => {
+    const storageKey = getNotificationStorageKey(niub);
+    const storedNotifications = localStorage.getItem(storageKey);
+    
     if (storedNotifications) {
-      const parsedNotifications = JSON.parse(storedNotifications);
-      setNotifications(parsedNotifications);
-      setUnreadCount(parsedNotifications.filter((n: NotificationType) => !n.read).length);
-      setHasNewCorrected(parsedNotifications.some((n: NotificationType) => !n.read && n.type === 'CORRECTED'));
-    }
-  }, []);
-
-  // Get current user
-  useEffect(() => {
-    const fetchUser = async () => {
       try {
-        const user = await getUserFromClient();
-        if (user && user.niub) {
-          setUserNiub(user.niub);
-        }
+        const parsedNotifications = JSON.parse(storedNotifications);
+        setNotifications(parsedNotifications);
+        setUnreadCount(parsedNotifications.filter((n: NotificationType) => !n.read).length);
+        setHasNewCorrected(parsedNotifications.some((n: NotificationType) => !n.read && n.type === 'CORRECTED'));
       } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error('Error parsing stored notifications:', error);
+        setNotifications([]);
+        setUnreadCount(0);
+        setHasNewCorrected(false);
       }
-    };
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+      setHasNewCorrected(false);
+    }
+  };
 
+  const saveUserNotifications = (niub: string, notificationsList: NotificationType[]) => {
+    const storageKey = getNotificationStorageKey(niub);
+    localStorage.setItem(storageKey, JSON.stringify(notificationsList));
+  };
+
+  const cleanupSubscription = () => {
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
+  };
+
+  const resetNotificationState = () => {
+    setNotifications([]);
+    setUnreadCount(0);
+    setHasNewCorrected(false);
+    cleanupSubscription();
+  };
+
+  const fetchUser = async () => {
+    try {
+      const user = await getUserFromClient();
+      const newUserNiub = user?.niub || null;
+      
+      // If user changed, reset state and load new user's notifications
+      if (newUserNiub !== userNiub) {
+        if (userNiub) {
+          // User changed, reset everything
+          resetNotificationState();
+        }
+        
+        setUserNiub(newUserNiub);
+        
+        if (newUserNiub) {
+          loadUserNotifications(newUserNiub);
+        }
+      }        
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      setUserNiub(null);
+      resetNotificationState();
+    }
+  }
+
+  // Get current user and handle user changes
+  useEffect(() => {
     fetchUser();
   }, []);
 
-  // Set up real-time subscription when userNiub is available
+  // Set up real-time subscription when userNiub changes
   useEffect(() => {
-    if (!userNiub || subscriptionRef.current) return;
+    if (!userNiub) return;
 
     // Subscribe to changes in practiceuserslink where userNiub matches
     const channel = supabase
@@ -114,25 +162,23 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
           
           // Check if status is one of the notification types
           if (['CORRECTING', 'CORRECTED', 'REJECTED'].includes(newRow.status)) {
-						handleNewNotification(newRow);
+            handleNewNotification(newRow);
           }
         }
       )
 
     subscriptionRef.current = channel;
-
     channel.subscribe();
 
     return () => {
-      if (subscriptionRef.current) {
-        supabase.removeChannel(subscriptionRef.current);
-        subscriptionRef.current = null;
-      }
+      cleanupSubscription();
     };
   }, [userNiub]);
 
   // Handle new notification
   const handleNewNotification = async (data: any) => {
+    if (!userNiub) return;
+
 		try {
 			const practiceData = await getPracticeById(data.practice_id)
 
@@ -150,7 +196,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       // Update state with new notification
       setNotifications(prev => {
         const updated = [notification, ...prev];
-        localStorage.setItem('notifications', JSON.stringify(updated));
+        saveUserNotifications(userNiub, updated);
         return updated;
       });
       
@@ -217,11 +263,13 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
   // Mark notification as read
   const markAsRead = (id: string) => {
+    if (!userNiub) return;
+    
     setNotifications(prev => {
       const updated = prev.map(notification => 
         notification.id === id ? { ...notification, read: true } : notification
       );
-      localStorage.setItem('notifications', JSON.stringify(updated));
+      saveUserNotifications(userNiub, updated);
       return updated;
     });
     setUnreadCount(prev => Math.max(0, prev - 1));
@@ -230,9 +278,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
   // Mark all notifications as read
   const markAllAsRead = () => {
+    if (!userNiub) return;
+
     setNotifications(prev => {
       const updated = prev.map(notification => ({ ...notification, read: true }));
-      localStorage.setItem('notifications', JSON.stringify(updated));
+      saveUserNotifications(userNiub, updated);
       return updated;
     });
     setUnreadCount(0);
@@ -241,10 +291,13 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
   // Clear all notifications
   const clearNotifications = () => {
+    if (!userNiub) return;
+
+    const storageKey = getNotificationStorageKey(userNiub);
     setNotifications([]);
     setUnreadCount(0);
     setHasNewCorrected(false);
-    localStorage.removeItem('notifications');
+    localStorage.removeItem(storageKey);
   };
 
   // Update corrected flag when notifications change
@@ -260,6 +313,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     markAsRead,
     markAllAsRead,
     clearNotifications,
+    fetchUser
   };
 
   return (
